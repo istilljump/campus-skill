@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.campus.runner.mapper.WithdrawRequestMapper">
+
+    <!-- 提现申请分页 -->
+    <select id="page" resultType="com.campus.runner.entity.WithdrawRequest">
+        select * from withdraw_request
+        <where>
+            <if test="userId != null">and user_id = #{userId}</if>
+            <if test="status != null">and status = #{status}</if>
+        </where>
+        order by apply_time desc
+    </select>
+
+    <!-- 动态更新提现申请（审核打款/驳回时使用） -->
+    <update id="update">
+        update withdraw_request
+        <set>
+            <if test="status != null">status = #{status},</if>
+            <if test="auditTime != null">audit_time = #{auditTime},</if>
+            <if test="payTime != null">pay_time = #{payTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </set>
+        where id = #{id}
+    </update>
+</mapper>

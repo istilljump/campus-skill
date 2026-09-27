@@ -1,0 +1,38 @@
+campus:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    host: localhost
+    port: 3306
+    database: campus_runner
+    username: root
+    password: ""
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password: ""
+      database: 0
+  alioss:
+    endpoint: oss-cn-beijing.aliyuncs.com
+    access-key-id: placeholder
+    access-key-secret: placeholder
+    bucket-name: placeholder
+    region: cn-beijing
+  baidu:
+    ak: placeholder
+    location-url: https://api.map.baidu.com/geocoding/v3/
+    distance-url: https://api.map.baidu.com/routedirection/v2/riding
+  wechat:
+    appid: placeholder
+    secret: placeholder
+    mchid: placeholder
+    mch-serial-no: placeholder
+    private-key-file-path: placeholder
+    api-v3-key: placeholder
+    notify-url: placeholder
+    refund-notify-url: placeholder
+  shop:
+    location:
+      lng: 116.404
+      lat: 39.915
+    limit-distance: 10

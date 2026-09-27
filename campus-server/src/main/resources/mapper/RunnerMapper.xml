@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.campus.runner.mapper.RunnerMapper">
+
+    <!-- 动态更新跑腿员 -->
+    <update id="update">
+        update runner
+        <set>
+            <if test="name != null">name = #{name},</if>
+            <if test="phone != null">phone = #{phone},</if>
+            <if test="studentNo != null">student_no = #{studentNo},</if>
+            <if test="campus != null">campus = #{campus},</if>
+            <if test="college != null">college = #{college},</if>
+            <if test="auditStatus != null">audit_status = #{auditStatus},</if>
+            <if test="runnerLevel != null">runner_level = #{runnerLevel},</if>
+            <if test="dailyOrderLimit != null">daily_order_limit = #{dailyOrderLimit},</if>
+            <if test="completedOrders != null">completed_orders = #{completedOrders},</if>
+            <if test="score != null">score = #{score},</if>
+            <if test="status != null">status = #{status},</if>
+            update_time = now()
+        </set>
+        where id = #{id}
+    </update>
+
+    <!-- 管理端-跑腿员列表分页 -->
+    <select id="page" resultType="com.campus.runner.entity.Runner">
+        select * from runner
+        <where>
+            <if test="name != null and name != ''">and name like concat('%', #{name}, '%')</if>
+            <if test="campus != null and campus != ''">and campus like concat('%', #{campus}, '%')</if>
+            <if test="auditStatus != null">and audit_status = #{auditStatus}</if>
+            <if test="status != null">and status = #{status}</if>
+        </where>
+        order by score desc, completed_orders desc
+    </select>
+</mapper>

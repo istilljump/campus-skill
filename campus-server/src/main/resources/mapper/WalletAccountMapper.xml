@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.campus.runner.mapper.WalletAccountMapper">
+
+    <!-- 动态更新钱包账户 -->
+    <update id="update">
+        update wallet_account
+        <set>
+            <if test="balance != null">balance = #{balance},</if>
+            <if test="frozenAmount != null">frozen_amount = #{frozenAmount},</if>
+            <if test="totalIncome != null">total_income = #{totalIncome},</if>
+            <if test="totalExpense != null">total_expense = #{totalExpense},</if>
+            <if test="status != null">status = #{status},</if>
+            update_time = now()
+        </set>
+        where id = #{id}
+    </update>
+</mapper>

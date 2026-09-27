@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.campus.runner.mapper.OrderMapper">
+
+    <!-- 通用订单列表结果映射（含类型名称等冗余字段） -->
+    <resultMap id="orderResultMap" type="com.campus.runner.entity.Orders">
+        <id column="id" property="id"/>
+        <result column="number" property="number"/>
+        <result column="user_id" property="userId"/>
+        <result column="runner_id" property="runnerId"/>
+        <result column="type_id" property="typeId"/>
+        <result column="title" property="title"/>
+        <result column="description" property="description"/>
+        <result column="pickup_address" property="pickupAddress"/>
+        <result column="delivery_address" property="deliveryAddress"/>
+        <result column="campus" property="campus"/>
+        <result column="reward_amount" property="rewardAmount"/>
+        <result column="platform_fee" property="platformFee"/>
+        <result column="runner_income" property="runnerIncome"/>
+        <result column="status" property="status"/>
+        <result column="expected_time" property="expectedTime"/>
+        <result column="timeout_time" property="timeoutTime"/>
+        <result column="cancel_reason" property="cancelReason"/>
+        <result column="cancel_by" property="cancelBy"/>
+        <result column="is_appealed" property="isAppealed"/>
+        <result column="pay_method" property="payMethod"/>
+        <result column="pay_status" property="payStatus"/>
+        <result column="order_time" property="orderTime"/>
+        <result column="pay_time" property="payTime"/>
+        <result column="pickup_time" property="pickupTime"/>
+        <result column="finish_time" property="finishTime"/>
+        <result column="cancel_time" property="cancelTime"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <!-- 动态更新订单 -->
+    <update id="update">
+        update orders
+        <set>
+            <if test="runnerId != null">runner_id = #{runnerId},</if>
+            <if test="typeId != null">type_id = #{typeId},</if>
+            <if test="title != null">title = #{title},</if>
+            <if test="description != null">description = #{description},</if>
+            <if test="pickupAddress != null">pickup_address = #{pickupAddress},</if>
+            <if test="deliveryAddress != null">delivery_address = #{deliveryAddress},</if>
+            <if test="campus != null">campus = #{campus},</if>
+            <if test="rewardAmount != null">reward_amount = #{rewardAmount},</if>
+            <if test="platformFee != null">platform_fee = #{platformFee},</if>
+            <if test="runnerIncome != null">runner_income = #{runnerIncome},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="expectedTime != null">expected_time = #{expectedTime},</if>
+            <if test="timeoutTime != null">timeout_time = #{timeoutTime},</if>
+            <if test="cancelReason != null">cancel_reason = #{cancelReason},</if>
+            <if test="cancelBy != null">cancel_by = #{cancelBy},</if>
+            <if test="isAppealed != null">is_appealed = #{isAppealed},</if>
+            <if test="payMethod != null">pay_method = #{payMethod},</if>
+            <if test="payStatus != null">pay_status = #{payStatus},</if>
+            <if test="payTime != null">pay_time = #{payTime},</if>
+            <if test="pickupTime != null">pickup_time = #{pickupTime},</if>
+            <if test="finishTime != null">finish_time = #{finishTime},</if>
+            <if test="cancelTime != null">cancel_time = #{cancelTime},</if>
+            update_time = now()
+        </set>
+        where id = #{id}
+    </update>
+
+    <!-- 用户端-我的订单分页 -->
+    <select id="pageUserOrders" resultMap="orderResultMap">
+        select * from orders
+        <where>
+            user_id = #{userId}
+            <if test="status != null">and status = #{status}</if>
+            <if test="typeId != null">and type_id = #{typeId}</if>
+            <if test="campus != null and campus != ''">and campus like concat('%', #{campus}, '%')</if>
+            <if test="keyword != null and keyword != ''">
+                and (title like concat('%', #{keyword}, '%') or number like concat('%', #{keyword}, '%'))
+            </if>
+        </where>
+        order by create_time desc
+    </select>
+
+    <!-- 跑腿员端-订单大厅分页（待接单） -->
+    <select id="pageHallOrders" resultType="com.campus.runner.vo.OrderHallVO">
+        select
+            o.id,
+            o.number,
+            o.title,
+            o.description,
+            o.type_id       as typeId,
+            t.name          as typeName,
+            o.pickup_address as pickupAddress,
+            o.delivery_address as deliveryAddress,
+            o.campus,
+            o.reward_amount as rewardAmount,
+            o.runner_income as runnerIncome,
+            o.expected_time as expectedTime,
+            u.name          as publisherName,
+            o.create_time   as createTime
+        from orders o
+        left join errand_type t on o.type_id = t.id
+        left join user u on o.user_id = u.id
+        <where>
+            o.status = 2 and o.pay_status = 1
+            <if test="typeId != null">and o.type_id = #{typeId}</if>
+            <if test="campus != null and campus != ''">and o.campus like concat('%', #{campus}, '%')</if>
+            <if test="keyword != null and keyword != ''">
+                and (o.title like concat('%', #{keyword}, '%') or o.number like concat('%', #{keyword}, '%'))
+            </if>
+        </where>
+        order by o.reward_amount desc, o.create_time desc
+    </select>
+
+    <!-- 跑腿员端-接单记录分页 -->
+    <select id="pageRunnerOrders" resultMap="orderResultMap">
+        select * from orders
+        <where>
+            runner_id = #{runnerId}
+            <if test="status != null">and status = #{status}</if>
+            <if test="typeId != null">and type_id = #{typeId}</if>
+            <if test="campus != null and campus != ''">and campus like concat('%', #{campus}, '%')</if>
+            <if test="keyword != null and keyword != ''">
+                and (title like concat('%', #{keyword}, '%') or number like concat('%', #{keyword}, '%'))
+            </if>
+        </where>
+        order by create_time desc
+    </select>
+
+    <!-- 管理端-订单列表分页 -->
+    <select id="pageAdminOrders" resultMap="orderResultMap">
+        select * from orders
+        <where>
+            <if test="status != null">and status = #{status}</if>
+            <if test="typeId != null">and type_id = #{typeId}</if>
+            <if test="campus != null and campus != ''">and campus like concat('%', #{campus}, '%')</if>
+            <if test="keyword != null and keyword != ''">
+                and (title like concat('%', #{keyword}, '%') or number like concat('%', #{keyword}, '%'))
+            </if>
+        </where>
+        order by create_time desc
+    </select>
+</mapper>

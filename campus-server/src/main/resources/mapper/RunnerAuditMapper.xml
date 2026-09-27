@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.campus.runner.mapper.RunnerAuditMapper">
+
+    <!-- 动态更新审核记录（审核通过/驳回时使用） -->
+    <update id="update">
+        update runner_audit
+        <set>
+            <if test="status != null">status = #{status},</if>
+            <if test="auditRemark != null">audit_remark = #{auditRemark},</if>
+            <if test="auditorId != null">auditor_id = #{auditorId},</if>
+            <if test="auditTime != null">audit_time = #{auditTime},</if>
+        </set>
+        where id = #{id}
+    </update>
+
+    <!-- 管理端-审核记录列表 -->
+    <select id="page" resultType="com.campus.runner.entity.RunnerAudit">
+        select * from runner_audit
+        <where>
+            <if test="status != null">and status = #{status}</if>
+            <if test="studentNo != null and studentNo != ''">and student_no like concat('%', #{studentNo}, '%')</if>
+        </where>
+        order by apply_time desc
+    </select>
+</mapper>

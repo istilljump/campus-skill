@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.campus.runner.mapper.WalletTransactionMapper">
+
+    <!-- 钱包流水分页 -->
+    <select id="page" resultType="com.campus.runner.entity.WalletTransaction">
+        select * from wallet_transaction
+        <where>
+            wallet_id = #{walletId}
+            <if test="type != null">and type = #{type}</if>
+        </where>
+        order by create_time desc
+    </select>
+</mapper>

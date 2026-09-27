@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.campus.runner.mapper.AddressBookMapper">
+
+    <!-- 动态更新地址（校园地址：校区/楼栋/房间号） -->
+    <update id="updateAddress">
+        update address_book
+        <set>
+            <if test="consignee != null">consignee = #{consignee},</if>
+            <if test="phone != null">phone = #{phone},</if>
+            <if test="sex != null">sex = #{sex},</if>
+            <if test="campus != null">campus = #{campus},</if>
+            <if test="building != null">building = #{building},</if>
+            <if test="room != null">room = #{room},</if>
+            <if test="detail != null">detail = #{detail},</if>
+            <if test="label != null">label = #{label},</if>
+            <if test="isDefault != null">is_default = #{isDefault},</if>
+        </set>
+        where user_id = #{userId} and id = #{id}
+    </update>
+</mapper>

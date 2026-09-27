@@ -1,0 +1,17 @@
+# build
+target/
+*.class
+
+# ide
+.idea/
+*.iml
+.vscode/
+
+# runtime data & local tools (mysql-data / redis / maven / e2e harness)
+.local/
+logs/
+*.log
+
+# os
+.DS_Store
+Thumbs.db
