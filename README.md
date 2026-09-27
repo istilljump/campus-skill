@@ -37,6 +37,16 @@ java -jar campus-server/target/campus-server-1.0-SNAPSHOT.jar
 
 启动后访问 `http://localhost:8080/doc.html` 查看在线接口文档。
 
+## 前端页面（零构建，随服务直接访问）
+
+| 入口 | 地址 | 说明 |
+|---|---|---|
+| 🖥️ 管理端控制台 | http://localhost:8080/admin-app/ | Vue3 + Element Plus：数据看板、订单、跑腿员、认证/提现审核、类型管理 |
+| 🙋 用户端 H5 | http://localhost:8080/user-app/ | Vant 移动风格：发单、订单跟踪、钱包、评价、地址、认证申请 |
+| 🏃 跑腿员端 H5 | http://localhost:8080/runner-app/ | 抢单大厅、取件/送达、收入提现、个人中心 |
+
+设计规范基于 [design-system-starter](https://github.com/aiskillstore/marketplace/tree/main/skills/ariegoldkin/design-system-starter) 令牌体系（蓝色品牌色 / Inter / 4px 间距），见 `static/assets/tokens.css`；Vue3 / Element Plus / Vant 依赖已自托管于 `static/assets/vendor/`，无需外网。
+
 - 管理端账号：`admin / 123456`
 - 微信登录未配置 appid 时自动降级为本地联调模式：任意 code 登录，openid 为 `campus_dev_{code}`；认证通过后即可登录跑腿员端
 

@@ -3,8 +3,12 @@ package com.campus.runner.controller.user;
 import com.campus.runner.dto.OrdersPageQueryDTO;
 import com.campus.runner.result.PageResult;
 import com.campus.runner.result.Result;
+import com.campus.runner.service.ErrandTypeService;
 import com.campus.runner.service.OrderService;
+import com.campus.runner.vo.ErrandTypeVO;
 import com.campus.runner.vo.OrderHallVO;
+
+import java.util.List;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
@@ -24,6 +28,15 @@ public class HallController {
 
     @Autowired
     private OrderService orderService;
+
+    @Autowired
+    private ErrandTypeService errandTypeService;
+
+    @GetMapping("/errandType/list")
+    @ApiOperation("启用中的跑腿订单类型")
+    public Result<List<ErrandTypeVO>> errandTypes() {
+        return Result.success(errandTypeService.listEnabled());
+    }
 
     @GetMapping("/list")
     @ApiOperation("订单大厅分页查询（跑腿员端登录后同样可访问）")

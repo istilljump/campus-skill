@@ -34,6 +34,7 @@ public class RunnerController {
     @GetMapping("/center")
     @ApiOperation("个人中心（今日接单/收入/等级/评分/余额）")
     public Result<RunnerCenterVO> center() {
-        return Result.success(runnerService.getCenter(BaseContext.getCurrentId()));
+        //BaseContext 中是跑腿员ID，getCenter 需要关联用户ID
+        return Result.success(runnerService.getCenter(runnerService.resolveUserId(BaseContext.getCurrentId())));
     }
 }

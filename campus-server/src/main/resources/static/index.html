@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>campus-runner 校园综合跑腿服务平台</title>
+<link rel="stylesheet" href="/assets/tokens.css">
+<style>
+  body { display:flex; align-items:center; justify-content:center; min-height:100vh;
+    background: linear-gradient(135deg, var(--blue-700), var(--blue-400)); }
+  .hub { text-align:center; color:#fff; }
+  .hub h1 { font-size: var(--text-2xl); font-weight: var(--weight-bold); margin-bottom: var(--sp-2); }
+  .hub p { opacity:.85; margin-bottom: var(--sp-8); }
+  .links { display:flex; gap: var(--sp-4); justify-content:center; flex-wrap:wrap; }
+  a.app {
+    display:block; width:220px; padding: var(--sp-6); background:#fff; color: var(--text-primary);
+    border-radius: var(--radius-xl); box-shadow: var(--shadow-lg); text-decoration:none;
+    transition: transform .15s ease, box-shadow .15s ease;
+  }
+  a.app:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
+  .app .ico { font-size: 40px; }
+  .app .name { font-weight: var(--weight-semibold); margin: var(--sp-2) 0 var(--sp-1); }
+  .app .desc { font-size: var(--text-xs); color: var(--text-tertiary); }
+</style>
+</head>
+<body>
+<div class="hub">
+  <h1>🚴 campus-runner</h1>
+  <p>校园综合跑腿服务平台 · 选择入口</p>
+  <div class="links">
+    <a class="app" href="/admin-app/">
+      <div class="ico">🖥️</div><div class="name">管理端控制台</div>
+      <div class="desc">数据看板 / 订单 / 审核 / 类型管理</div>
+    </a>
+    <a class="app" href="/user-app/">
+      <div class="ico">🙋</div><div class="name">用户端</div>
+      <div class="desc">发单 / 订单跟踪 / 钱包 / 评价</div>
+    </a>
+    <a class="app" href="/runner-app/">
+      <div class="ico">🏃</div><div class="name">跑腿员端</div>
+      <div class="desc">抢单大厅 / 订单操作 / 收入提现</div>
+    </a>
+  </div>
+</div>
+</body>
+</html>

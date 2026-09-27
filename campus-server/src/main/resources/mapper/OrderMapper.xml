@@ -71,11 +71,11 @@
         select * from orders
         <where>
             user_id = #{userId}
-            <if test="status != null">and status = #{status}</if>
-            <if test="typeId != null">and type_id = #{typeId}</if>
-            <if test="campus != null and campus != ''">and campus like concat('%', #{campus}, '%')</if>
-            <if test="keyword != null and keyword != ''">
-                and (title like concat('%', #{keyword}, '%') or number like concat('%', #{keyword}, '%'))
+            <if test="q.status != null">and status = #{q.status}</if>
+            <if test="q.typeId != null">and type_id = #{q.typeId}</if>
+            <if test="q.campus != null and q.campus != ''">and campus like concat('%', #{q.campus}, '%')</if>
+            <if test="q.keyword != null and q.keyword != ''">
+                and (title like concat('%', #{q.keyword}, '%') or number like concat('%', #{q.keyword}, '%'))
             </if>
         </where>
         order by create_time desc
@@ -117,11 +117,11 @@
         select * from orders
         <where>
             runner_id = #{runnerId}
-            <if test="status != null">and status = #{status}</if>
-            <if test="typeId != null">and type_id = #{typeId}</if>
-            <if test="campus != null and campus != ''">and campus like concat('%', #{campus}, '%')</if>
-            <if test="keyword != null and keyword != ''">
-                and (title like concat('%', #{keyword}, '%') or number like concat('%', #{keyword}, '%'))
+            <if test="q.status != null">and status = #{q.status}</if>
+            <if test="q.typeId != null">and type_id = #{q.typeId}</if>
+            <if test="q.campus != null and q.campus != ''">and campus like concat('%', #{q.campus}, '%')</if>
+            <if test="q.keyword != null and q.keyword != ''">
+                and (title like concat('%', #{q.keyword}, '%') or number like concat('%', #{q.keyword}, '%'))
             </if>
         </where>
         order by create_time desc

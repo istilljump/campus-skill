@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>校园跑腿 · 用户端</title>
+<link rel="stylesheet" href="/assets/tokens.css">
+<link rel="stylesheet" href="/assets/vendor/vant.css">
+<script src="/assets/vendor/vue.global.prod.js"></script>
+<script src="/assets/vendor/vant.js"></script>
+<style>
+  body { max-width: 480px; margin: 0 auto; min-height: 100vh; background: var(--bg-secondary); }
+  .page { padding-bottom: 70px; }
+  .hero { background: linear-gradient(135deg, var(--blue-600), var(--blue-400)); color:#fff;
+    padding: var(--sp-6) var(--sp-4) var(--sp-10); border-radius: 0 0 var(--radius-xl) var(--radius-xl); }
+  .hero h3 { font-size: var(--text-xl); font-weight: var(--weight-bold); }
+  .hero p { opacity:.85; font-size: var(--text-sm); margin-top: var(--sp-1); }
+  .type-grid { display:grid; grid-template-columns:repeat(4,1fr); gap: var(--sp-2);
+    margin: calc(var(--sp-10) * -1 + 10px) var(--sp-4) 0; background:#fff; border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md); padding: var(--sp-4); }
+  .type-item { text-align:center; padding: var(--sp-2) 0; border-radius: var(--radius-md); cursor:pointer; }
+  .type-item:active { background: var(--brand-soft); }
+  .type-emoji { font-size: 24px; }
+  .type-name { font-size: var(--text-xs); color: var(--text-secondary); margin-top: var(--sp-1); }
+  .section { margin: var(--sp-4) var(--sp-4) 0; }
+  .card { background:#fff; border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); padding: var(--sp-4); margin-top: var(--sp-3); }
+  .order-line { display:flex; justify-content:space-between; align-items:center; }
+  .order-title { font-weight: var(--weight-medium); }
+  .money { color: var(--brand-primary); font-weight: var(--weight-bold); }
+  .tag { display:inline-block; font-size: var(--text-xs); padding: 1px 8px; border-radius: var(--radius-full);
+    background: var(--brand-soft); color: var(--brand-primary); margin-left: var(--sp-2); }
+  .btn { width:100%; padding: var(--sp-3); border:none; border-radius: var(--radius-md);
+    background: var(--brand-primary); color:#fff; font-size: var(--text-base); font-weight: var(--weight-medium); cursor:pointer; }
+  .btn.ghost { background: var(--brand-soft); color: var(--brand-primary); }
+  .field { width:100%; padding: var(--sp-3); border:1px solid var(--blue-100); border-radius: var(--radius-md);
+    font-size: var(--text-base); margin-top: var(--sp-1); background: var(--bg-secondary); }
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- 登录 -->
+  <div v-if="!token" style="padding:60px 24px">
+    <div style="text-align:center;font-size:56px">🚴</div>
+    <h2 style="text-align:center;margin:12px 0 4px">校园跑腿</h2>
+    <p style="text-align:center;color:var(--text-tertiary);margin-bottom:32px">登录后即可发布跑腿订单</p>
+    <van-cell-group inset>
+      <van-field v-model="loginCode" label="登录码" placeholder="输入任意码即可登录（联调模式）"></van-field>
+    </van-cell-group>
+    <div style="margin-top:20px">
+      <button class="btn" @click="doLogin" :disabled="busy">登 录</button>
+    </div>
+  </div>
+
+  <div v-else class="page">
+    <van-nav-bar :title="navTitle"></van-nav-bar>
+
+    <!-- 首页 -->
+    <div v-if="view==='home'">
+      <div class="hero" style="margin-top:0">
+        <h3>Hi，让跑腿帮你跑</h3>
+        <p>信用分 {{ profile.creditScore ?? 100 }} · 已发单 {{ profile.publishOrderCount ?? 0 }} 单</p>
+      </div>
+      <div class="type-grid">
+        <div v-for="t in types" :key="t.id" class="type-item" @click="startOrder(t)">
+          <div class="type-emoji">{{ t.id===1?'📦':t.id===2?'🚀':t.id===3?'🛒':'📋' }}</div>
+          <div class="type-name">{{ t.name }}</div>
+        </div>
+      </div>
+      <div class="section">
+        <div class="card" @click="view='hall'">
+          <div class="order-line"><b>🧭 订单大厅</b><span class="text-tertiary">看看大家在发什么 ›</span></div>
+        </div>
+        <div class="card" @click="view='runnerApply'">
+          <div class="order-line"><b>🏃 成为跑腿员</b><span class="text-tertiary">认证后可接单赚钱 ›</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 发单 -->
+    <div v-if="view==='submit'">
+      <div class="section card">
+        <div style="font-weight:600;margin-bottom:12px">发布「{{ typeName }}」订单 <span class="tag">服务费率 {{ (curType.feeRate*100).toFixed(0) }}%</span></div>
+        <input class="field" v-model="form.title" placeholder="订单标题，如：帮我取菜鸟驿站快递"/>
+        <input class="field" v-model="form.description" placeholder="需求描述（选填）"/>
+        <input class="field" v-model="form.pickupAddress" placeholder="取件地址"/>
+        <select class="field" v-model="form.addressBookId">
+          <option v-for="a in addresses" :key="a.id" :value="a.id">{{ a.campus }} {{ a.building }} {{ a.room }}（{{ a.consignee }}）</option>
+        </select>
+        <input class="field" type="number" v-model.number="form.rewardAmount" placeholder="悬赏金额（元）"/>
+        <div class="order-line" style="margin-top:12px;font-size:14px">
+          <span class="text-secondary">支付方式</span>
+          <van-radio-group v-model="form.payMethod" direction="horizontal">
+            <van-radio :name="1">微信</van-radio><van-radio :name="2">钱包余额</van-radio>
+          </van-radio-group>
+        </div>
+        <button class="btn" style="margin-top:16px" @click="submitOrder" :disabled="busy">立即发单</button>
+      </div>
+    </div>
+
+    <!-- 订单大厅 -->
+    <div v-if="view==='hall'">
+      <div class="section">
+        <div v-for="o in hall" :key="o.id" class="card">
+          <div class="order-line">
+            <div><span class="order-title">{{ o.title }}</span><span class="tag">{{ o.typeName }}</span></div>
+            <div class="money">￥{{ o.rewardAmount }}</div>
+          </div>
+          <div class="text-tertiary" style="font-size:13px;margin:6px 0">{{ o.pickupAddress }} → {{ o.deliveryAddress }}</div>
+          <div class="order-line"><span class="text-tertiary" style="font-size:12px">{{ o.publisherName }} 发布于 {{ (o.createTime||'').slice(5,16) }}</span></div>
+        </div>
+        <van-empty v-if="!hall.length" description="大厅暂无待接单订单"></van-empty>
+      </div>
+    </div>
+
+    <!-- 我的订单 -->
+    <div v-if="view==='orders'">
+      <van-tabs v-model:active="orderTab" @click-tab="loadOrders">
+        <van-tab title="全部" :name="null"></van-tab><van-tab title="待支付" :name="1"></van-tab>
+        <van-tab title="待接单" :name="2"></van-tab><van-tab title="进行中" :name="3"></van-tab>
+        <van-tab title="已完成" :name="5"></van-tab>
+      </van-tabs>
+      <div class="section">
+        <div v-for="o in orders" :key="o.id" class="card" @click="openOrder(o.id)">
+          <div class="order-line">
+            <div><span class="order-title">{{ o.title }}</span></div>
+            <van-tag :type="tagType(o.status)">{{ statusText(o.status) }}</van-tag>
+          </div>
+          <div class="order-line" style="margin-top:8px">
+            <span class="text-tertiary" style="font-size:13px">{{ o.typeName }} · {{ (o.createTime||'').slice(5,16) }}</span>
+            <span class="money">￥{{ o.rewardAmount }}</span>
+          </div>
+        </div>
+        <van-empty v-if="!orders.length" description="还没有订单"></van-empty>
+      </div>
+    </div>
+
+    <!-- 订单详情/跟踪 -->
+    <div v-if="view==='orderDetail'">
+      <div class="section card" v-if="detail">
+        <van-steps :active="stepActive" active-color="var(--brand-primary)">
+          <van-step>发单</van-step><van-step>支付</van-step><van-step>接单</van-step>
+          <van-step>送达</van-step><van-step>完成</van-step>
+        </van-steps>
+        <h3 style="margin:16px 0 4px">{{ detail.title }} <van-tag :type="tagType(detail.status)">{{ statusText(detail.status) }}</van-tag></h3>
+        <p class="text-secondary" style="font-size:14px">{{ detail.description }}</p>
+        <van-cell-group inset style="margin-top:12px">
+          <van-cell title="类型" :value="detail.typeName"></van-cell>
+          <van-cell title="取件" :label="detail.pickupAddress"></van-cell>
+          <van-cell title="送达" :label="detail.deliveryAddress"></van-cell>
+          <van-cell title="悬赏" :value="'￥'+detail.rewardAmount"></van-cell>
+          <van-cell title="服务费" :value="'￥'+detail.platformFee"></van-cell>
+          <van-cell title="跑腿员" :value="detail.runnerName ? detail.runnerName+' '+detail.runnerPhone : '待接单'"></van-cell>
+        </van-cell-group>
+        <div v-if="detail.status===1" style="margin-top:12px"><button class="btn" @click="payOrder" :disabled="busy">立即支付</button></div>
+        <div v-if="detail.status===4" style="margin-top:12px"><button class="btn" @click="confirmOrder" :disabled="busy">确认完成</button></div>
+        <div v-if="[1,2].includes(detail.status)" style="margin-top:8px"><button class="btn ghost" @click="cancelOrder" :disabled="busy">取消订单</button></div>
+        <div v-if="detail.status===5 && !reviewed" style="margin-top:8px">
+          <van-rate v-model="reviewScore" style="margin-bottom:8px"></van-rate>
+          <input class="field" v-model="reviewContent" placeholder="说说这次体验（选填）"/>
+          <button class="btn" style="margin-top:8px" @click="submitReview" :disabled="busy">提交评价</button>
+        </div>
+        <div v-if="detail.status===5 && reviewed" style="margin-top:12px" class="text-tertiary">✅ 已完成并评价</div>
+      </div>
+    </div>
+
+    <!-- 钱包 -->
+    <div v-if="view==='wallet'">
+      <div class="hero">
+        <p>钱包余额（元）</p>
+        <h3 style="font-size:36px">￥{{ wallet.balance ?? '0.00' }}</h3>
+        <p style="margin-top:8px">累计收入 ￥{{ wallet.totalIncome ?? 0 }} · 支出 ￥{{ wallet.totalExpense ?? 0 }}</p>
+        <button class="btn" style="width:auto;padding:8px 24px;margin-top:12px" @click="recharge" :disabled="busy">充值 50 元</button>
+      </div>
+      <div class="section">
+        <div class="card">
+          <div style="font-weight:600;margin-bottom:8px">收支明细</div>
+          <van-cell-group inset>
+            <van-cell v-for="t in txs" :key="t.id" :title="txName(t.type)" :label="t.remark"
+              :value="(t.type===1||t.type===3||t.type===5?'+':'-')+'￥'+t.amount"></van-cell>
+          </van-cell-group>
+          <van-empty v-if="!txs.length" description="暂无流水" image-size="64"></van-empty>
+        </div>
+      </div>
+    </div>
+
+    <!-- 地址管理 -->
+    <div v-if="view==='address'">
+      <div class="section">
+        <div v-for="a in addresses" :key="a.id" class="card">
+          <div class="order-line">
+            <div><b>{{ a.campus }} {{ a.building }} {{ a.room }}</b><van-tag v-if="a.isDefault===1" style="margin-left:6px">默认</van-tag></div>
+            <van-button size="small" type="danger" plain @click="delAddress(a.id)">删除</van-button>
+          </div>
+          <div class="text-tertiary" style="font-size:13px;margin-top:4px">{{ a.consignee }} · {{ a.phone }}</div>
+        </div>
+        <div class="card">
+          <div style="font-weight:600;margin-bottom:8px">新增地址</div>
+          <input class="field" v-model="addrForm.consignee" placeholder="联系人"/>
+          <input class="field" v-model="addrForm.phone" placeholder="手机号"/>
+          <input class="field" v-model="addrForm.campus" placeholder="校区"/>
+          <input class="field" v-model="addrForm.building" placeholder="楼栋"/>
+          <input class="field" v-model="addrForm.room" placeholder="房间号"/>
+          <button class="btn" style="margin-top:12px" @click="saveAddress" :disabled="busy">保存地址</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 认证申请 -->
+    <div v-if="view==='runnerApply'">
+      <div class="section card">
+        <div style="font-weight:600;margin-bottom:8px">🏃 申请成为跑腿员</div>
+        <p class="text-tertiary" style="font-size:13px;margin-bottom:12px">提交后由平台审核，通过后即可在跑腿员端登录接单。</p>
+        <input class="field" v-model="auditForm.realName" placeholder="真实姓名"/>
+        <input class="field" v-model="auditForm.studentNo" placeholder="学号"/>
+        <input class="field" v-model="auditForm.campus" placeholder="校区"/>
+        <input class="field" v-model="auditForm.college" placeholder="学院"/>
+        <button class="btn" style="margin-top:12px" @click="applyRunner" :disabled="busy">提交认证申请</button>
+      </div>
+    </div>
+
+    <!-- 我的 -->
+    <div v-if="view==='me'">
+      <div class="section card" style="margin-top:16px">
+        <div class="order-line"><b>{{ profile.name || '跑腿用户' }}</b><span class="text-tertiary">ID: {{ profile.id }}</span></div>
+        <div style="margin-top:12px">
+          <van-cell-group inset>
+            <van-cell title="信用分" :value="profile.creditScore ?? 100"></van-cell>
+            <van-cell title="累计发单" :value="(profile.publishOrderCount ?? 0) + ' 单'"></van-cell>
+            <van-cell title="校区" :value="profile.campus || '未填写'"></van-cell>
+          </van-cell-group>
+        </div>
+        <button class="btn ghost" style="margin-top:16px" @click="view='address'">地址管理</button>
+        <button class="btn ghost" style="margin-top:8px" @click="logout">退出登录</button>
+      </div>
+    </div>
+
+    <!-- 底部导航 -->
+    <van-tabbar v-model="tab" @change="switchTab">
+      <van-tabbar-item icon="wap-nav-o" name="home">首页</van-tabbar-item>
+      <van-tabbar-item icon="orders-o" name="orders">订单</van-tabbar-item>
+      <van-tabbar-item icon="balance-o" name="wallet">钱包</van-tabbar-item>
+      <van-tabbar-item icon="user-o" name="me">我的</van-tabbar-item>
+    </van-tabbar>
+  </div>
+
+  <van-toast ref="toastRef"></van-toast>
+</div>
+
+<script>
+const { createApp, ref, reactive, computed } = Vue;
+const { showToast, showLoadingToast, closeToast } = vant;
+
+async function api(method, url, body, token) {
+  const opt = { method, headers: { "Content-Type": "application/json" } };
+  if (token) opt.headers["authentication"] = token;
+  if (body !== undefined && body !== null) opt.body = JSON.stringify(body);
+  const r = await fetch(url, opt);
+  return r.json();
+}
+const STATUS = { 1:"待支付", 2:"待接单", 3:"进行中", 4:"已送达", 5:"已完成", 6:"已取消", 7:"已超时" };
+const TAG = { 1:"primary", 2:"warning", 3:"primary", 4:"primary", 5:"success", 6:"default", 7:"danger" };
+
+createApp({
+  setup() {
+    const token = ref(localStorage.getItem("user_token") || "");
+    const view = ref("home");
+    const tab = ref("home");
+    const busy = ref(false);
+    const profile = ref({});
+    const types = ref([]);
+    const addresses = ref([]);
+    const hall = ref([]);
+    const orders = ref([]);
+    const orderTab = ref(null);
+    const detail = ref(null);
+    const reviewed = ref(false);
+    const wallet = ref({});
+    const txs = ref([]);
+    const loginCode = ref("");
+    const curType = ref({});
+    const reviewScore = ref(5);
+    const reviewContent = ref("");
+    const form = reactive({ title: "", description: "", pickupAddress: "", addressBookId: null, rewardAmount: null, payMethod: 2, typeId: null });
+    const addrForm = reactive({ consignee: "", phone: "", campus: "", building: "", room: "" });
+    const auditForm = reactive({ realName: "", studentNo: "", campus: "", college: "" });
+
+    const navTitle = computed(() => ({ home:"首页", hall:"订单大厅", submit:"发布订单", orders:"我的订单",
+      orderDetail:"订单详情", wallet:"我的钱包", address:"地址管理", runnerApply:"跑腿员认证", me:"我的" }[view.value] || "校园跑腿"));
+
+    function toast(msg, ok = true) { showToast({ message: msg, type: ok ? "success" : "fail" }); }
+
+    async function doLogin() {
+      if (!loginCode.value) return toast("请输入登录码", false);
+      busy.value = true;
+      const r = await api("POST", "/user/user/login", { code: loginCode.value });
+      busy.value = false;
+      if (r.code === 1) { localStorage.setItem("user_token", r.data.token); token.value = r.data.token; init(); }
+      else toast(r.msg || "登录失败", false);
+    }
+    function logout() { localStorage.removeItem("user_token"); location.reload(); }
+
+    async function init() {
+      profile.value = (await api("GET", "/user/user/profile", null, token.value)).data || {};
+      types.value = (await api("GET", "/user/errandType/list", null, token.value)).data || [];
+      await loadAddresses();
+      await loadWallet();
+    }
+
+    async function loadAddresses() {
+      const r = await api("GET", "/user/addressBook/list", null, token.value);
+      addresses.value = r.data || [];
+      if (addresses.value.length && form.addressBookId === null) form.addressBookId = addresses.value[0].id;
+    }
+    async function saveAddress() {
+      const r = await api("POST", "/user/addressBook", { ...addrForm, sex: "1", isDefault: addresses.value.length ? 0 : 1 }, token.value);
+      r.code === 1 ? (toast("已保存"), loadAddresses()) : toast(r.msg, false);
+    }
+    async function delAddress(id) {
+      const r = await api("DELETE", "/user/addressBook?id=" + id, null, token.value);
+      r.code === 1 ? loadAddresses() : toast(r.msg, false);
+    }
+
+    function startOrder(t) { curType.value = t || {}; form.typeId = t.id; view.value = "submit"; }
+
+    async function submitOrder() {
+      busy.value = true;
+      const r = await api("POST", "/user/order/submit", form, token.value);
+      busy.value = false;
+      if (r.code !== 1) return toast(r.msg || "发单失败", false);
+      toast("发单成功");
+      if (form.payMethod === 2) await api("POST", "/user/order/pay/" + r.data.orderNumber, null, token.value);
+      view.value = "orders"; orderTab.value = null; loadOrders();
+    }
+
+    async function loadHall() {
+      const r = await api("GET", "/user/hall/list?page=1&pageSize=20", null, token.value);
+      hall.value = (r.data && r.data.records) || [];
+    }
+    async function loadOrders() {
+      const q = new URLSearchParams({ page: 1, pageSize: 20 });
+      if (orderTab.value) q.set("status", orderTab.value);
+      const r = await api("GET", "/user/order/page?" + q, null, token.value);
+      orders.value = (r.data && r.data.records) || [];
+    }
+    async function openOrder(id) {
+      const r = await api("GET", "/user/order/detail/" + id, null, token.value);
+      detail.value = r.data; view.value = "orderDetail";
+      const rv = await api("GET", "/user/review/order/" + id, null, token.value);
+      reviewed.value = !!(rv.data && rv.data.id);
+    }
+    async function payOrder() {
+      busy.value = true;
+      const r = await api("POST", "/user/order/pay/" + detail.value.number, null, token.value);
+      busy.value = false;
+      r.code === 1 ? (toast("支付成功"), openOrder(detail.value.id)) : toast(r.msg, false);
+    }
+    async function confirmOrder() {
+      const r = await api("PUT", "/user/order/confirm/" + detail.value.id, null, token.value);
+      r.code === 1 ? (toast("订单已完成"), openOrder(detail.value.id)) : toast(r.msg, false);
+    }
+    async function cancelOrder() {
+      const r = await api("PUT", "/user/order/cancel", { id: detail.value.id, cancelReason: "用户主动取消" }, token.value);
+      r.code === 1 ? (toast("已取消并退款"), loadOrders(), view.value = "orders") : toast(r.msg, false);
+    }
+    async function submitReview() {
+      const r = await api("POST", "/user/review/submit",
+        { orderId: detail.value.id, score: reviewScore.value, content: reviewContent.value, isAnonymous: 0 }, token.value);
+      r.code === 1 ? (toast("评价成功"), reviewed.value = true) : toast(r.msg, false);
+    }
+
+    async function loadWallet() {
+      wallet.value = (await api("GET", "/user/wallet/balance", null, token.value)).data || {};
+      const r = await api("GET", "/user/wallet/transactions?page=1&pageSize=20", null, token.value);
+      txs.value = (r.data && r.data.records) || [];
+    }
+    async function recharge() {
+      busy.value = true;
+      const r = await api("POST", "/user/wallet/recharge", { amount: 50 }, token.value);
+      busy.value = false;
+      r.code === 1 ? (toast("充值成功"), loadWallet()) : toast(r.msg, false);
+    }
+    function txName(t) { return { 1:"跑腿收入", 2:"支付支出", 3:"充值", 4:"提现", 5:"退款", 6:"违约金" }[t] || "其他"; }
+
+    async function applyRunner() {
+      busy.value = true;
+      const r = await api("POST", "/user/runner/apply", auditForm, token.value);
+      busy.value = false;
+      r.code === 1 ? toast("申请已提交，等待平台审核") : toast(r.msg, false);
+    }
+
+    function switchTab(name) {
+      view.value = name;
+      if (name === "orders") loadOrders();
+      if (name === "wallet") loadWallet();
+    }
+    function statusText(s) { return STATUS[s] || s; }
+    function tagType(s) { return TAG[s] || "primary"; }
+
+    if (token.value) init();
+
+    return { token, view, tab, busy, profile, types, addresses, hall, orders, orderTab, detail, reviewed,
+             wallet, txs, loginCode, curType, reviewScore, reviewContent, form, addrForm, auditForm,
+             navTitle, doLogin, logout, startOrder, submitOrder, loadHall, loadOrders, openOrder, payOrder,
+             confirmOrder, cancelOrder, submitReview, recharge, txName, applyRunner, saveAddress, delAddress,
+             switchTab, statusText, tagType };
+  }
+}).use(vant).mount("#app");
+
+/* 首页大厅入口 */
+document.addEventListener("click", () => {});
+</script>
+</body>
+</html>

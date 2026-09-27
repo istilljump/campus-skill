@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>campus-runner 管理端</title>
+<link rel="stylesheet" href="/assets/tokens.css">
+<link rel="stylesheet" href="/assets/vendor/element-plus.css">
+<script src="/assets/vendor/vue.global.prod.js"></script>
+<script src="/assets/vendor/element-plus.js"></script>
+<style>
+  body { background: var(--bg-tertiary); }
+  .login-wrap { display:flex; align-items:center; justify-content:center; min-height:100vh;
+    background: linear-gradient(135deg, var(--blue-600), var(--blue-400)); }
+  .login-card { width: 380px; padding: var(--sp-10); background:#fff; border-radius: var(--radius-xl); box-shadow: var(--shadow-lg); }
+  .login-title { font-size: var(--text-xl); font-weight: var(--weight-bold); text-align:center; margin-bottom: var(--sp-2); color: var(--brand-active); }
+  .layout { display:flex; min-height:100vh; }
+  .side { width:220px; background:var(--brand-active); color:#fff; padding: var(--sp-6) var(--sp-4); }
+  .logo { font-weight: var(--weight-bold); font-size: var(--text-lg); margin-bottom: var(--sp-8); padding: 0 var(--sp-2); }
+  .menu-item { padding: var(--sp-3) var(--sp-4); border-radius: var(--radius-md); cursor:pointer; margin-bottom: var(--sp-1);
+    color:#dbeafe; font-size: var(--text-sm); transition: all .15s; }
+  .menu-item:hover { background: rgba(255,255,255,.12); }
+  .menu-item.active { background:#fff; color: var(--brand-active); font-weight: var(--weight-semibold); }
+  .main { flex:1; padding: var(--sp-6); }
+  .topbar { display:flex; justify-content:space-between; align-items:center; margin-bottom: var(--sp-6); }
+  .topbar h2 { font-size: var(--text-xl); font-weight: var(--weight-semibold); }
+  .stat-grid { display:grid; grid-template-columns:repeat(4,1fr); gap: var(--sp-4); margin-bottom: var(--sp-6); }
+  .stat-card { background:#fff; border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); padding: var(--sp-6); }
+  .stat-num { font-size: var(--text-2xl); font-weight: var(--weight-bold); color: var(--brand-primary); }
+  .stat-label { font-size: var(--text-sm); color: var(--text-tertiary); margin-top: var(--sp-1); }
+  .stat-panel { background:#fff; border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); padding: var(--sp-6); }
+  .panel-title { font-weight: var(--weight-semibold); margin-bottom: var(--sp-4); }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+const { createApp, ref, reactive, onMounted, computed } = Vue;
+
+/* ---------- API helper ---------- */
+async function api(method, url, body, token) {
+  const opt = { method, headers: { "Content-Type": "application/json" } };
+  if (token) opt.headers["token"] = token;
+  if (body !== undefined && body !== null) opt.body = JSON.stringify(body);
+  const r = await fetch(url, opt);
+  return r.json();
+}
+
+const STATUS = { 1:"待支付", 2:"待接单", 3:"进行中", 4:"已送达", 5:"已完成", 6:"已取消", 7:"已超时" };
+const STATUS_TAG = { 1:"info", 2:"warning", 3:"", 4:"", 5:"success", 6:"danger", 7:"danger" };
+
+const app = createApp({
+  setup() {
+    const token = localStorage.getItem("admin_token") || "";
+    const page = ref(token ? "dashboard" : "login");
+    const loginForm = reactive({ username: "admin", password: "123456" });
+    const menu = ref("dashboard");
+    const loading = ref(false);
+
+    /* dashboard */
+    const stat = ref({});
+    /* orders */
+    const orders = ref({ records: [], total: 0 });
+    const orderQuery = reactive({ page: 1, pageSize: 10, status: null });
+    const orderDetail = ref(null); const detailVisible = ref(false);
+    /* runners */
+    const runners = ref({ records: [], total: 0 });
+    const runnerQuery = reactive({ page: 1, pageSize: 10 });
+    /* audits */
+    const audits = ref({ records: [], total: 0 });
+    const auditQuery = reactive({ page: 1, pageSize: 10, status: 0 });
+    /* withdraws */
+    const withdraws = ref({ records: [], total: 0 });
+    const wdQuery = reactive({ page: 1, pageSize: 10, status: 0 });
+    /* types */
+    const types = ref([]);
+    const typeDialog = ref(false);
+    const typeForm = reactive({ id: null, name: "", description: "", feeRate: 0.1, sort: 0 });
+    /* users */
+    const users = ref({ records: [], total: 0 });
+    const userQuery = reactive({ page: 1, pageSize: 10 });
+
+    async function doLogin() {
+      const r = await api("POST", "/admin/employee/login", loginForm);
+      if (r.code === 1) { localStorage.setItem("admin_token", r.data.token); location.reload(); }
+      else ElementPlus.ElMessage.error(r.msg || "登录失败");
+    }
+    function logout() { localStorage.removeItem("admin_token"); location.reload(); }
+
+    async function loadStat() { stat.value = (await api("GET", "/admin/statistics/overview", null, token)).data || {}; }
+
+    async function loadOrders() {
+      loading.value = true;
+      const q = new URLSearchParams({ page: orderQuery.page, pageSize: orderQuery.pageSize });
+      if (orderQuery.status) q.set("status", orderQuery.status);
+      orders.value = (await api("GET", "/admin/order/page?" + q, null, token)).data || { records: [], total: 0 };
+      loading.value = false;
+    }
+    async function showOrder(id) { orderDetail.value = (await api("GET", "/admin/order/detail/" + id, null, token)).data; detailVisible.value = true; }
+
+    async function loadRunners() {
+      const q = new URLSearchParams({ page: runnerQuery.page, pageSize: runnerQuery.pageSize });
+      runners.value = (await api("GET", "/admin/runner/page?" + q, null, token)).data || { records: [], total: 0 };
+    }
+    async function toggleRunner(row) {
+      const r = await api("POST", "/admin/runner/status/" + (row.status === 1 ? 0 : 1) + "?runnerId=" + row.id, null, token);
+      r.code === 1 ? (ElementPlus.ElMessage.success("已更新"), loadRunners()) : ElementPlus.ElMessage.error(r.msg);
+    }
+
+    async function loadAudits() {
+      const q = new URLSearchParams({ page: auditQuery.page, pageSize: auditQuery.pageSize });
+      if (auditQuery.status !== null && auditQuery.status !== "") q.set("status", auditQuery.status);
+      audits.value = (await api("GET", "/admin/runnerAudit/page?" + q, null, token)).data || { records: [], total: 0 };
+    }
+    async function processAudit(row, status) {
+      const { value } = await ElementPlus.ElMessageBox.prompt(
+        status === 1 ? "通过该认证申请？" : "驳回该认证申请？请填写原因", "认证审核", { inputValue: status === 1 ? "信息无误" : "" });
+      const r = await api("PUT", "/admin/runnerAudit/process", { id: row.id, status, auditRemark: value || "-" }, token);
+      r.code === 1 ? (ElementPlus.ElMessage.success("已处理"), loadAudits()) : ElementPlus.ElMessage.error(r.msg);
+    }
+
+    async function loadWithdraws() {
+      const q = new URLSearchParams({ page: wdQuery.page, pageSize: wdQuery.pageSize });
+      if (wdQuery.status !== null && wdQuery.status !== "") q.set("status", wdQuery.status);
+      withdraws.value = (await api("GET", "/admin/withdraw/page?" + q, null, token)).data || { records: [], total: 0 };
+    }
+    async function processWd(row, status) {
+      const { value } = await ElementPlus.ElMessageBox.prompt(
+        status === 1 ? "确认已打款？" : "驳回该提现申请？请填写原因", "提现处理", { inputValue: status === 1 ? "" : "" });
+      const r = await api("PUT", "/admin/withdraw/process", { id: row.id, status, remark: value || "-" }, token);
+      r.code === 1 ? (ElementPlus.ElMessage.success("已处理"), loadWithdraws()) : ElementPlus.ElMessage.error(r.msg);
+    }
+
+    async function loadTypes() { types.value = (await api("GET", "/admin/errandType/list", null, token)).data || []; }
+    function editType(row) { Object.assign(typeForm, row || { id: null, name: "", description: "", feeRate: 0.1, sort: 0 }); typeDialog.value = true; }
+    async function saveType() {
+      const r = typeForm.id
+        ? await api("PUT", "/admin/errandType", typeForm, token)
+        : await api("POST", "/admin/errandType", typeForm, token);
+      r.code === 1 ? (typeDialog.value = false, ElementPlus.ElMessage.success("保存成功"), loadTypes()) : ElementPlus.ElMessage.error(r.msg);
+    }
+    async function toggleType(row) {
+      const r = await api("PUT", "/admin/errandType/status/" + (row.status === 1 ? 0 : 1) + "?id=" + row.id, null, token);
+      r.code === 1 ? loadTypes() : ElementPlus.ElMessage.error(r.msg);
+    }
+    async function delType(row) {
+      await ElementPlus.ElMessageBox.confirm("确认删除该类型？", "提示", { type: "warning" });
+      const r = await api("DELETE", "/admin/errandType/" + row.id, null, token);
+      r.code === 1 ? (ElementPlus.ElMessage.success("已删除"), loadTypes()) : ElementPlus.ElMessage.error(r.msg);
+    }
+
+    async function loadUsers() {
+      const q = new URLSearchParams({ page: userQuery.page, pageSize: userQuery.pageSize });
+      users.value = (await api("GET", "/admin/user/page?" + q, null, token)).data || { records: [], total: 0 };
+    }
+
+    const loaders = { dashboard: loadStat, orders: loadOrders, runners: loadRunners, audits: loadAudits,
+                      withdraws: loadWithdraws, types: loadTypes, users: loadUsers };
+    function go(key) { menu.value = key; page.value = key; loaders[key] && loaders[key](); }
+    onMounted(() => { if (token) loadStat(); });
+
+    return { token, page, loginForm, doLogin, logout, menu, go, loading,
+             stat, orders, orderQuery, loadOrders, showOrder, orderDetail, detailVisible, STATUS, STATUS_TAG,
+             runners, runnerQuery, loadRunners, toggleRunner,
+             audits, auditQuery, loadAudits, processAudit,
+             withdraws, wdQuery, loadWithdraws, processWd,
+             types, typeDialog, typeForm, editType, saveType, toggleType, delType,
+             users, userQuery, loadUsers };
+  },
+  template: `
+  <div v-if="page==='login'" class="login-wrap">
+    <div class="login-card">
+      <div class="login-title">campus-runner 管理端</div>
+      <p style="text-align:center;color:var(--text-tertiary);margin-bottom:24px">校园综合跑腿服务平台</p>
+      <el-input v-model="loginForm.username" placeholder="用户名" size="large" style="margin-bottom:16px"></el-input>
+      <el-input v-model="loginForm.password" type="password" placeholder="密码" size="large" show-password style="margin-bottom:24px" @keyup.enter="doLogin"></el-input>
+      <el-button type="primary" size="large" style="width:100%" @click="doLogin">登 录</el-button>
+    </div>
+  </div>
+
+  <div v-else class="layout">
+    <div class="side">
+      <div class="logo">🚴 campus-runner</div>
+      <div v-for="m in [['dashboard','📊 数据看板'],['orders','🧾 订单管理'],['runners','🏃 跑腿员管理'],['audits','✅ 认证审核'],['withdraws','💰 提现审核'],['types','🏷️ 订单类型'],['users','👥 用户管理']]"
+        :key="m[0]" class="menu-item" :class="{active: menu===m[0]}" @click="go(m[0])">{{ m[1] }}</div>
+      <div class="menu-item" style="margin-top:40px" @click="logout">🚪 退出登录</div>
+    </div>
+    <div class="main">
+      <div class="topbar"><h2>{{ {dashboard:'数据看板',orders:'订单管理',runners:'跑腿员管理',audits:'认证审核',withdraws:'提现审核',types:'订单类型',users:'用户管理'}[menu] }}</h2>
+        <el-tag type="info">管理端 · admin</el-tag></div>
+
+      <!-- 看板 -->
+      <div v-if="menu==='dashboard'">
+        <div class="stat-grid">
+          <div class="stat-card"><div class="stat-num">{{ stat.totalOrders ?? '-' }}</div><div class="stat-label">订单总数</div></div>
+          <div class="stat-card"><div class="stat-num">{{ stat.todayOrders ?? '-' }}</div><div class="stat-label">今日新增</div></div>
+          <div class="stat-card"><div class="stat-num">{{ stat.pendingCount ?? '-' }}</div><div class="stat-label">待接单</div></div>
+          <div class="stat-card"><div class="stat-num">{{ stat.inProgressCount ?? '-' }}</div><div class="stat-label">进行中</div></div>
+          <div class="stat-card"><div class="stat-num">{{ stat.completedCount ?? '-' }}</div><div class="stat-label">已完成</div></div>
+          <div class="stat-card"><div class="stat-num">{{ stat.cancelledCount ?? '-' }}</div><div class="stat-label">已取消</div></div>
+          <div class="stat-card"><div class="stat-num">￥{{ stat.totalReward ?? '-' }}</div><div class="stat-label">流水总金额</div></div>
+          <div class="stat-card"><div class="stat-num" style="color:var(--success)">￥{{ stat.totalPlatformFee ?? '-' }}</div><div class="stat-label">平台服务费收益</div></div>
+        </div>
+      </div>
+
+      <!-- 订单 -->
+      <div v-if="menu==='orders'" class="stat-panel">
+        <el-select v-model="orderQuery.status" placeholder="全部状态" clearable style="width:160px;margin-bottom:16px" @change="loadOrders">
+          <el-option v-for="(v,k) in STATUS" :key="k" :label="v" :value="Number(k)"></el-option>
+        </el-select>
+        <el-table :data="orders.records" v-loading="loading" stripe>
+          <el-table-column prop="id" label="ID" width="60"></el-table-column>
+          <el-table-column prop="number" label="订单号" width="190"></el-table-column>
+          <el-table-column prop="title" label="标题" min-width="120"></el-table-column>
+          <el-table-column prop="typeName" label="类型" width="90"></el-table-column>
+          <el-table-column prop="campus" label="校区" width="90"></el-table-column>
+          <el-table-column prop="rewardAmount" label="悬赏" width="80"></el-table-column>
+          <el-table-column prop="platformFee" label="服务费" width="80"></el-table-column>
+          <el-table-column label="状态" width="90">
+            <template #default="{row}"><el-tag :type="STATUS_TAG[row.status]" size="small">{{ STATUS[row.status] }}</el-tag></template>
+          </el-table-column>
+          <el-table-column label="操作" width="80"><template #default="{row}">
+            <el-button link type="primary" @click="showOrder(row.id)">详情</el-button></template></el-table-column>
+        </el-table>
+        <el-pagination style="margin-top:16px" layout="prev, pager, next, total" :total="Number(orders.total)"
+          :page-size="orderQuery.pageSize" v-model:current-page="orderQuery.page" @current-change="loadOrders"></el-pagination>
+      </div>
+
+      <!-- 跑腿员 -->
+      <div v-if="menu==='runners'" class="stat-panel">
+        <el-table :data="runners.records" stripe>
+          <el-table-column prop="id" label="ID" width="60"></el-table-column>
+          <el-table-column prop="name" label="姓名" width="100"></el-table-column>
+          <el-table-column prop="phone" label="手机号" width="120"></el-table-column>
+          <el-table-column prop="studentNo" label="学号" width="120"></el-table-column>
+          <el-table-column prop="campus" label="校区" width="100"></el-table-column>
+          <el-table-column prop="completedOrders" label="完成单数" width="90"></el-table-column>
+          <el-table-column prop="score" label="评分" width="70"></el-table-column>
+          <el-table-column label="认证" width="90">
+            <template #default="{row}"><el-tag :type="row.auditStatus===1?'success':'info'" size="small">
+              {{ ['待认证','已认证','已拒绝','审核中'][row.auditStatus] }}</el-tag></template></el-table-column>
+          <el-table-column label="操作"><template #default="{row}">
+            <el-button link :type="row.status===1?'danger':'success'" @click="toggleRunner(row)">{{ row.status===1?'禁用':'启用' }}</el-button>
+          </template></el-table-column>
+        </el-table>
+        <el-pagination style="margin-top:16px" layout="prev, pager, next, total" :total="Number(runners.total)"
+          :page-size="runnerQuery.pageSize" v-model:current-page="runnerQuery.page" @current-change="loadRunners"></el-pagination>
+      </div>
+
+      <!-- 认证审核 -->
+      <div v-if="menu==='audits'" class="stat-panel">
+        <el-radio-group v-model="auditQuery.status" style="margin-bottom:16px" @change="loadAudits">
+          <el-radio-button :label="0">待审核</el-radio-button><el-radio-button :label="1">已通过</el-radio-button>
+          <el-radio-button :label="2">已驳回</el-radio-button><el-radio-button label="">全部</el-radio-button>
+        </el-radio-group>
+        <el-table :data="audits.records" stripe>
+          <el-table-column prop="id" label="ID" width="60"></el-table-column>
+          <el-table-column prop="realName" label="姓名" width="90"></el-table-column>
+          <el-table-column prop="studentNo" label="学号" width="120"></el-table-column>
+          <el-table-column prop="campus" label="校区" width="100"></el-table-column>
+          <el-table-column prop="college" label="学院" min-width="120"></el-table-column>
+          <el-table-column prop="applyTime" label="申请时间" width="170"></el-table-column>
+          <el-table-column label="状态" width="90">
+            <template #default="{row}"><el-tag :type="['warning','success','danger'][row.status]" size="small">
+              {{ ['待审核','通过','驳回'][row.status] }}</el-tag></template></el-table-column>
+          <el-table-column label="操作" width="150"><template #default="{row}" v-if="row.status===0">
+            <el-button link type="success" :disabled="row.status!==0" @click="processAudit(row,1)">通过</el-button>
+            <el-button link type="danger" :disabled="row.status!==0" @click="processAudit(row,2)">驳回</el-button>
+          </template></el-table-column>
+        </el-table>
+        <el-pagination style="margin-top:16px" layout="prev, pager, next, total" :total="Number(audits.total)"
+          :page-size="auditQuery.pageSize" v-model:current-page="auditQuery.page" @current-change="loadAudits"></el-pagination>
+      </div>
+
+      <!-- 提现审核 -->
+      <div v-if="menu==='withdraws'" class="stat-panel">
+        <el-radio-group v-model="wdQuery.status" style="margin-bottom:16px" @change="loadWithdraws">
+          <el-radio-button :label="0">待处理</el-radio-button><el-radio-button :label="1">已打款</el-radio-button>
+          <el-radio-button :label="2">已驳回</el-radio-button><el-radio-button label="">全部</el-radio-button>
+        </el-radio-group>
+        <el-table :data="withdraws.records" stripe>
+          <el-table-column prop="id" label="ID" width="60"></el-table-column>
+          <el-table-column prop="amount" label="金额" width="100"></el-table-column>
+          <el-table-column prop="applyTime" label="申请时间" width="170"></el-table-column>
+          <el-table-column prop="payTime" label="打款时间" width="170"></el-table-column>
+          <el-table-column prop="remark" label="备注" min-width="120"></el-table-column>
+          <el-table-column label="状态" width="90">
+            <template #default="{row}"><el-tag :type="['warning','success','danger'][row.status]" size="small">
+              {{ ['待处理','已打款','已驳回'][row.status] }}</el-tag></template></el-table-column>
+          <el-table-column label="操作" width="150"><template #default="{row}">
+            <el-button link type="success" :disabled="row.status!==0" @click="processWd(row,1)">打款</el-button>
+            <el-button link type="danger" :disabled="row.status!==0" @click="processWd(row,2)">驳回</el-button>
+          </template></el-table-column>
+        </el-table>
+        <el-pagination style="margin-top:16px" layout="prev, pager, next, total" :total="Number(withdraws.total)"
+          :page-size="wdQuery.pageSize" v-model:current-page="wdQuery.page" @current-change="loadWithdraws"></el-pagination>
+      </div>
+
+      <!-- 订单类型 -->
+      <div v-if="menu==='types'" class="stat-panel">
+        <el-button type="primary" style="margin-bottom:16px" @click="editType(null)">新增类型</el-button>
+        <el-table :data="types" stripe>
+          <el-table-column prop="id" label="ID" width="60"></el-table-column>
+          <el-table-column prop="name" label="名称" width="120"></el-table-column>
+          <el-table-column prop="description" label="说明" min-width="200"></el-table-column>
+          <el-table-column prop="feeRate" label="服务费率" width="90"></el-table-column>
+          <el-table-column prop="sort" label="排序" width="70"></el-table-column>
+          <el-table-column label="状态" width="90">
+            <template #default="{row}"><el-tag :type="row.status===1?'success':'info'" size="small">{{ row.status===1?'启用':'停用' }}</el-tag></template></el-table-column>
+          <el-table-column label="操作" width="180"><template #default="{row}">
+            <el-button link type="primary" @click="editType(row)">编辑</el-button>
+            <el-button link :type="row.status===1?'warning':'success'" @click="toggleType(row)">{{ row.status===1?'停用':'启用' }}</el-button>
+            <el-button link type="danger" @click="delType(row)">删除</el-button>
+          </template></el-table-column>
+        </el-table>
+      </div>
+
+      <!-- 用户 -->
+      <div v-if="menu==='users'" class="stat-panel">
+        <el-table :data="users.records" stripe>
+          <el-table-column prop="id" label="ID" width="60"></el-table-column>
+          <el-table-column prop="name" label="姓名" width="110"></el-table-column>
+          <el-table-column prop="phone" label="手机号" width="130"></el-table-column>
+          <el-table-column prop="studentNo" label="学号" width="130"></el-table-column>
+          <el-table-column prop="campus" label="校区" width="110"></el-table-column>
+          <el-table-column prop="creditScore" label="信用分" width="80"></el-table-column>
+          <el-table-column prop="publishOrderCount" label="发单数" width="80"></el-table-column>
+          <el-table-column prop="createTime" label="注册时间" min-width="170"></el-table-column>
+        </el-table>
+        <el-pagination style="margin-top:16px" layout="prev, pager, next, total" :total="Number(users.total)"
+          :page-size="userQuery.pageSize" v-model:current-page="userQuery.page" @current-change="loadUsers"></el-pagination>
+      </div>
+    </div>
+  </div>
+
+  <!-- 订单详情弹窗 -->
+  <el-dialog v-model="detailVisible" title="订单详情" width="560px">
+    <el-descriptions v-if="orderDetail" :column="2" border>
+      <el-descriptions-item label="订单号">{{ orderDetail.number }}</el-descriptions-item>
+      <el-descriptions-item label="状态">{{ STATUS[orderDetail.status] }}</el-descriptions-item>
+      <el-descriptions-item label="标题" :span="2">{{ orderDetail.title }}</el-descriptions-item>
+      <el-descriptions-item label="类型">{{ orderDetail.typeName }}</el-descriptions-item>
+      <el-descriptions-item label="校区">{{ orderDetail.campus }}</el-descriptions-item>
+      <el-descriptions-item label="取件地址" :span="2">{{ orderDetail.pickupAddress }}</el-descriptions-item>
+      <el-descriptions-item label="送达地址" :span="2">{{ orderDetail.deliveryAddress }}</el-descriptions-item>
+      <el-descriptions-item label="悬赏">￥{{ orderDetail.rewardAmount }}</el-descriptions-item>
+      <el-descriptions-item label="服务费">￥{{ orderDetail.platformFee }}</el-descriptions-item>
+      <el-descriptions-item label="发布者">{{ orderDetail.publisherName }} {{ orderDetail.publisherPhone }}</el-descriptions-item>
+      <el-descriptions-item label="跑腿员">{{ orderDetail.runnerName || '暂无' }}</el-descriptions-item>
+    </el-descriptions>
+  </el-dialog>
+
+  <!-- 类型编辑弹窗 -->
+  <el-dialog v-model="typeDialog" :title="typeForm.id?'编辑类型':'新增类型'" width="420px">
+    <el-form label-width="80px">
+      <el-form-item label="名称"><el-input v-model="typeForm.name"></el-input></el-form-item>
+      <el-form-item label="说明"><el-input v-model="typeForm.description"></el-input></el-form-item>
+      <el-form-item label="服务费率"><el-input-number v-model="typeForm.feeRate" :min="0" :max="1" :step="0.05"></el-input-number></el-form-item>
+      <el-form-item label="排序"><el-input-number v-model="typeForm.sort" :min="0"></el-input-number></el-form-item>
+    </el-form>
+    <template #footer><el-button @click="typeDialog=false">取消</el-button>
+      <el-button type="primary" @click="saveType">保存</el-button></template>
+  </el-dialog>
+  `
+});
+app.use(ElementPlus);
+app.mount("#app");
+</script>
+</body>
+</html>

@@ -51,7 +51,7 @@ public interface OrderMapper {
     /**
      * 用户端-我的订单分页
      */
-    Page<Orders> pageUserOrders(@Param("userId") Long userId, OrdersPageQueryDTO ordersPageQueryDTO);
+    Page<Orders> pageUserOrders(@Param("userId") Long userId, @Param("q") OrdersPageQueryDTO ordersPageQueryDTO);
 
     /**
      * 跑腿员端-订单大厅分页（待接单订单）
@@ -61,7 +61,7 @@ public interface OrderMapper {
     /**
      * 跑腿员端-接单记录分页
      */
-    Page<Orders> pageRunnerOrders(@Param("runnerId") Long runnerId, OrdersPageQueryDTO ordersPageQueryDTO);
+    Page<Orders> pageRunnerOrders(@Param("runnerId") Long runnerId, @Param("q") OrdersPageQueryDTO ordersPageQueryDTO);
 
     /**
      * 管理端-订单列表分页
