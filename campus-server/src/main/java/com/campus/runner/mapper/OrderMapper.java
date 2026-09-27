@@ -16,6 +16,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 @Mapper
 public interface OrderMapper {
@@ -132,4 +133,38 @@ public interface OrderMapper {
      */
     @Select("select * from orders where status = 2 and pay_status = 1 and timeout_time is not null and timeout_time <= #{now}")
     List<Orders> findUnclaimedTimeoutOrders(@Param("now") LocalDateTime now);
+
+    /**
+     * 数据大屏-按日统计订单趋势（begin 及以后的每一天）
+     */
+    @Select("select date_format(create_time, '%Y-%m-%d') as date, count(*) as orderCount, " +
+            "sum(case when status in (4, 5) then 1 else 0 end) as completedCount, " +
+            "ifnull(sum(case when pay_status = 1 then reward_amount else 0 end), 0) as amount " +
+            "from orders where create_time >= #{begin} " +
+            "group by date_format(create_time, '%Y-%m-%d') order by date")
+    List<Map<String, Object>> statDailyTrend(@Param("begin") LocalDate begin);
+
+    /**
+     * 数据大屏-跑腿类型订单量 TOP N
+     */
+    @Select("select t.name as name, count(*) as count from orders o " +
+            "join errand_type t on o.type_id = t.id " +
+            "group by t.name order by count desc limit #{limit}")
+    List<Map<String, Object>> statTypeRank(@Param("limit") int limit);
+
+    /**
+     * 数据大屏-各校区订单量分布
+     */
+    @Select("select ifnull(campus, '未填写') as name, count(*) as count from orders " +
+            "group by ifnull(campus, '未填写') order by count desc")
+    List<Map<String, Object>> statCampusRank();
+
+    /**
+     * 跑腿员端-按日统计完成单量与收入（按送达时间）
+     */
+    @Select("select date_format(finish_time, '%Y-%m-%d') as date, count(*) as orderCount, " +
+            "ifnull(sum(runner_income), 0) as amount from orders " +
+            "where runner_id = #{runnerId} and status in (4, 5) and finish_time >= #{begin} " +
+            "group by date_format(finish_time, '%Y-%m-%d') order by date")
+    List<Map<String, Object>> statRunnerDailyTrend(@Param("runnerId") Long runnerId, @Param("begin") LocalDate begin);
 }

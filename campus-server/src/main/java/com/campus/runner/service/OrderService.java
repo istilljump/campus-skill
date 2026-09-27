@@ -1,5 +1,6 @@
 package com.campus.runner.service;
 
+import com.campus.runner.dto.OrdersBoostDTO;
 import com.campus.runner.dto.OrdersCancelDTO;
 import com.campus.runner.dto.OrdersGrabDTO;
 import com.campus.runner.dto.OrdersPageQueryDTO;
@@ -20,6 +21,11 @@ public interface OrderService {
      * 用户端-订单支付（微信为模拟支付，钱包为余额扣款）
      */
     void pay(String orderNumber, Long userId);
+
+    /**
+     * 用户端-订单追加悬赏（待接单且已支付，顺延超时时间）
+     */
+    void boost(Long userId, OrdersBoostDTO ordersBoostDTO);
 
     /**
      * 用户端-订单大厅查询（跑腿员端也复用）

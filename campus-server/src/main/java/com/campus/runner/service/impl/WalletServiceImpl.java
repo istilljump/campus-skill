@@ -15,6 +15,7 @@ import com.campus.runner.mapper.WalletAccountMapper;
 import com.campus.runner.mapper.WalletTransactionMapper;
 import com.campus.runner.mapper.WithdrawRequestMapper;
 import com.campus.runner.result.PageResult;
+import com.campus.runner.service.MessageService;
 import com.campus.runner.service.WalletService;
 import com.campus.runner.vo.WalletTransactionVO;
 import com.campus.runner.vo.WalletVO;
@@ -41,6 +42,9 @@ public class WalletServiceImpl implements WalletService {
 
     @Autowired
     private WalletTransactionMapper walletTransactionMapper;
+
+    @Autowired
+    private MessageService messageService;
 
     @Autowired
     private WithdrawRequestMapper withdrawRequestMapper;
@@ -169,6 +173,13 @@ public class WalletServiceImpl implements WalletService {
             throw new BusinessException(MessageConstant.WITHDRAW_AMOUNT_INVALID);
         }
         withdrawRequestMapper.update(upd);
+        //站内消息：通知提现处理结果
+        boolean paid = dto.getStatus() == WalletConstant.WITHDRAW_PAID;
+        messageService.notify(request.getUserId(), paid ? "提现已打款" : "提现申请被驳回",
+                paid ? "您申请的提现 ¥" + request.getAmount() + " 已打款，请注意查收"
+                        : "您申请的提现 ¥" + request.getAmount() + " 被驳回，金额已退回余额"
+                                + (dto.getRemark() != null ? "。原因：" + dto.getRemark() : ""),
+                null);
         log.info("[操作日志]提现审核，withdrawId={}, userId={}, result={}, 金额={}, 备注={}",
                 dto.getId(), request.getUserId(),
                 dto.getStatus() == WalletConstant.WITHDRAW_PAID ? "已打款" : "已驳回", request.getAmount(), dto.getRemark());

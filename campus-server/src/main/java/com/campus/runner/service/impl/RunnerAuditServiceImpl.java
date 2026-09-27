@@ -10,6 +10,7 @@ import com.campus.runner.mapper.RunnerAuditMapper;
 import com.campus.runner.mapper.RunnerMapper;
 import com.campus.runner.mapper.UserMapper;
 import com.campus.runner.result.PageResult;
+import com.campus.runner.service.MessageService;
 import com.campus.runner.service.RunnerAuditService;
 import com.campus.runner.vo.RunnerAuditVO;
 import com.github.pagehelper.Page;
@@ -35,6 +36,9 @@ public class RunnerAuditServiceImpl implements RunnerAuditService {
 
     @Autowired
     private UserMapper userMapper;
+
+    @Autowired
+    private MessageService messageService;
 
     @Override
     public PageResult<RunnerAuditVO> page(Integer page, Integer pageSize, Integer status, String studentNo) {
@@ -70,6 +74,15 @@ public class RunnerAuditServiceImpl implements RunnerAuditService {
                 .auditStatus(runnerAuditStatus)
                 .build();
         runnerMapper.update(runnerUpd);
+        //站内消息：通知申请人审核结果（audit 表无 userId，经跑腿员记录解析）
+        Runner notifiedRunner = runnerMapper.getById(audit.getRunnerId());
+        if (notifiedRunner != null) {
+            boolean passed = dto.getStatus() == RunnerConstant.REVIEW_PASSED;
+            messageService.notify(notifiedRunner.getUserId(), passed ? "跑腿员认证已通过" : "跑腿员认证未通过",
+                    (passed ? "恭喜！您的跑腿员认证已通过审核，现在可以登录跑腿员端接单了。"
+                            : "很抱歉，您的跑腿员认证未通过审核。" + (dto.getAuditRemark() != null ? "原因：" + dto.getAuditRemark() : "")),
+                    null);
+        }
         log.info("认证审核完成，auditId={}, runnerId={}, result={}", dto.getId(), audit.getRunnerId(), dto.getStatus());
     }
 

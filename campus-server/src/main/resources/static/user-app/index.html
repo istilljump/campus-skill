@@ -66,13 +66,53 @@
           <div class="type-name">{{ t.name }}</div>
         </div>
       </div>
+      <div class="section" v-if="activeOrders.length">
+        <div class="order-line" style="margin-bottom:8px;padding:0 4px"><b style="font-size:14px">⏳ 进行中的订单</b></div>
+        <div class="card" v-for="o in activeOrders" :key="o.id" @click="openOrder(o.id)"
+          style="border-left:3px solid var(--brand-primary)">
+          <div class="order-line">
+            <div><span class="order-title">{{ o.title }}</span><span class="tag">{{ o.typeName }}</span></div>
+            <van-tag :type="tagType(o.status)">{{ statusText(o.status) }}</van-tag>
+          </div>
+          <div class="order-line" style="margin-top:6px">
+            <span class="text-tertiary" style="font-size:12px">{{ relTime(o.createTime) }} · 悬赏 {{ money(o.rewardAmount) }}</span>
+            <span class="text-secondary" style="font-size:12px">查看进度 ›</span>
+          </div>
+        </div>
+      </div>
       <div class="section">
+        <div class="card" @click="openMessages()">
+          <div class="order-line">
+            <b>🔔 消息中心</b>
+            <span><van-badge v-if="unread > 0" :content="unread" max="99"></van-badge><span class="text-tertiary"> 查看消息 ›</span></span>
+          </div>
+        </div>
         <div class="card" @click="view='hall'">
           <div class="order-line"><b>🧭 订单大厅</b><span class="text-tertiary">看看大家在发什么 ›</span></div>
         </div>
         <div class="card" @click="view='runnerApply'">
           <div class="order-line"><b>🏃 成为跑腿员</b><span class="text-tertiary">认证后可接单赚钱 ›</span></div>
         </div>
+      </div>
+    </div>
+
+    <!-- 消息中心 -->
+    <div v-if="view==='messages'">
+      <div class="section card order-line" style="padding:12px">
+        <b>🔔 消息中心</b>
+        <van-button size="small" plain type="primary" @click="readAll" :disabled="busy">全部已读</van-button>
+      </div>
+      <div class="section">
+        <div v-for="m in messages" :key="m.id" class="card" @click="m.orderId && openOrder(m.orderId)"
+          :style="(m.isRead===0 ? 'border-left:3px solid var(--brand-primary)' : '') + (m.orderId ? ';cursor:pointer' : '')">
+          <div class="order-line">
+            <b style="font-size:14px">{{ m.title }}</b>
+            <span class="text-tertiary" style="font-size:11px">{{ relTime(m.createTime) }}</span>
+          </div>
+          <div class="text-secondary" style="font-size:13px;margin-top:4px">{{ m.content }}</div>
+          <div v-if="m.orderId" class="text-secondary" style="font-size:12px;margin-top:4px;color:var(--brand-primary)">查看订单详情 ›</div>
+        </div>
+        <van-empty v-if="!messages.length" description="暂无消息"></van-empty>
       </div>
     </div>
 
@@ -86,7 +126,15 @@
         <select class="field" v-model="form.addressBookId">
           <option v-for="a in addresses" :key="a.id" :value="a.id">{{ a.campus }} {{ a.building }} {{ a.room }}（{{ a.consignee }}）</option>
         </select>
+        <div class="order-line" style="margin-top:4px">
+          <span class="text-tertiary" style="font-size:12px">{{ addresses.length ? '送达地址' : '还没有收货地址' }}</span>
+          <span class="text-secondary" style="font-size:12px;cursor:pointer" @click="view='address'">📍 新增/管理地址</span>
+        </div>
         <input class="field" type="number" v-model.number="form.rewardAmount" placeholder="悬赏金额（元）"/>
+        <div v-if="form.rewardAmount > 0" class="order-line" style="margin-top:6px;font-size:13px">
+          <span class="text-tertiary">平台服务费 {{ money(form.rewardAmount * feeRateNum) }}</span>
+          <span class="text-secondary">跑腿员实得 {{ money(form.rewardAmount * (1 - feeRateNum)) }}</span>
+        </div>
         <div class="order-line" style="margin-top:12px;font-size:14px">
           <span class="text-secondary">支付方式</span>
           <van-radio-group v-model="form.payMethod" direction="horizontal">
@@ -138,7 +186,9 @@
             <span class="money">{{ money(o.rewardAmount) }}</span>
           </div>
         </div>
-        <van-empty v-if="!orders.length" description="还没有订单"></van-empty>
+        <van-empty v-if="!orders.length" description="还没有订单，发一单试试吧">
+          <van-button round type="primary" size="small" style="padding:0 20px" @click="view='home'">去发布订单</van-button>
+        </van-empty>
       </div>
     </div>
 
@@ -157,11 +207,24 @@
           <van-cell title="送达" :label="detail.deliveryAddress"></van-cell>
           <van-cell title="悬赏" :value="'￥'+detail.rewardAmount"></van-cell>
           <van-cell title="服务费" :value="'￥'+detail.platformFee"></van-cell>
-          <van-cell title="跑腿员" :value="detail.runnerName ? detail.runnerName+' '+detail.runnerPhone : '待接单'"></van-cell>
+          <van-cell title="跑腿员" :value="detail.runnerName ? detail.runnerName + (detail.runnerPhone ? ' ' + detail.runnerPhone : '') : '待接单'">
+            <template #right-icon>
+              <a v-if="detail.runnerPhone" :href="'tel:' + detail.runnerPhone"
+                style="display:flex;align-items:center;text-decoration:none;font-size:18px;margin-left:6px">📞</a>
+            </template>
+          </van-cell>
         </van-cell-group>
         <div v-if="detail.status===1" style="margin-top:12px"><button class="btn" @click="payOrder" :disabled="busy">立即支付</button></div>
-        <div v-if="detail.status===4" style="margin-top:12px"><button class="btn" @click="confirmOrder" :disabled="busy">确认完成</button></div>
+        <div v-if="detail.status===2 && detail.payStatus===1" style="margin-top:12px">
+          <div class="order-line" style="font-size:13px"><span class="text-secondary">长时间无人接单？追加悬赏提高曝光</span></div>
+          <input class="field" type="number" v-model.number="boostAmount" placeholder="追加金额（元），同时顺延15分钟超时"/>
+          <button class="btn ghost" style="margin-top:8px" @click="boostOrder" :disabled="busy">追加悬赏</button>
+        </div>
+        <div v-if="detail.status===4" style="margin-top:12px"><button class="btn" @click="confirmOrder" :disabled="busy">✅ 确认完成</button></div>
         <div v-if="[1,2].includes(detail.status)" style="margin-top:8px"><button class="btn ghost" @click="cancelOrder" :disabled="busy">取消订单</button></div>
+        <div v-if="detail.status===2 && detail.payStatus===1" class="text-tertiary" style="font-size:12px;margin-top:8px">
+          💡 一直无人接单？可取消订单全额退款，或追加悬赏提高吸引力
+        </div>
         <div v-if="detail.status===5 && !reviewed" style="margin-top:8px">
           <van-rate v-model="reviewScore" style="margin-bottom:8px"></van-rate>
           <input class="field" v-model="reviewContent" placeholder="说说这次体验（选填）"/>
@@ -251,6 +314,7 @@
           </van-cell-group>
         </div>
         <button class="btn ghost" style="margin-top:16px" @click="openProfileEdit">编辑资料</button>
+        <button class="btn ghost" style="margin-top:8px" @click="openMessages">消息中心</button>
         <button class="btn ghost" style="margin-top:8px" @click="view='address'">地址管理</button>
         <button class="btn ghost" style="margin-top:8px" @click="logout">退出登录</button>
       </div>
@@ -315,9 +379,13 @@ createApp({
     const form = reactive({ title: "", description: "", pickupAddress: "", addressBookId: null, rewardAmount: null, payMethod: 2, typeId: null });
     const addrForm = reactive({ consignee: "", phone: "", campus: "", building: "", room: "" });
     const auditForm = reactive({ realName: "", studentNo: "", campus: "", college: "" });
+    const messages = ref([]);
+    const unread = ref(0);
+    const boostAmount = ref(null);
 
     const navTitle = computed(() => ({ home:"首页", hall:"订单大厅", submit:"发布订单", orders:"我的订单",
-      orderDetail:"订单详情", wallet:"我的钱包", address:"地址管理", runnerApply:"跑腿员认证", me:"我的" }[view.value] || "校园跑腿"));
+      orderDetail:"订单详情", wallet:"我的钱包", address:"地址管理", runnerApply:"跑腿员认证", me:"我的",
+      messages:"消息中心" }[view.value] || "校园跑腿"));
 
     function toast(msg, ok = true) { showToast({ message: msg, type: ok ? "success" : "fail" }); }
 
@@ -336,6 +404,72 @@ createApp({
       types.value = (await api("GET", "/user/errandType/list", null, token.value)).data || [];
       await loadAddresses();
       await loadWallet();
+      loadActiveOrders();
+      loadUnread();
+      connectWs();
+    }
+
+    //首页-进行中订单直通卡片
+    const activeOrders = ref([]);
+    async function loadActiveOrders() {
+      const r = await api("GET", "/user/order/page?page=1&pageSize=10", null, token.value);
+      activeOrders.value = ((r.data && r.data.records) || []).filter(o => [2, 3, 4].includes(o.status)).slice(0, 3);
+    }
+    //人性化时间显示
+    function relTime(t) {
+      if (!t) return "";
+      const d = new Date(String(t).replace(" ", "T"));
+      const diff = Math.floor((Date.now() - d.getTime()) / 60000);
+      if (diff < 1) return "刚刚";
+      if (diff < 60) return diff + " 分钟前";
+      if (diff < 1440) return Math.floor(diff / 60) + " 小时前";
+      if (diff < 2880) return "昨天 " + String(t).slice(11, 16);
+      return String(t).slice(5, 16);
+    }
+    const feeRateNum = computed(() => Number(curType.value.feeRate) || 0.1);
+
+    async function loadUnread() {
+      const r = await api("GET", "/user/message/unread", null, token.value);
+      unread.value = r.data || 0;
+    }
+    // WebSocket 实时推送：订单状态变更即时弹窗提醒
+    let ws = null, wsTimer = null;
+    function connectWs() {
+      if (!token.value) return;
+      if (ws) { try { ws.onclose = null; ws.close(); } catch (e) {} }
+      clearTimeout(wsTimer);
+      const proto = location.protocol === "https:" ? "wss" : "ws";
+      try {
+        ws = new WebSocket(proto + "://" + location.host + "/ws/" + encodeURIComponent(token.value));
+      } catch (e) { return; }
+      ws.onmessage = (ev) => {
+        try {
+          const d = JSON.parse(ev.data);
+          if (d.type === "message") {
+            showToast({ message: "🔔 " + d.title });
+            unread.value += 1;
+          }
+        } catch (e) {}
+      };
+      ws.onclose = () => { wsTimer = setTimeout(connectWs, 10000); };
+      ws.onerror = () => { try { ws.close(); } catch (e) {} };
+    }
+    async function loadMessages() {
+      const r = await api("GET", "/user/message/list", null, token.value);
+      messages.value = r.data || [];
+    }
+    function openMessages() { view.value = "messages"; loadMessages(); }
+    async function readAll() {
+      const r = await api("PUT", "/user/message/readAll", null, token.value);
+      if (r.code === 1) { toast("已全部标记为已读"); loadMessages(); loadUnread(); }
+    }
+    async function boostOrder() {
+      if (!boostAmount.value || boostAmount.value <= 0) return toast("请输入追加金额", false);
+      busy.value = true;
+      const r = await api("PUT", "/user/order/boost", { id: detail.value.id, amount: boostAmount.value }, token.value);
+      busy.value = false;
+      if (r.code === 1) { toast("悬赏追加成功"); boostAmount.value = null; openOrder(detail.value.id); }
+      else toast(r.msg, false);
     }
 
     async function loadAddresses() {
@@ -355,6 +489,9 @@ createApp({
     function startOrder(t) { curType.value = t || {}; form.typeId = t.id; view.value = "submit"; }
 
     async function submitOrder() {
+      if (!form.title) return toast("请填写订单标题", false);
+      if (!form.addressBookId) return toast("请先选择或新增送达地址", false);
+      if (!form.rewardAmount || form.rewardAmount <= 0) return toast("请填写正确的悬赏金额", false);
       busy.value = true;
       const r = await api("POST", "/user/order/submit", form, token.value);
       busy.value = false;
@@ -403,13 +540,21 @@ createApp({
       busy.value = true;
       const r = await api("POST", "/user/order/pay/" + detail.value.number, null, token.value);
       busy.value = false;
-      r.code === 1 ? (toast("支付成功"), openOrder(detail.value.id)) : toast(r.msg, false);
+      if (r.code === 1) { toast("支付成功"), openOrder(detail.value.id); }
+      else if ((r.msg || "").indexOf("余额") >= 0) { toast(r.msg + "，可先到「钱包」充值", false); }
+      else toast(r.msg, false);
     }
     async function confirmOrder() {
+      try {
+        await vant.showConfirmDialog({ title: "确认完成", message: "确认跑腿员已送达？确认后订单将进入评价环节" });
+      } catch (e) { return; }
       const r = await api("PUT", "/user/order/confirm/" + detail.value.id, null, token.value);
       r.code === 1 ? (toast("订单已完成"), openOrder(detail.value.id)) : toast(r.msg, false);
     }
     async function cancelOrder() {
+      try {
+        await vant.showConfirmDialog({ title: "取消订单", message: "确定取消该订单吗？已支付金额将原路退回钱包" });
+      } catch (e) { return; }
       const r = await api("PUT", "/user/order/cancel", { id: detail.value.id, cancelReason: "用户主动取消" }, token.value);
       r.code === 1 ? (toast("已取消并退款"), loadOrders(), view.value = "orders") : toast(r.msg, false);
     }
@@ -444,6 +589,7 @@ createApp({
       view.value = name;
       if (name === "orders") loadOrders();
       if (name === "wallet") loadWallet();
+      if (name === "home") loadActiveOrders();
     }
     function statusText(s) { return STATUS[s] || s; }
     function tagType(s) { return TAG[s] || "primary"; }
@@ -455,7 +601,8 @@ createApp({
              hallKeyword, hallType, reviewTags, editForm, toggleTag, openProfileEdit, saveProfile, money,
              navTitle, doLogin, logout, startOrder, submitOrder, loadHall, loadOrders, openOrder, payOrder,
              confirmOrder, cancelOrder, submitReview, recharge, txName, applyRunner, saveAddress, delAddress,
-             switchTab, statusText, tagType };
+             switchTab, statusText, tagType, messages, unread, openMessages, readAll, loadUnread,
+             boostAmount, boostOrder, activeOrders, loadActiveOrders, relTime, feeRateNum };
   }
 }).use(vant).mount("#app");
 

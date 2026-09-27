@@ -4,7 +4,10 @@ import com.campus.runner.dto.RunnerAuditApplyDTO;
 import com.campus.runner.result.PageResult;
 import com.campus.runner.vo.RunnerCenterVO;
 import com.campus.runner.vo.RunnerVO;
+import com.campus.runner.vo.TrendPointVO;
 import com.campus.runner.vo.UserLoginVO;
+
+import java.util.List;
 
 public interface RunnerService {
 
@@ -22,6 +25,11 @@ public interface RunnerService {
      * 跑腿员端-个人中心（含今日接单数、今日收入、钱包余额）
      */
     RunnerCenterVO getCenter(Long userId);
+
+    /**
+     * 跑腿员端-近 days 日完成单量与收入趋势（缺失日期补零）
+     */
+    List<TrendPointVO> dailyTrend(Long userId, int days);
 
     /**
      * 根据完成订单数自动更新跑腿等级

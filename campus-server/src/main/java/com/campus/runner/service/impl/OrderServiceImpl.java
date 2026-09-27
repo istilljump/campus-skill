@@ -3,6 +3,7 @@ package com.campus.runner.service.impl;
 import com.campus.runner.constant.MessageConstant;
 import com.campus.runner.constant.RedisConstant;
 import com.campus.runner.constant.RunnerConstant;
+import com.campus.runner.dto.OrdersBoostDTO;
 import com.campus.runner.dto.OrdersCancelDTO;
 import com.campus.runner.dto.OrdersGrabDTO;
 import com.campus.runner.dto.OrdersPageQueryDTO;
@@ -21,6 +22,7 @@ import com.campus.runner.mapper.OrderMapper;
 import com.campus.runner.mapper.RunnerMapper;
 import com.campus.runner.mapper.UserMapper;
 import com.campus.runner.result.PageResult;
+import com.campus.runner.service.MessageService;
 import com.campus.runner.service.OrderService;
 import com.campus.runner.service.WalletService;
 import com.campus.runner.vo.OrderDetailVO;
@@ -68,6 +70,9 @@ public class OrderServiceImpl implements OrderService {
 
     @Autowired
     private WalletService walletService;
+
+    @Autowired
+    private MessageService messageService;
 
     @Autowired
     private com.campus.runner.service.RunnerService runnerService;
@@ -277,9 +282,57 @@ public class OrderServiceImpl implements OrderService {
                 throw new GrabFailedException(MessageConstant.ORDER_NOT_GRABBABLE);
             }
             log.info("抢单成功，orderId={}, runnerId={}", orderId, runnerId);
+            //站内消息：通知发单用户
+            Orders grabbed = orderMapper.getById(orderId);
+            if (grabbed != null) {
+                Runner grabRunner = runnerMapper.getById(runnerId);
+                messageService.notify(grabbed.getUserId(), "订单已被接单",
+                        "您的订单「" + grabbed.getTitle() + "」已被"
+                                + (grabRunner != null ? grabRunner.getName() : "跑腿员") + "接单，请留意取送进度",
+                        grabbed.getId());
+            }
         } finally {
             redisTemplate.delete(lockKey);
         }
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void boost(Long userId, OrdersBoostDTO dto) {
+        Orders order = orderMapper.getByIdAndUserId(dto.getId(), userId);
+        if (order == null) {
+            throw new OrderBusinessException(MessageConstant.ORDER_NOT_FOUND);
+        }
+        if (order.getStatus() != Orders.TO_BE_TAKEN || order.getPayStatus() == null || order.getPayStatus() != Orders.PAID) {
+            throw new OrderBusinessException("仅已支付且待接单的订单可追加悬赏");
+        }
+        BigDecimal amount = dto.getAmount();
+        //钱包支付的订单从余额扣款（changeBalance 保证余额不透支），微信支付订单为模拟支付直接成功
+        if (order.getPayMethod() != null && order.getPayMethod() == 2) {
+            walletService.changeBalance(userId, amount.negate(),
+                    com.campus.runner.constant.WalletConstant.TYPE_EXPENSE, order.getId(),
+                    "追加悬赏-" + order.getNumber());
+        }
+        //按类型费率重算服务费与跑腿员实得
+        ErrandType type = errandTypeMapper.getById(order.getTypeId());
+        BigDecimal feeRate = type != null && type.getFeeRate() != null ? type.getFeeRate() : new BigDecimal("0.10");
+        BigDecimal newReward = order.getRewardAmount().add(amount);
+        BigDecimal newFee = newReward.multiply(feeRate).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal newIncome = newReward.subtract(newFee);
+        Orders upd = Orders.builder()
+                .id(order.getId())
+                .rewardAmount(newReward)
+                .platformFee(newFee)
+                .runnerIncome(newIncome)
+                .build();
+        //追加悬赏顺延超时时间，给订单更多曝光接单机会
+        if (order.getTimeoutTime() != null) {
+            upd.setTimeoutTime(order.getTimeoutTime().plusMinutes(15));
+        }
+        orderMapper.update(upd);
+        messageService.notify(userId, "追加悬赏成功",
+                "订单「" + order.getTitle() + "」悬赏已追加至 ¥" + newReward + "，将继续等待跑腿员接单", order.getId());
+        log.info("追加悬赏成功，orderId={}, userId={}, amount={}, newReward={}", order.getId(), userId, amount, newReward);
     }
 
     @Override
@@ -293,6 +346,8 @@ public class OrderServiceImpl implements OrderService {
                 .pickupTime(LocalDateTime.now())
                 .build();
         orderMapper.update(upd);
+        messageService.notify(order.getUserId(), "订单已取件",
+                "订单「" + order.getTitle() + "」跑腿员已确认取件，正在配送中", order.getId());
         log.info("确认取件，orderId={}, runnerId={}", orderId, runnerId);
     }
 
@@ -318,6 +373,8 @@ public class OrderServiceImpl implements OrderService {
                 .status(Orders.DELIVERED)
                 .build();
         orderMapper.update(upd);
+        messageService.notify(order.getUserId(), "订单已送达",
+                "订单「" + order.getTitle() + "」已送达，请及时确认完成", order.getId());
         log.info("确认送达并完成结算，orderId={}, runnerId={}, income={}", orderId, runnerId, order.getRunnerIncome());
     }
 
@@ -378,6 +435,18 @@ public class OrderServiceImpl implements OrderService {
                 .cancelTime(LocalDateTime.now())
                 .build();
         orderMapper.update(upd);
+        //站内消息：通知对方订单已取消
+        if (userCancel && order.getRunnerId() != null) {
+            Runner cancelledRunner = runnerMapper.getById(order.getRunnerId());
+            if (cancelledRunner != null) {
+                messageService.notify(cancelledRunner.getUserId(), "订单已取消",
+                        "订单「" + order.getTitle() + "」已被用户取消" + (order.getPayStatus() == Orders.PAID ? "，报酬不会结算" : ""),
+                        order.getId());
+            }
+        } else if (!userCancel) {
+            messageService.notify(order.getUserId(), "订单已取消",
+                    "您的订单「" + order.getTitle() + "」已被跑腿员取消，已支付金额将自动退回", order.getId());
+        }
         log.info("[操作日志]订单取消，orderId={}, 操作方={}({}), 原因={}",
                 order.getId(), cancelBy == RunnerConstant.CANCEL_BY_USER ? "用户" : "跑腿员", operatorId, dto.getCancelReason());
     }

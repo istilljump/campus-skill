@@ -35,4 +35,10 @@ public class ErrandTypeVO implements Serializable {
 
     //平台服务费率
     private BigDecimal feeRate;
+
+    //排序权重
+    private Integer sort;
+
+    //状态 1启用 0停用
+    private Integer status;
 }

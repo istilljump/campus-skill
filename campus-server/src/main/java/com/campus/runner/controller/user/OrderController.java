@@ -1,5 +1,6 @@
 package com.campus.runner.controller.user;
 
+import com.campus.runner.dto.OrdersBoostDTO;
 import com.campus.runner.dto.OrdersCancelDTO;
 import com.campus.runner.dto.OrdersPageQueryDTO;
 import com.campus.runner.dto.OrdersSubmitDTO;
@@ -81,5 +82,12 @@ public class OrderController {
     public Result<String> appeal(@PathVariable Long id) {
         orderService.appeal(id, BaseContext.getCurrentId());
         return Result.success("申诉已提交");
+    }
+
+    @PutMapping("/boost")
+    @ApiOperation("订单追加悬赏（待接单且已支付）")
+    public Result<String> boost(@RequestBody @Valid OrdersBoostDTO ordersBoostDTO) {
+        orderService.boost(BaseContext.getCurrentId(), ordersBoostDTO);
+        return Result.success("悬赏追加成功");
     }
 }

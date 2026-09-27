@@ -101,6 +101,8 @@ public class ErrandTypeServiceImpl implements ErrandTypeService {
                 .icon(type.getIcon())
                 .description(type.getDescription())
                 .feeRate(type.getFeeRate())
+                .sort(type.getSort())
+                .status(type.getStatus())
                 .build();
     }
 }

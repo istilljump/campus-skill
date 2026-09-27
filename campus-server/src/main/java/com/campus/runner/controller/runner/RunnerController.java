@@ -5,6 +5,7 @@ import com.campus.runner.dto.RunnerAuditApplyDTO;
 import com.campus.runner.result.Result;
 import com.campus.runner.service.RunnerService;
 import com.campus.runner.vo.RunnerCenterVO;
+import com.campus.runner.vo.TrendPointVO;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
@@ -13,9 +14,11 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.validation.Valid;
+import java.util.List;
 
 /**
  * 跑腿员端-个人信息与认证接口
@@ -36,5 +39,12 @@ public class RunnerController {
     public Result<RunnerCenterVO> center() {
         //BaseContext 中是跑腿员ID，getCenter 需要关联用户ID
         return Result.success(runnerService.getCenter(runnerService.resolveUserId(BaseContext.getCurrentId())));
+    }
+
+    @GetMapping("/trend")
+    @ApiOperation("近 N 日完成单量与收入趋势（默认7天）")
+    public Result<List<TrendPointVO>> trend(@RequestParam(defaultValue = "7") Integer days) {
+        Long userId = runnerService.resolveUserId(BaseContext.getCurrentId());
+        return Result.success(runnerService.dailyTrend(userId, days));
     }
 }

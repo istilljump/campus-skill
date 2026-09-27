@@ -174,6 +174,33 @@ public class RunnerServiceImpl implements RunnerService {
     }
 
     @Override
+    public List<com.campus.runner.vo.TrendPointVO> dailyTrend(Long userId, int days) {
+        Runner runner = runnerMapper.getByUserId(userId);
+        if (runner == null) {
+            throw new BusinessException(MessageConstant.RUNNER_NOT_FOUND);
+        }
+        days = Math.max(1, Math.min(days, 30));
+        java.time.LocalDate begin = java.time.LocalDate.now().minusDays(days - 1L);
+        java.util.Map<String, Map<String, Object>> byDate = new java.util.HashMap<>();
+        for (Map<String, Object> row : orderMapper.statRunnerDailyTrend(runner.getId(), begin)) {
+            byDate.put(String.valueOf(row.get("date")), row);
+        }
+        List<com.campus.runner.vo.TrendPointVO> result = new java.util.ArrayList<>();
+        for (int i = 0; i < days; i++) {
+            String date = begin.plusDays(i).toString();
+            Map<String, Object> row = byDate.get(date);
+            result.add(com.campus.runner.vo.TrendPointVO.builder()
+                    .date(date)
+                    .orderCount(row != null ? ((Number) row.get("orderCount")).intValue() : 0)
+                    .completedCount(row != null ? ((Number) row.get("orderCount")).intValue() : 0)
+                    .amount(row != null && row.get("amount") != null
+                            ? new BigDecimal(String.valueOf(row.get("amount"))) : BigDecimal.ZERO)
+                    .build());
+        }
+        return result;
+    }
+
+    @Override
     @Transactional(rollbackFor = Exception.class)
     public void updateLevel(Long runnerId) {
         Runner runner = runnerMapper.getById(runnerId);

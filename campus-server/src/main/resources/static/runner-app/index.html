@@ -67,10 +67,60 @@
           <div class="stat-box"><div class="stat-num">{{ money(center.balance) }}</div><div class="stat-lab">钱包余额</div></div>
         </div>
       </div>
+      <div class="section" v-if="currentTask">
+        <div class="card" style="border-left:3px solid var(--brand-primary)">
+          <div class="order-line"><b>🚀 当前任务</b><van-tag type="primary">{{ statusText(currentTask.status) }}</van-tag></div>
+          <div style="font-weight:600;margin:8px 0 2px">{{ currentTask.title }}</div>
+          <div class="text-tertiary" style="font-size:13px">{{ currentTask.pickupAddress }} → {{ currentTask.deliveryAddress }}</div>
+          <div class="order-line" style="margin-top:10px">
+            <span class="money">实得{{ money(currentTask.runnerIncome) }}</span>
+            <span>
+              <a v-if="currentTask.publisherPhone" :href="'tel:' + currentTask.publisherPhone"
+                style="text-decoration:none;font-size:16px;margin-right:8px">📞</a>
+              <van-button v-if="!currentTask.pickupTime" size="small" type="primary" plain @click="pickup(currentTask)">确认取件</van-button>
+              <van-button size="small" type="success" @click="deliver(currentTask)">确认送达</van-button>
+            </span>
+          </div>
+        </div>
+      </div>
       <div class="section">
+        <div class="card" @click="openMessages()">
+          <div class="order-line">
+            <b>🔔 消息中心</b>
+            <span><van-badge v-if="unread > 0" :content="unread" max="99"></van-badge><span class="text-tertiary"> 查看消息 ›</span></span>
+          </div>
+        </div>
         <div class="card" @click="view='hall'; loadHall()"><div class="order-line"><b>🧭 抢单大厅</b><span class="text-tertiary">去接单 ›</span></div></div>
         <div class="card" @click="view='myOrders'; loadMyOrders()"><div class="order-line"><b>🧾 我的接单</b><span class="text-tertiary">进行中/已完成 ›</span></div></div>
         <div class="card" @click="view='wallet'; loadWallet()"><div class="order-line"><b>💰 我的收入</b><span class="text-tertiary">余额/提现 ›</span></div></div>
+      </div>
+      <div class="section card">
+        <div class="order-line"><b>🏅 等级权益</b><span class="tag">{{ levelName(center.runnerLevel) }}</span></div>
+        <van-progress :percentage="levelPct" stroke-width="8" style="margin-top:10px"></van-progress>
+        <div class="text-tertiary" style="font-size:12px;margin-top:6px">
+          累计完成 {{ center.completedOrders ?? 0 }} 单{{ nextGoal ? '，再完成 ' + nextGoal + ' 单升级' + nextLevelName : '，已达最高等级' }}
+          · 当前每日可接 {{ center.dailyOrderLimit ?? 10 }} 单
+        </div>
+      </div>
+    </div>
+
+    <!-- 消息中心 -->
+    <div v-if="view==='messages'">
+      <div class="section card order-line" style="padding:12px">
+        <b>🔔 消息中心</b>
+        <van-button size="small" plain type="primary" @click="readAll" :disabled="busy">全部已读</van-button>
+      </div>
+      <div class="section">
+        <div v-for="m in messages" :key="m.id" class="card" @click="goOrderOfMessage(m)"
+          :style="(m.isRead===0 ? 'border-left:3px solid var(--brand-primary)' : '') + (m.orderId ? ';cursor:pointer' : '')">
+          <div class="order-line">
+            <b style="font-size:14px">{{ m.title }}</b>
+            <span class="text-tertiary" style="font-size:11px">{{ relTime(m.createTime) }}</span>
+          </div>
+          <div class="text-secondary" style="font-size:13px;margin-top:4px">{{ m.content }}</div>
+          <div v-if="m.orderId" class="text-secondary" style="font-size:12px;margin-top:4px;color:var(--brand-primary)">查看我的接单 ›</div>
+        </div>
+        <van-empty v-if="!messages.length" description="暂无消息"></van-empty>
       </div>
     </div>
 
@@ -79,6 +129,11 @@
       <div class="section">
         <div class="card" style="padding:12px">
           <input class="field" style="margin-top:0" v-model="hallKeyword" placeholder="搜索标题 / 订单号，回车搜索" @keyup.enter="loadHall"/>
+          <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+            <van-tag :type="hallTypeId===null?'primary':'default'" size="large" style="cursor:pointer" @click="hallTypeId=null;loadHall()">全部</van-tag>
+            <van-tag v-for="t in hallTypes" :key="t.id" :type="hallTypeId===t.id?'primary':'default'" size="large"
+              style="cursor:pointer" @click="hallTypeId=t.id;loadHall()">{{ t.name }}</van-tag>
+          </div>
         </div>
         <div v-for="o in hall" :key="o.id" class="card">
           <div class="order-line">
@@ -87,7 +142,7 @@
           </div>
           <div class="text-tertiary" style="font-size:13px;margin:6px 0">{{ o.pickupAddress }} → {{ o.deliveryAddress }}</div>
           <div class="order-line">
-            <span class="text-tertiary" style="font-size:12px">{{ o.campus }} · {{ o.publisherName }} 发布</span>
+            <span class="text-tertiary" style="font-size:12px">{{ o.campus }} · {{ o.publisherName }} 发布于 {{ relTime(o.createTime) }}</span>
             <van-button size="small" type="primary" @click="grab(o)">立即抢单</van-button>
           </div>
         </div>
@@ -107,9 +162,14 @@
           <div class="order-line">
             <span class="money">实得{{ money(o.runnerIncome) }}</span>
             <span>
+              <a v-if="o.publisherPhone && o.status===3" :href="'tel:' + o.publisherPhone"
+                style="text-decoration:none;font-size:16px;margin-right:6px">📞</a>
               <van-button v-if="o.status===3 && !o.pickupTime" size="small" type="primary" plain @click="pickup(o)">确认取件</van-button>
               <van-button v-if="o.status===3" size="small" type="success" @click="deliver(o)">确认送达</van-button>
             </span>
+          </div>
+          <div v-if="o.status===3" class="text-tertiary" style="font-size:12px;margin-top:6px">
+            💡 送达前可点击 📞 联系用户确认取件位置
           </div>
         </div>
         <van-empty v-if="!myOrders.length" description="还没有接单记录"></van-empty>
@@ -122,6 +182,18 @@
         <p>可提现余额（元）</p>
         <h3 style="font-size:36px">{{ money(wallet.balance) }}</h3>
         <p style="margin-top:8px">累计收入 {{ money(wallet.totalIncome) }} · 支出 {{ money(wallet.totalExpense) }}</p>
+      </div>
+      <div class="section card">
+        <div style="font-weight:600;margin-bottom:8px">近7日收入趋势</div>
+        <div style="display:flex;align-items:flex-end;gap:6px;height:130px;margin-top:12px">
+          <div v-for="p in trend" :key="p.date" style="flex:1;text-align:center;height:100%;display:flex;flex-direction:column;justify-content:flex-end">
+            <div class="text-tertiary" style="font-size:10px;min-height:12px">{{ p.amount > 0 ? Number(p.amount).toFixed(0) : '' }}</div>
+            <div style="background:var(--brand-primary);border-radius:4px 4px 0 0;margin:2px auto 0;width:62%;min-height:3px"
+              :style="{ height: barH(p) + 'px' }"></div>
+            <div class="text-tertiary" style="font-size:10px;margin-top:4px">{{ p.date.slice(5) }}</div>
+          </div>
+        </div>
+        <div class="text-tertiary" style="font-size:12px;margin-top:6px">近7日完成 {{ trendTotal }} 单 · 收入 {{ money(trendIncome) }}</div>
       </div>
       <div class="section card">
         <div style="font-weight:600;margin-bottom:8px">申请提现</div>
@@ -196,9 +268,14 @@ createApp({
     const wdAmount = ref(null);
     const wdPassword = ref("");
     const auditForm = reactive2({ realName: "", studentNo: "", campus: "", college: "" });
+    const hallTypes = ref([]);
+    const hallTypeId = ref(null);
+    const trend = ref([]);
+    const messages = ref([]);
+    const unread = ref(0);
 
     function reactive2(o) { return Vue.reactive(o); }
-    const navTitle = computed(() => ({ home:"跑腿员中心", hall:"抢单大厅", myOrders:"我的接单", wallet:"我的收入" }[view.value]));
+    const navTitle = computed(() => ({ home:"跑腿员中心", hall:"抢单大厅", myOrders:"我的接单", wallet:"我的收入", messages:"消息中心" }[view.value]));
 
     function toast(msg, ok = true) { showToast({ message: msg, type: ok ? "success" : "fail" }); }
     async function doLogin() {
@@ -221,11 +298,103 @@ createApp({
     async function init() {
       const c = await api("GET", "/runner/info/center", null, token.value);
       if (c.code === 1) center.value = c.data; else { localStorage.removeItem("runner_token"); token.value = ""; return; }
+      loadCurrentTask();
       loadHall();
+      loadHallTypes();
+      loadUnread();
+      connectWs();
     }
+    //首页-当前进行中任务（快捷取件/送达/联系用户）
+    const currentTask = ref(null);
+    async function loadCurrentTask() {
+      const r = await api("GET", "/runner/orders/page?page=1&pageSize=5&status=3", null, token.value);
+      currentTask.value = (r.data && r.data.records && r.data.records[0]) || null;
+    }
+    //人性化时间显示
+    function relTime(t) {
+      if (!t) return "";
+      const d = new Date(String(t).replace(" ", "T"));
+      const diff = Math.floor((Date.now() - d.getTime()) / 60000);
+      if (diff < 1) return "刚刚";
+      if (diff < 60) return diff + " 分钟前";
+      if (diff < 1440) return Math.floor(diff / 60) + " 小时前";
+      if (diff < 2880) return "昨天 " + String(t).slice(11, 16);
+      return String(t).slice(5, 16);
+    }
+    function goOrderOfMessage(m) {
+      if (!m.orderId) return;
+      view.value = "myOrders";
+      loadMyOrders();
+    }
+    async function loadHallTypes() {
+      const r = await api("GET", "/user/hall/errandType/list", null, token.value);
+      hallTypes.value = r.data || [];
+    }
+    async function loadTrend() {
+      const r = await api("GET", "/runner/info/trend?days=7", null, token.value);
+      trend.value = r.data || [];
+    }
+    function barH(p) {
+      const max = Math.max(...trend.value.map(t => Number(t.amount) || 0), 1);
+      return Math.max(3, Math.round(Number(p.amount || 0) / max * 90));
+    }
+    const trendTotal = computed(() => trend.value.reduce((s, t) => s + (t.orderCount || 0), 0));
+    const trendIncome = computed(() => trend.value.reduce((s, t) => s + Number(t.amount || 0), 0));
+    async function loadUnread() {
+      const r = await api("GET", "/runner/message/unread", null, token.value);
+      unread.value = r.data || 0;
+    }
+    // WebSocket 实时推送：新订单/订单状态变更即时弹窗提醒
+    let ws = null, wsTimer = null;
+    function connectWs() {
+      if (!token.value) return;
+      if (ws) { try { ws.onclose = null; ws.close(); } catch (e) {} }
+      clearTimeout(wsTimer);
+      const proto = location.protocol === "https:" ? "wss" : "ws";
+      try {
+        ws = new WebSocket(proto + "://" + location.host + "/ws/" + encodeURIComponent(token.value));
+      } catch (e) { return; }
+      ws.onmessage = (ev) => {
+        try {
+          const d = JSON.parse(ev.data);
+          if (d.type === "message") {
+            showToast({ message: "🔔 " + d.title });
+            unread.value += 1;
+            //消息相关页面实时刷新
+            if (view.value === "messages") loadMessages();
+            if (view.value === "wallet") loadWallet();
+          }
+        } catch (e) {}
+      };
+      ws.onclose = () => { wsTimer = setTimeout(connectWs, 10000); };
+      ws.onerror = () => { try { ws.close(); } catch (e) {} };
+    }
+    async function loadMessages() {
+      const r = await api("GET", "/runner/message/list", null, token.value);
+      messages.value = r.data || [];
+    }
+    function openMessages() { view.value = "messages"; loadMessages(); }
+    async function readAll() {
+      const r = await api("PUT", "/runner/message/readAll", null, token.value);
+      if (r.code === 1) { toast("已全部标记为已读"); loadMessages(); loadUnread(); }
+    }
+    //等级门槛：20/50/100 单晋升铜/银/金牌
+    const LEVEL_GOALS = { 1: 20, 2: 50, 3: 100 };
+    const levelPct = computed(() => {
+      const done = center.value.completedOrders || 0;
+      const goal = LEVEL_GOALS[center.value.runnerLevel] || LEVEL_GOALS[3];
+      return Math.min(100, Math.round(done / goal * 100));
+    });
+    const nextGoal = computed(() => {
+      const done = center.value.completedOrders || 0;
+      const goal = LEVEL_GOALS[center.value.runnerLevel];
+      return goal ? Math.max(goal - done, 0) : 0;
+    });
+    const nextLevelName = computed(() => levelName((center.value.runnerLevel || 1) + 1));
     async function loadHall() {
       const q = new URLSearchParams({ page: 1, pageSize: 20 });
       if (hallKeyword.value) q.set("keyword", hallKeyword.value);
+      if (hallTypeId.value) q.set("typeId", hallTypeId.value);
       const r = await api("GET", "/runner/orders/hall?" + q, null, token.value);
       hall.value = (r.data && r.data.records) || [];
     }
@@ -237,15 +406,29 @@ createApp({
       busy.value = true;
       const r = await api("POST", "/runner/orders/grab", { id: o.id }, token.value);
       busy.value = false;
-      r.code === 1 ? (toast("抢单成功！"), loadHall()) : toast(r.msg, false);
+      if (r.code === 1) {
+        toast("抢单成功！请尽快取件");
+        //联动跳转：直接进入我的接单办理任务
+        view.value = "myOrders";
+        loadMyOrders();
+        loadCurrentTask();
+      } else toast(r.msg, false);
     }
     async function pickup(o) {
       const r = await api("PUT", "/runner/orders/pickup/" + o.id, null, token.value);
-      r.code === 1 ? (toast("已确认取件"), loadMyOrders()) : toast(r.msg, false);
+      if (r.code === 1) { toast("已确认取件"); loadMyOrders(); loadCurrentTask(); } else toast(r.msg, false);
     }
     async function deliver(o) {
       const r = await api("PUT", "/runner/orders/deliver/" + o.id, null, token.value);
-      r.code === 1 ? (toast("送达成功，报酬已到账"), loadMyOrders(), loadWallet()) : toast(r.msg, false);
+      if (r.code === 1) {
+        toast("送达成功，报酬已到账");
+        loadMyOrders();
+        loadCurrentTask();
+        //联动刷新：重新拉取个人中心今日收入
+        const c = await api("GET", "/runner/info/center", null, token.value);
+        if (c.code === 1) center.value = c.data;
+        loadWallet();
+      } else toast(r.msg, false);
     }
     async function loadWallet() {
       wallet.value = (await api("GET", "/runner/wallet/balance", null, token.value)).data || {};
@@ -253,6 +436,7 @@ createApp({
       txs.value = (t.data && t.data.records) || [];
       const w = await api("GET", "/runner/wallet/withdraw/page?page=1&pageSize=10", null, token.value);
       wdRecords.value = (w.data && w.data.records) || [];
+      loadTrend();
     }
     async function applyWd() {
       busy.value = true;
@@ -277,13 +461,17 @@ createApp({
       if (name === "hall") loadHall();
       if (name === "myOrders") loadMyOrders();
       if (name === "wallet") loadWallet();
+      if (name === "home") { loadCurrentTask(); loadUnread(); }
     }
 
     if (token.value) init();
 
     return { token, view, tab, busy, loginCode, center, hall, myOrders, wallet, txs, wdRecords, wdAmount,
              wdPassword, auditForm, navTitle, doLogin, applyAudit, loadHall, loadMyOrders, grab, pickup,
-             deliver, applyWd, setPwd, txName, levelName, statusText, switchTab, hallKeyword, limitPct, money };
+             deliver, applyWd, setPwd, txName, levelName, statusText, switchTab, hallKeyword, limitPct, money,
+             hallTypes, hallTypeId, trend, barH, trendTotal, trendIncome, messages, unread, openMessages,
+             readAll, loadUnread, levelPct, nextGoal, nextLevelName, currentTask, loadCurrentTask,
+             relTime, goOrderOfMessage };
   }
 }).use(vant).mount("#app");
 </script>

@@ -1,0 +1,57 @@
+:root {
+  --brand: #2563eb;
+  --brand-light: #dbeafe;
+  --bg: #f5f7fa;
+  --text-main: #1f2937;
+  --text-sub: #6b7280;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+  font-family: 'Inter', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  color: var(--text-main);
+  background: var(--bg);
+}
+
+.page-card {
+  background: #fff;
+  border-radius: 8px;
+  padding: 16px;
+  min-height: 100%;
+}
+
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+  align-items: center;
+}
+
+.filter-bar .el-input,
+.filter-bar .el-select {
+  width: 200px;
+}
+
+.table-pager {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
+.muted {
+  color: var(--text-sub);
+  font-size: 12px;
+}
+
+.money {
+  color: #d97706;
+  font-weight: 600;
+}

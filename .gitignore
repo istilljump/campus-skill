@@ -15,3 +15,7 @@ logs/
 # os
 .DS_Store
 Thumbs.db
+
+# frontend (admin-web)
+admin-web/node_modules/
+admin-web/dist/
