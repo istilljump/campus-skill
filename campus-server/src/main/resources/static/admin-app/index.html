@@ -36,6 +36,7 @@
 <div id="app"></div>
 <script>
 const { createApp, ref, reactive, onMounted, computed } = Vue;
+const money = v => "￥" + Number(v || 0).toFixed(2);
 
 /* ---------- API helper ---------- */
 async function api(method, url, body, token) {
@@ -43,7 +44,12 @@ async function api(method, url, body, token) {
   if (token) opt.headers["token"] = token;
   if (body !== undefined && body !== null) opt.body = JSON.stringify(body);
   const r = await fetch(url, opt);
-  return r.json();
+  const j = await r.json();
+  if (j.code === 0 && j.msg && j.msg.indexOf("token") >= 0) {
+    localStorage.removeItem("admin_token");
+    setTimeout(() => location.reload(), 800);
+  }
+  return j;
 }
 
 const STATUS = { 1:"待支付", 2:"待接单", 3:"进行中", 4:"已送达", 5:"已完成", 6:"已取消", 7:"已超时" };
@@ -56,6 +62,19 @@ const app = createApp({
     const loginForm = reactive({ username: "admin", password: "123456" });
     const menu = ref("dashboard");
     const loading = ref(false);
+    const statusBars = computed(() => {
+      const total = Number(stat.value.totalOrders || 0) || 1;
+      const rows = [
+        { label: "待接单", key: "pendingCount", color: "#d97706" },
+        { label: "进行中", key: "inProgressCount", color: "#2563eb" },
+        { label: "已完成", key: "completedCount", color: "#16a34a" },
+        { label: "已取消", key: "cancelledCount", color: "#94a3b8" }
+      ];
+      return rows.map(r => {
+        const count = Number(stat.value[r.key] || 0);
+        return { label: r.label, count, color: r.color, pct: Math.round(count / total * 100) };
+      });
+    });
 
     /* dashboard */
     const stat = ref({});
@@ -93,6 +112,7 @@ const app = createApp({
       loading.value = true;
       const q = new URLSearchParams({ page: orderQuery.page, pageSize: orderQuery.pageSize });
       if (orderQuery.status) q.set("status", orderQuery.status);
+      if (orderQuery.keyword) q.set("keyword", orderQuery.keyword);
       orders.value = (await api("GET", "/admin/order/page?" + q, null, token)).data || { records: [], total: 0 };
       loading.value = false;
     }
@@ -159,7 +179,7 @@ const app = createApp({
     function go(key) { menu.value = key; page.value = key; loaders[key] && loaders[key](); }
     onMounted(() => { if (token) loadStat(); });
 
-    return { token, page, loginForm, doLogin, logout, menu, go, loading,
+    return { token, page, loginForm, doLogin, logout, menu, go, loading, statusBars, money,
              stat, orders, orderQuery, loadOrders, showOrder, orderDetail, detailVisible, STATUS, STATUS_TAG,
              runners, runnerQuery, loadRunners, toggleRunner,
              audits, auditQuery, loadAudits, processAudit,
@@ -198,13 +218,25 @@ const app = createApp({
           <div class="stat-card"><div class="stat-num">{{ stat.inProgressCount ?? '-' }}</div><div class="stat-label">进行中</div></div>
           <div class="stat-card"><div class="stat-num">{{ stat.completedCount ?? '-' }}</div><div class="stat-label">已完成</div></div>
           <div class="stat-card"><div class="stat-num">{{ stat.cancelledCount ?? '-' }}</div><div class="stat-label">已取消</div></div>
-          <div class="stat-card"><div class="stat-num">￥{{ stat.totalReward ?? '-' }}</div><div class="stat-label">流水总金额</div></div>
-          <div class="stat-card"><div class="stat-num" style="color:var(--success)">￥{{ stat.totalPlatformFee ?? '-' }}</div><div class="stat-label">平台服务费收益</div></div>
+          <div class="stat-card"><div class="stat-num">￥{{ Number(stat.totalReward||0).toFixed(2) }}</div><div class="stat-label">流水总金额</div></div>
+          <div class="stat-card"><div class="stat-num" style="color:var(--success)">￥{{ Number(stat.totalPlatformFee||0).toFixed(2) }}</div><div class="stat-label">平台服务费收益</div></div>
+        </div>
+        <div class="stat-panel">
+          <div class="panel-title">订单状态分布</div>
+          <div v-for="row in statusBars" :key="row.label" style="display:flex;align-items:center;gap:12px;margin-bottom:10px">
+            <span style="width:70px;font-size:14px;color:var(--text-secondary)">{{ row.label }}</span>
+            <div style="flex:1;background:var(--bg-tertiary);border-radius:9999px;height:14px;overflow:hidden">
+              <div :style="{ width: row.pct + '%', height: '100%', background: row.color, borderRadius: '9999px', transition: 'width .4s ease' }"></div>
+            </div>
+            <span style="width:40px;text-align:right;font-weight:600">{{ row.count }}</span>
+          </div>
         </div>
       </div>
 
       <!-- 订单 -->
       <div v-if="menu==='orders'" class="stat-panel">
+        <el-input v-model="orderQuery.keyword" placeholder="按标题 / 订单号搜索，回车确认" clearable
+          style="width:260px;margin-bottom:16px;margin-right:12px" @keyup.enter="orderQuery.page=1;loadOrders()"/>
         <el-select v-model="orderQuery.status" placeholder="全部状态" clearable style="width:160px;margin-bottom:16px" @change="loadOrders">
           <el-option v-for="(v,k) in STATUS" :key="k" :label="v" :value="Number(k)"></el-option>
         </el-select>

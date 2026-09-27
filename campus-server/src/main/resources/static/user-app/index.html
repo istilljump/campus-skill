@@ -100,10 +100,18 @@
     <!-- 订单大厅 -->
     <div v-if="view==='hall'">
       <div class="section">
+        <div class="card" style="padding:12px">
+          <input class="field" style="margin-top:0" v-model="hallKeyword" placeholder="搜索标题 / 订单号，回车搜索" @keyup.enter="loadHall"/>
+          <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+            <van-tag :type="hallType===null?'primary':'default'" size="large" style="cursor:pointer" @click="hallType=null;loadHall()">全部</van-tag>
+            <van-tag v-for="t in types" :key="t.id" :type="hallType===t.id?'primary':'default'" size="large"
+              style="cursor:pointer" @click="hallType=t.id;loadHall()">{{ t.name }}</van-tag>
+          </div>
+        </div>
         <div v-for="o in hall" :key="o.id" class="card">
           <div class="order-line">
             <div><span class="order-title">{{ o.title }}</span><span class="tag">{{ o.typeName }}</span></div>
-            <div class="money">￥{{ o.rewardAmount }}</div>
+            <div class="money">{{ money(o.rewardAmount) }}</div>
           </div>
           <div class="text-tertiary" style="font-size:13px;margin:6px 0">{{ o.pickupAddress }} → {{ o.deliveryAddress }}</div>
           <div class="order-line"><span class="text-tertiary" style="font-size:12px">{{ o.publisherName }} 发布于 {{ (o.createTime||'').slice(5,16) }}</span></div>
@@ -127,7 +135,7 @@
           </div>
           <div class="order-line" style="margin-top:8px">
             <span class="text-tertiary" style="font-size:13px">{{ o.typeName }} · {{ (o.createTime||'').slice(5,16) }}</span>
-            <span class="money">￥{{ o.rewardAmount }}</span>
+            <span class="money">{{ money(o.rewardAmount) }}</span>
           </div>
         </div>
         <van-empty v-if="!orders.length" description="还没有订单"></van-empty>
@@ -167,8 +175,8 @@
     <div v-if="view==='wallet'">
       <div class="hero">
         <p>钱包余额（元）</p>
-        <h3 style="font-size:36px">￥{{ wallet.balance ?? '0.00' }}</h3>
-        <p style="margin-top:8px">累计收入 ￥{{ wallet.totalIncome ?? 0 }} · 支出 ￥{{ wallet.totalExpense ?? 0 }}</p>
+        <h3 style="font-size:36px">{{ money(wallet.balance) }}</h3>
+        <p style="margin-top:8px">累计收入 {{ money(wallet.totalIncome) }} · 支出 {{ money(wallet.totalExpense) }}</p>
         <button class="btn" style="width:auto;padding:8px 24px;margin-top:12px" @click="recharge" :disabled="busy">充值 50 元</button>
       </div>
       <div class="section">
@@ -176,10 +184,23 @@
           <div style="font-weight:600;margin-bottom:8px">收支明细</div>
           <van-cell-group inset>
             <van-cell v-for="t in txs" :key="t.id" :title="txName(t.type)" :label="t.remark"
-              :value="(t.type===1||t.type===3||t.type===5?'+':'-')+'￥'+t.amount"></van-cell>
+              :value="(t.type===1||t.type===3||t.type===5?'+':'-')+money(t.amount)"></van-cell>
           </van-cell-group>
           <van-empty v-if="!txs.length" description="暂无流水" image-size="64"></van-empty>
         </div>
+      </div>
+    </div>
+
+    <!-- 编辑资料 -->
+    <div v-if="view==='profileEdit'">
+      <div class="section card">
+        <div style="font-weight:600;margin-bottom:8px">编辑个人资料</div>
+        <input class="field" v-model="editForm.name" placeholder="昵称"/>
+        <input class="field" v-model="editForm.phone" placeholder="手机号"/>
+        <input class="field" v-model="editForm.studentNo" placeholder="学号"/>
+        <input class="field" v-model="editForm.campus" placeholder="校区"/>
+        <button class="btn" style="margin-top:12px" @click="saveProfile" :disabled="busy">保存资料</button>
+        <button class="btn ghost" style="margin-top:8px" @click="view='me'">返回</button>
       </div>
     </div>
 
@@ -229,7 +250,8 @@
             <van-cell title="校区" :value="profile.campus || '未填写'"></van-cell>
           </van-cell-group>
         </div>
-        <button class="btn ghost" style="margin-top:16px" @click="view='address'">地址管理</button>
+        <button class="btn ghost" style="margin-top:16px" @click="openProfileEdit">编辑资料</button>
+        <button class="btn ghost" style="margin-top:8px" @click="view='address'">地址管理</button>
         <button class="btn ghost" style="margin-top:8px" @click="logout">退出登录</button>
       </div>
     </div>
@@ -255,8 +277,14 @@ async function api(method, url, body, token) {
   if (token) opt.headers["authentication"] = token;
   if (body !== undefined && body !== null) opt.body = JSON.stringify(body);
   const r = await fetch(url, opt);
-  return r.json();
+  const j = await r.json();
+  if (j.code === 0 && j.msg && j.msg.indexOf("token") >= 0) {
+    localStorage.removeItem("user_token");
+    setTimeout(() => location.reload(), 800);
+  }
+  return j;
 }
+const money = v => "￥" + Number(v || 0).toFixed(2);
 const STATUS = { 1:"待支付", 2:"待接单", 3:"进行中", 4:"已送达", 5:"已完成", 6:"已取消", 7:"已超时" };
 const TAG = { 1:"primary", 2:"warning", 3:"primary", 4:"primary", 5:"success", 6:"default", 7:"danger" };
 
@@ -277,6 +305,10 @@ createApp({
     const wallet = ref({});
     const txs = ref([]);
     const loginCode = ref("");
+    const hallKeyword = ref("");
+    const hallType = ref(null);
+    const reviewTags = ref([]);
+    const editForm = reactive({ name: "", phone: "", studentNo: "", campus: "" });
     const curType = ref({});
     const reviewScore = ref(5);
     const reviewContent = ref("");
@@ -333,8 +365,27 @@ createApp({
     }
 
     async function loadHall() {
-      const r = await api("GET", "/user/hall/list?page=1&pageSize=20", null, token.value);
+      const q = new URLSearchParams({ page: 1, pageSize: 20 });
+      if (hallType.value) q.set("typeId", hallType.value);
+      if (hallKeyword.value) q.set("keyword", hallKeyword.value);
+      const r = await api("GET", "/user/hall/list?" + q, null, token.value);
       hall.value = (r.data && r.data.records) || [];
+    }
+    function toggleTag(tg) {
+      const i = reviewTags.value.indexOf(tg);
+      i >= 0 ? reviewTags.value.splice(i, 1) : reviewTags.value.push(tg);
+    }
+    function openProfileEdit() {
+      Object.assign(editForm, { name: profile.value.name, phone: profile.value.phone,
+        studentNo: profile.value.studentNo, campus: profile.value.campus });
+      view.value = "profileEdit";
+    }
+    async function saveProfile() {
+      busy.value = true;
+      const r = await api("PUT", "/user/user/profile", editForm, token.value);
+      busy.value = false;
+      r.code === 1 ? (toast("资料已更新"), profile.value = await (async () =>
+        (await api("GET", "/user/user/profile", null, token.value)).data)(), view.value = "me") : toast(r.msg, false);
     }
     async function loadOrders() {
       const q = new URLSearchParams({ page: 1, pageSize: 20 });
@@ -364,7 +415,8 @@ createApp({
     }
     async function submitReview() {
       const r = await api("POST", "/user/review/submit",
-        { orderId: detail.value.id, score: reviewScore.value, content: reviewContent.value, isAnonymous: 0 }, token.value);
+        { orderId: detail.value.id, score: reviewScore.value, content: reviewContent.value,
+          tags: reviewTags.value.join(","), isAnonymous: 0 }, token.value);
       r.code === 1 ? (toast("评价成功"), reviewed.value = true) : toast(r.msg, false);
     }
 
@@ -400,6 +452,7 @@ createApp({
 
     return { token, view, tab, busy, profile, types, addresses, hall, orders, orderTab, detail, reviewed,
              wallet, txs, loginCode, curType, reviewScore, reviewContent, form, addrForm, auditForm,
+             hallKeyword, hallType, reviewTags, editForm, toggleTag, openProfileEdit, saveProfile, money,
              navTitle, doLogin, logout, startOrder, submitOrder, loadHall, loadOrders, openOrder, payOrder,
              confirmOrder, cancelOrder, submitReview, recharge, txName, applyRunner, saveAddress, delAddress,
              switchTab, statusText, tagType };

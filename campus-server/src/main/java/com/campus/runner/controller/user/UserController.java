@@ -2,6 +2,7 @@ package com.campus.runner.controller.user;
 
 import com.campus.runner.context.BaseContext;
 import com.campus.runner.dto.UserLoginDTO;
+import com.campus.runner.dto.UserUpdateDTO;
 import com.campus.runner.entity.User;
 import com.campus.runner.result.Result;
 import com.campus.runner.service.UserService;
@@ -12,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -33,6 +35,13 @@ public class UserController {
         log.info("微信用户登录：{}", userLoginDTO.getCode());
         UserLoginVO userLoginVO = userService.login(userLoginDTO.getCode());
         return Result.success(userLoginVO);
+    }
+
+    @PutMapping("/profile")
+    @ApiOperation("编辑个人资料（昵称/手机号/学号/校区）")
+    public Result<String> updateProfile(@RequestBody @Valid UserUpdateDTO userUpdateDTO) {
+        userService.updateProfile(BaseContext.getCurrentId(), userUpdateDTO);
+        return Result.success("资料已更新");
     }
 
     @GetMapping("/profile")

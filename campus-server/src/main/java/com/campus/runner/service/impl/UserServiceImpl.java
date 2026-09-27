@@ -73,6 +73,21 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public void updateProfile(Long userId, com.campus.runner.dto.UserUpdateDTO dto) {
+        User user = userMapper.getById(userId);
+        if (user == null) {
+            throw new com.campus.runner.exception.BusinessException(MessageConstant.ACCOUNT_NOT_FOUND);
+        }
+        User upd = new User();
+        upd.setId(userId);
+        upd.setName(dto.getName());
+        upd.setPhone(dto.getPhone());
+        upd.setStudentNo(dto.getStudentNo());
+        upd.setCampus(dto.getCampus());
+        userMapper.update(upd);
+    }
+
+    @Override
     public PageResult<User> page(Integer page, Integer pageSize, String name, String phone, String campus) {
         com.github.pagehelper.PageHelper.startPage(page, pageSize);
         com.github.pagehelper.Page<User> userPage = (com.github.pagehelper.Page<User>) userMapper.page(name, phone, campus);

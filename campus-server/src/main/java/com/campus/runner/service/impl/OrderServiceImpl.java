@@ -363,9 +363,13 @@ public class OrderServiceImpl implements OrderService {
             throw new OrderBusinessException(MessageConstant.ORDER_CANCEL_NOT_ALLOWED);
         }
 
-        //已支付订单退款（钱包余额原路退回）
+        //已支付订单退款（钱包余额原路退回），用户单方面取消扣2分信用分
         if (order.getPayStatus() != null && order.getPayStatus() == Orders.PAID) {
             refund(order);
+            if (cancelBy.equals(RunnerConstant.CANCEL_BY_USER) && order.getStatus() != Orders.PENDING_PAYMENT) {
+                userMapper.adjustCreditScore(order.getUserId(), -2);
+                log.info("[操作日志]用户取消已支付订单扣信用分，orderId={}, userId={}, -2分", order.getId(), order.getUserId());
+            }
         }
         Orders upd = Orders.builder().id(order.getId())
                 .status(Orders.CANCELLED)

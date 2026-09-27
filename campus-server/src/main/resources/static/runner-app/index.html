@@ -60,10 +60,11 @@
       <div class="hero">
         <h3>{{ center.name || '跑腿员' }} <span class="tag" style="background:rgba(255,255,255,.2);color:#fff">{{ levelName(center.runnerLevel) }}</span></h3>
         <p>今日已接 {{ center.todayOrderCount ?? 0 }}/{{ center.dailyOrderLimit ?? 10 }} 单 · 评分 {{ center.score ?? '5.0' }}</p>
+        <van-progress :percentage="limitPct" stroke-width="6" style="margin-top:8px" color="#ffffff" track-color="rgba(255,255,255,.25)"/>
         <div class="stat-row">
-          <div class="stat-box"><div class="stat-num">￥{{ center.todayIncome ?? '0.00' }}</div><div class="stat-lab">今日收入</div></div>
+          <div class="stat-box"><div class="stat-num">{{ money(center.todayIncome) }}</div><div class="stat-lab">今日收入</div></div>
           <div class="stat-box"><div class="stat-num">{{ center.completedOrders ?? 0 }}</div><div class="stat-lab">完成单数</div></div>
-          <div class="stat-box"><div class="stat-num">￥{{ center.balance ?? '0.00' }}</div><div class="stat-lab">钱包余额</div></div>
+          <div class="stat-box"><div class="stat-num">{{ money(center.balance) }}</div><div class="stat-lab">钱包余额</div></div>
         </div>
       </div>
       <div class="section">
@@ -76,10 +77,13 @@
     <!-- 抢单大厅 -->
     <div v-if="view==='hall'">
       <div class="section">
+        <div class="card" style="padding:12px">
+          <input class="field" style="margin-top:0" v-model="hallKeyword" placeholder="搜索标题 / 订单号，回车搜索" @keyup.enter="loadHall"/>
+        </div>
         <div v-for="o in hall" :key="o.id" class="card">
           <div class="order-line">
             <div><span class="order-title">{{ o.title }}</span><span class="tag">{{ o.typeName }}</span></div>
-            <div class="money">实得￥{{ o.runnerIncome }}</div>
+            <div class="money">实得{{ money(o.runnerIncome) }}</div>
           </div>
           <div class="text-tertiary" style="font-size:13px;margin:6px 0">{{ o.pickupAddress }} → {{ o.deliveryAddress }}</div>
           <div class="order-line">
@@ -101,7 +105,7 @@
           </div>
           <div class="text-tertiary" style="font-size:13px;margin:6px 0">{{ o.pickupAddress }} → {{ o.deliveryAddress }}</div>
           <div class="order-line">
-            <span class="money">实得￥{{ o.runnerIncome }}</span>
+            <span class="money">实得{{ money(o.runnerIncome) }}</span>
             <span>
               <van-button v-if="o.status===3 && !o.pickupTime" size="small" type="primary" plain @click="pickup(o)">确认取件</van-button>
               <van-button v-if="o.status===3" size="small" type="success" @click="deliver(o)">确认送达</van-button>
@@ -116,8 +120,8 @@
     <div v-if="view==='wallet'">
       <div class="hero">
         <p>可提现余额（元）</p>
-        <h3 style="font-size:36px">￥{{ wallet.balance ?? '0.00' }}</h3>
-        <p style="margin-top:8px">累计收入 ￥{{ wallet.totalIncome ?? 0 }} · 支出 ￥{{ wallet.totalExpense ?? 0 }}</p>
+        <h3 style="font-size:36px">{{ money(wallet.balance) }}</h3>
+        <p style="margin-top:8px">累计收入 {{ money(wallet.totalIncome) }} · 支出 {{ money(wallet.totalExpense) }}</p>
       </div>
       <div class="section card">
         <div style="font-weight:600;margin-bottom:8px">申请提现</div>
@@ -131,7 +135,7 @@
       <div class="section card">
         <div style="font-weight:600;margin-bottom:8px">提现记录</div>
         <van-cell-group inset>
-          <van-cell v-for="w in wdRecords" :key="w.id" :title="'￥'+w.amount"
+          <van-cell v-for="w in wdRecords" :key="w.id" :title="money(w.amount)"
             :value="['待处理','已打款','已驳回'][w.status]" :label="w.applyTime"></van-cell>
         </van-cell-group>
         <van-empty v-if="!wdRecords.length" description="暂无提现记录" image-size="64"></van-empty>
@@ -140,7 +144,7 @@
         <div style="font-weight:600;margin-bottom:8px">收支明细</div>
         <van-cell-group inset>
           <van-cell v-for="t in txs" :key="t.id" :title="txName(t.type)" :label="t.remark"
-            :value="(t.type===1||t.type===3||t.type===5?'+':'-')+'￥'+t.amount"></van-cell>
+            :value="(t.type===1||t.type===3||t.type===5?'+':'-')+money(t.amount)"></van-cell>
         </van-cell-group>
         <van-empty v-if="!txs.length" description="暂无流水" image-size="64"></van-empty>
       </div>
@@ -165,8 +169,14 @@ async function api(method, url, body, token, header) {
   if (token) opt.headers[header || "authentication"] = token;
   if (body !== undefined && body !== null) opt.body = JSON.stringify(body);
   const r = await fetch(url, opt);
-  return r.json();
+  const j = await r.json();
+  if (j.code === 0 && j.msg && j.msg.indexOf("token") >= 0) {
+    localStorage.removeItem("runner_token");
+    setTimeout(() => location.reload(), 800);
+  }
+  return j;
 }
+const money = v => "￥" + Number(v || 0).toFixed(2);
 const STATUS = { 1:"待支付", 2:"待接单", 3:"进行中", 4:"已送达", 5:"已完成", 6:"已取消", 7:"已超时" };
 
 createApp({
@@ -176,6 +186,7 @@ createApp({
     const tab = ref("home");
     const busy = ref(false);
     const loginCode = ref("");
+    const hallKeyword = ref("");
     const center = ref({});
     const hall = ref([]);
     const myOrders = ref([]);
@@ -213,7 +224,9 @@ createApp({
       loadHall();
     }
     async function loadHall() {
-      const r = await api("GET", "/runner/orders/hall?page=1&pageSize=20", null, token.value);
+      const q = new URLSearchParams({ page: 1, pageSize: 20 });
+      if (hallKeyword.value) q.set("keyword", hallKeyword.value);
+      const r = await api("GET", "/runner/orders/hall?" + q, null, token.value);
       hall.value = (r.data && r.data.records) || [];
     }
     async function loadMyOrders() {
@@ -255,6 +268,10 @@ createApp({
     function txName(t) { return { 1:"跑腿收入", 2:"支付支出", 3:"充值", 4:"提现", 5:"退款", 6:"违约金" }[t] || "其他"; }
     function levelName(l) { return ["", "普通", "铜牌", "银牌", "金牌"][l] || "普通"; }
     function statusText(s) { return STATUS[s] || s; }
+    const limitPct = computed(() => {
+      const used = center.value.todayOrderCount || 0, lim = center.value.dailyOrderLimit || 10;
+      return Math.min(100, Math.round(used / lim * 100));
+    });
     function switchTab(name) {
       view.value = name;
       if (name === "hall") loadHall();
@@ -266,7 +283,7 @@ createApp({
 
     return { token, view, tab, busy, loginCode, center, hall, myOrders, wallet, txs, wdRecords, wdAmount,
              wdPassword, auditForm, navTitle, doLogin, applyAudit, loadHall, loadMyOrders, grab, pickup,
-             deliver, applyWd, setPwd, txName, levelName, statusText, switchTab };
+             deliver, applyWd, setPwd, txName, levelName, statusText, switchTab, hallKeyword, limitPct, money };
   }
 }).use(vant).mount("#app");
 </script>
