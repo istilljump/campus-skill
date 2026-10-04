@@ -100,9 +100,9 @@ public class ServiceItemServiceImpl implements ServiceItemService {
     }
 
     @Override
-    public PageResult<ServiceItemVO> pageOnShelf(Integer page, Integer pageSize, Long categoryId, String keyword) {
+    public PageResult<ServiceItemVO> pageOnShelf(Integer page, Integer pageSize, Long categoryId, String keyword, String sort) {
         PageHelper.startPage(page, pageSize);
-        Page<ServiceItemVO> voPage = (Page<ServiceItemVO>) serviceItemMapper.listOnShelf(categoryId, keyword);
+        Page<ServiceItemVO> voPage = (Page<ServiceItemVO>) serviceItemMapper.listOnShelf(categoryId, keyword, sort);
         return new PageResult<>(voPage.getTotal(), voPage.getResult(), voPage.getPageSize(), voPage.getPageNum());
     }
 

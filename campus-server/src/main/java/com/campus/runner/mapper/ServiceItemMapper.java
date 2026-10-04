@@ -23,7 +23,7 @@ public interface ServiceItemMapper {
     /**
      * 用户端-服务市场分页（仅上架，按销量、评分排序；PageHelper 在 service 层调用 startPage）
      */
-    List<ServiceItemVO> listOnShelf(@Param("categoryId") Long categoryId, @Param("keyword") String keyword);
+    List<ServiceItemVO> listOnShelf(@Param("categoryId") Long categoryId, @Param("keyword") String keyword, @Param("sort") String sort);
 
     /**
      * 用户端-服务详情（含技能者/类目冗余信息）

@@ -191,12 +191,19 @@
         <van-tab title="我的预约" :name="1"></van-tab>
       </van-tabs>
       <div class="section" v-if="marketTab===0">
+      <van-pull-refresh v-model="refreshing" @refresh="onRefresh('market')">
         <div class="card" style="padding:12px">
           <input class="field" style="margin-top:0" v-model="marketKeyword" placeholder="搜索技能服务，回车搜索" @keyup.enter="loadMarket"/>
           <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
             <van-tag :type="marketCategory===null?'primary':'default'" size="large" style="cursor:pointer" @click="marketCategory=null;loadMarket()">全部</van-tag>
             <van-tag v-for="t in types" :key="t.id" :type="marketCategory===t.id?'primary':'default'" size="large"
               style="cursor:pointer" @click="marketCategory=t.id;loadMarket()">{{ t.name }}</van-tag>
+          </div>
+          <div style="margin-top:8px;display:flex;align-items:center;gap:6px;font-size:12px">
+            <span class="text-tertiary">排序</span>
+            <van-tag :type="marketSort==='default'?'primary':'default'" style="cursor:pointer" @click="marketSort='default';loadMarket()">综合推荐</van-tag>
+            <van-tag :type="marketSort==='price'?'primary':'default'" style="cursor:pointer" @click="marketSort='price';loadMarket()">价格最低</van-tag>
+            <van-tag :type="marketSort==='score'?'primary':'default'" style="cursor:pointer" @click="marketSort='score';loadMarket()">评分优先</van-tag>
           </div>
         </div>
         <div v-for="s in market" :key="s.id" class="card" @click="openSvc(s)">
@@ -211,6 +218,7 @@
           </div>
         </div>
         <van-empty v-if="!market.length" description="市场暂无服务，稍后再来看看"></van-empty>
+      </van-pull-refresh>
       </div>
       <div class="section" v-else>
         <div v-for="b in bookings" :key="b.id" class="card">
@@ -240,6 +248,7 @@
         <van-tab title="待验收" :name="4"></van-tab><van-tab title="已完成" :name="5"></van-tab>
       </van-tabs>
       <div class="section">
+      <van-pull-refresh v-model="refreshing" @refresh="onRefresh('orders')">
         <div v-for="o in orders" :key="o.id" class="card" @click="openOrder(o.id)">
           <div class="order-line">
             <div><span class="order-title">{{ o.title }}</span></div>
@@ -253,6 +262,7 @@
         <van-empty v-if="!orders.length" description="还没有订单，发一单试试吧">
           <van-button round type="primary" size="small" style="padding:0 20px" @click="view='home'">去发布订单</van-button>
         </van-empty>
+      </van-pull-refresh>
       </div>
     </div>
 
@@ -263,9 +273,15 @@
           <van-step>发单</van-step><van-step>支付</van-step><van-step>接单</van-step>
           <van-step>交付</van-step><van-step>完成</van-step>
         </van-steps>
-        <h3 style="margin:16px 0 4px">{{ detail.title }} <van-tag :type="tagType(detail.status)">{{ statusText(detail.status) }}</van-tag></h3>
+        <h3 style="margin:16px 0 4px">{{ detail.title }} <van-tag :type="tagType(detail.status)">{{ statusText(detail.status) }}</van-tag>
+          <span v-if="countdown" class="tag" style="background:var(--bg-secondary);color:var(--brand-primary)">⏱ {{ countdown }}</span></h3>
         <p class="text-secondary" style="font-size:14px">{{ detail.description }}</p>
         <van-cell-group inset style="margin-top:12px">
+          <van-cell title="订单号" :value="detail.number">
+            <template #right-icon>
+              <span style="display:flex;align-items:center;font-size:14px;margin-left:6px;cursor:pointer" @click="copyText(detail.number)">📋</span>
+            </template>
+          </van-cell>
           <van-cell title="类型" :value="detail.typeName"></van-cell>
           <van-cell title="开始服务" :label="detail.pickupAddress"></van-cell>
           <van-cell title="交付" :label="detail.deliveryAddress"></van-cell>
@@ -285,6 +301,7 @@
             <div style="font-weight:600;margin-bottom:6px">📦 交付成果</div>
             <div v-if="detail.deliverableUrl" style="font-size:13px;margin-bottom:4px;word-break:break-all">
               交付物链接：<a :href="detail.deliverableUrl" target="_blank" rel="noopener" style="color:var(--brand-primary)">{{ detail.deliverableUrl }}</a>
+              <span style="cursor:pointer;margin-left:4px" @click="copyText(detail.deliverableUrl)">📋复制</span>
             </div>
             <div v-if="detail.deliverableNote" class="text-secondary" style="font-size:13px">交付说明：{{ detail.deliverableNote }}</div>
           </div>
@@ -484,6 +501,10 @@ createApp({
     const reviewScore = ref(5);
     const reviewContent = ref("");
     const form = reactive({ title: "", description: "", pickupAddress: "", addressBookId: null, rewardAmount: null, payMethod: 2, typeId: null, addrMode: "online", manualAddress: "", expectedTime: "" });
+    //发单草稿自动暂存：填写中途退出不丢内容，提交成功后清除
+    Vue.watch(form, () => {
+      if (view.value === "submit") localStorage.setItem("campus_draft_order", JSON.stringify(form));
+    }, { deep: true });
     const addrForm = reactive({ consignee: "", phone: "", campus: "", building: "", room: "" });
     const auditForm = reactive({ realName: "", studentNo: "", campus: "", college: "" });
     const messages = ref([]);
@@ -495,6 +516,7 @@ createApp({
     const market = ref([]);
     const marketKeyword = ref("");
     const marketCategory = ref(null);
+    const marketSort = ref("default");
     const svcDetail = ref(null);
     const showSvc = ref(false);
     const bookingMode = ref(false);
@@ -605,7 +627,17 @@ createApp({
       r.code === 1 ? loadAddresses() : toast(r.msg, false);
     }
 
-    function startOrder(t) { curType.value = t || {}; form.typeId = t.id; view.value = "submit"; }
+    function startOrder(t) {
+      curType.value = t || {}; form.typeId = t.id; view.value = "submit";
+      //恢复上次未提交完的草稿
+      try {
+        const draft = JSON.parse(localStorage.getItem("campus_draft_order") || "null");
+        if (draft && (draft.title || draft.rewardAmount)) {
+          Object.assign(form, draft, { typeId: t.id });
+          toast("已恢复上次草稿");
+        }
+      } catch (e) { /* 忽略草稿解析失败 */ }
+    }
 
     async function submitOrder() {
       if (!form.title) return toast("请填写订单标题", false);
@@ -623,6 +655,7 @@ createApp({
       const r = await api("POST", "/user/order/submit", payload, token.value);
       busy.value = false;
       if (r.code !== 1) return toast(r.msg || "发单失败", false);
+      localStorage.removeItem("campus_draft_order");
       toast("发单成功");
       if (form.payMethod === 2) await api("POST", "/user/order/pay/" + r.data.orderNumber, null, token.value);
       view.value = "orders"; orderTab.value = null; loadOrders();
@@ -676,6 +709,52 @@ createApp({
       const m = { 1:0, 2:1, 3:2, 4:3, 5:4, 8:3, 9:3 };
       return m[s] === undefined ? 0 : m[s];
     });
+
+    // ===== 关键节点倒计时（每秒刷新）=====
+    const nowTick = ref(Date.now());
+    setInterval(() => { nowTick.value = Date.now(); }, 1000);
+    function parseTime(s) { return s ? new Date(String(s).replace(" ", "T")).getTime() : 0; }
+    const countdown = computed(() => {
+      const d = detail.value; if (!d) return "";
+      const now = nowTick.value;
+      if (d.status === 1 && d.orderTime) {
+        const left = parseTime(d.orderTime) + 15 * 60 * 1000 - now;
+        if (left <= 0) return "即将超时关闭";
+        return "支付剩余 " + Math.floor(left / 60000) + " 分 " + Math.floor(left % 60000 / 1000) + " 秒";
+      }
+      if (d.status === 4 && d.autoAcceptTime) {
+        const left = parseTime(d.autoAcceptTime) - now;
+        if (left <= 0) return "即将自动验收";
+        return Math.floor(left / 3600000) + " 小时后自动验收";
+      }
+      if ((d.status === 3 || d.status === 8) && d.timeoutTime) {
+        const left = parseTime(d.timeoutTime) - now;
+        if (left <= 0) return "已超时，待系统处理";
+        return "交付剩余 " + Math.floor(left / 3600000) + " 时 " + Math.floor(left % 3600000 / 60000) + " 分";
+      }
+      return "";
+    });
+
+    // ===== 一键复制 =====
+    async function copyText(t) {
+      if (!t) return;
+      try { await navigator.clipboard.writeText(t); }
+      catch (e) {
+        const ta = document.createElement("textarea");
+        ta.value = t; document.body.appendChild(ta); ta.select();
+        document.execCommand("copy"); document.body.removeChild(ta);
+      }
+      toast("已复制");
+    }
+
+    // ===== 下拉刷新 =====
+    const refreshing = ref(false);
+    async function onRefresh(target) {
+      try {
+        if (target === "orders") { await loadOrders(); await loadActiveOrders(); }
+        else if (target === "market") { await loadMarket(); }
+      } finally { refreshing.value = false; }
+    }
     // 已交付：验收 / 返修 / 仲裁
     async function acceptOrder() {
       try {
@@ -725,7 +804,7 @@ createApp({
     function bkText(s) { return BK[s] || s; }
     function bkTag(s) { return BKTAG[s] || "default"; }
     async function loadMarket() {
-      const q = new URLSearchParams({ page: 1, pageSize: 10 });
+      const q = new URLSearchParams({ page: 1, pageSize: 10, sort: marketSort.value || "default" });
       if (marketCategory.value) q.set("categoryId", marketCategory.value);
       if (marketKeyword.value) q.set("keyword", marketKeyword.value);
       const r = await api("GET", "/user/market?" + q, null, token.value);
@@ -814,6 +893,7 @@ createApp({
              saveAddress, delAddress, switchTab, statusText, tagType, messages, unread, openMessages, readAll,
              loadUnread, boostAmount, boostOrder, activeOrders, loadActiveOrders, relTime, feeRateNum,
              stepActive, marketTab, market, marketKeyword, marketCategory, svcDetail, showSvc, bookingMode,
+             marketSort, countdown, copyText, refreshing, onRefresh,
              bookingForm, bookings, loadMarket, loadBookings, onMarketTab, openSvc, modeText, submitBooking,
              payBooking, cancelBooking, bkText, bkTag, typeName };
   }

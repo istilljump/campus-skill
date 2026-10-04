@@ -32,7 +32,7 @@ public interface ServiceItemService {
     /**
      * 用户端-服务市场分页（仅上架）
      */
-    PageResult<ServiceItemVO> pageOnShelf(Integer page, Integer pageSize, Long categoryId, String keyword);
+    PageResult<ServiceItemVO> pageOnShelf(Integer page, Integer pageSize, Long categoryId, String keyword, String sort);
 
     /**
      * 用户端-服务详情

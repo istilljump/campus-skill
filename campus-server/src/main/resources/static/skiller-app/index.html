@@ -77,6 +77,8 @@
             <van-button size="small" type="primary" @click="grab(o)">立即抢单</van-button>
           </div>
         </div>
+      <div v-if="hallNew > 0" class="card" style="border-left:3px solid var(--brand-primary);cursor:pointer"
+        @click="applyHallNew">🔔 有 {{ hallNew }} 个新需求 · 点击查看</div>
         <van-empty v-if="!hall.length" description="悬赏大厅暂无需求，稍后再来看看"></van-empty>
       </div>
     </div>
@@ -374,6 +376,9 @@ createApp({
     const hallKeyword = ref("");
     const center = ref({});
     const hall = ref([]);
+    const hallNew = ref(0);        //大厅新需求条数（提示条）
+    const hallSeenMax = ref(0);    //已见到的最新悬赏 id
+    setInterval(() => pollHall(), 15000);
     const myOrders = ref([]);
     const wallet = ref({});
     const txs = ref([]);
@@ -527,7 +532,26 @@ createApp({
       if (hallTypeId.value) q.set("typeId", hallTypeId.value);
       const r = await api("GET", "/skiller/orders/hall?" + q, null, token.value);
       hall.value = (r.data && r.data.records) || [];
+      //记录已见到的最新悬赏 id，用于新需求提醒（空大厅用 -1 表示基线已建立）
+      if (hall.value.length) trackHallMax(Math.max(...hall.value.map(o => o.id)));
+      else if (!hallSeenMax.value) hallSeenMax.value = -1;
     }
+    //静默轮询大厅：发现新悬赏时提示条提醒（不打断当前浏览）
+    async function pollHall() {
+      if (!token.value || tab.value !== "hall") return;
+      const r = await api("GET", "/skiller/orders/hall?page=1&pageSize=1", null, token.value);
+      const list = (r.data && r.data.records) || [];
+      if (list.length) trackHallMax(Math.max(...list.map(o => o.id)));
+      else if (!hallSeenMax.value) hallSeenMax.value = -1;
+    }
+    function trackHallMax(maxId) {
+      if (hallSeenMax.value === 0) { hallSeenMax.value = maxId; return; }
+      if (maxId > hallSeenMax.value) {
+        hallNew.value += maxId - hallSeenMax.value;
+        hallSeenMax.value = maxId;
+      }
+    }
+    function applyHallNew() { hallNew.value = 0; loadHall(); }
     async function loadMyOrders() {
       const r = await api("GET", "/skiller/orders/page?page=1&pageSize=20", null, token.value);
       myOrders.value = (r.data && r.data.records) || [];
@@ -559,6 +583,7 @@ createApp({
       busy.value = false;
       if (r.code === 1) {
         toast("接单成功！请尽快开始服务");
+        if (navigator.vibrate) navigator.vibrate([80, 40, 80]);
         //联动跳转：直接进入订单办理任务
         view.value = "myOrders";
         tab.value = "myOrders";
@@ -709,6 +734,7 @@ createApp({
     if (token.value) init();
 
     return { token, view, tab, busy, loginCode, center, hall, myOrders, wallet, txs, wdRecords, wdAmount,
+             hallNew, applyHallNew,
              wdPassword, auditForm, navTitle, doLogin, applyAudit, loadHall, loadMyOrders, grab, pickup,
              openDeliver, submitDeliver, deliverShow, deliverForm, respondRework, applyWd, setPwd, txName,
              levelName, statusText, tagType, switchTab, hallKeyword, limitPct, money,

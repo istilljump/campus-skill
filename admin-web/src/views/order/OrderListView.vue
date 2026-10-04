@@ -62,8 +62,18 @@
             <el-tag :type="ORDER_STATUS[detail.status]?.type">{{ ORDER_STATUS[detail.status]?.label }}</el-tag>
             <el-tag v-if="detail.isAppealed === 1" type="danger" style="margin-left: 8px">申诉中</el-tag>
           </el-descriptions-item>
-          <el-descriptions-item label="取件地址">{{ detail.pickupAddress }}</el-descriptions-item>
-          <el-descriptions-item label="送达地址">{{ detail.deliveryAddress || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="取件/服务地点">{{ detail.pickupAddress || '线上交付' }}</el-descriptions-item>
+          <el-descriptions-item label="交付地址">{{ detail.deliveryAddress || '-' }}</el-descriptions-item>
+          <el-descriptions-item v-if="detail.mode === 2" label="撮合模式">
+            <el-tag size="small" type="warning">服务预约</el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item v-if="detail.deliverableUrl" label="交付物">
+            <el-link type="primary" :href="detail.deliverableUrl" target="_blank" style="word-break: break-all">
+              {{ detail.deliverableUrl }}
+            </el-link>
+          </el-descriptions-item>
+          <el-descriptions-item v-if="detail.deliverableNote" label="交付说明">{{ detail.deliverableNote }}</el-descriptions-item>
+          <el-descriptions-item v-if="detail.reworkCount" label="返修次数">{{ detail.reworkCount }} 次</el-descriptions-item>
           <el-descriptions-item label="校区">{{ detail.campus }}</el-descriptions-item>
           <el-descriptions-item label="悬赏金额">{{ fmtMoney(detail.rewardAmount) }}</el-descriptions-item>
           <el-descriptions-item label="平台服务费">{{ fmtMoney(detail.platformFee) }}</el-descriptions-item>
@@ -110,6 +120,8 @@ const detail = ref(null)
 const timeline = computed(() => [
   { label: '下单', time: fmtTime(detail.value?.orderTime) },
   { label: '支付', time: fmtTime(detail.value?.payTime) },
+  { label: '开始服务', time: fmtTime(detail.value?.pickupTime) },
+  { label: '交付', time: fmtTime(detail.value?.deliverTime) },
   { label: '完成', time: fmtTime(detail.value?.finishTime) },
 ])
 

@@ -72,7 +72,11 @@
                     or si.tags like concat('%', #{keyword}, '%'))
             </if>
         </where>
-        order by si.sales_count desc, si.avg_score desc
+        <choose>
+            <when test="sort == 'price'">order by si.price asc, si.sales_count desc</when>
+            <when test="sort == 'score'">order by si.avg_score desc, si.sales_count desc</when>
+            <otherwise>order by si.sales_count desc, si.avg_score desc</otherwise>
+        </choose>
     </select>
 
     <!-- 用户端-服务详情（含技能者/类目冗余信息） -->

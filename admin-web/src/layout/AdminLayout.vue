@@ -7,10 +7,17 @@
       </div>
       <el-menu :default-active="activeMenu" router background-color="#0f172a" text-color="#94a3b8"
         active-text-color="#ffffff" class="menu">
-        <el-menu-item v-for="item in menus" :key="item.path" :index="item.path">
+        <el-menu-item v-for="item in topMenus" :key="item.path" :index="item.path">
           <el-icon><component :is="item.icon" /></el-icon>
           <span>{{ item.title }}</span>
         </el-menu-item>
+        <el-menu-item-group v-for="g in menuGroups" :key="g.label">
+          <template #title><span class="group-title">{{ g.label }}</span></template>
+          <el-menu-item v-for="item in g.items" :key="item.path" :index="item.path">
+            <el-icon><component :is="item.icon" /></el-icon>
+            <span>{{ item.title }}</span>
+          </el-menu-item>
+        </el-menu-item-group>
       </el-menu>
     </el-aside>
 
@@ -54,19 +61,38 @@ const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
 
-const menus = [
+// 顶层数据大屏 + 三个业务分组的菜单结构
+const topMenus = [
   { path: '/dashboard', title: '数据大屏', icon: 'DataBoard' },
-  { path: '/orders', title: '订单管理', icon: 'List' },
-  { path: '/runners', title: '技能者管理', icon: 'Avatar' },
-  { path: '/audits', title: '技能者认证', icon: 'Stamp' },
-  { path: '/withdraws', title: '提现审核', icon: 'Money' },
-  { path: '/types', title: '技能类目', icon: 'Grid' },
-  { path: '/portfolio-audits', title: '作品审核', icon: 'Picture' },
-  { path: '/disputes', title: '仲裁工单', icon: 'ScaleToOriginal' },
-  { path: '/credit-rank', title: '信用榜单', icon: 'TrophyBase' },
-  { path: '/users', title: '用户管理', icon: 'User' },
-  { path: '/employees', title: '员工管理', icon: 'Setting' },
-  { path: '/shop', title: '营业设置', icon: 'Shop' },
+]
+
+const menuGroups = [
+  {
+    label: '业务管理',
+    items: [
+      { path: '/orders', title: '订单管理', icon: 'List' },
+      { path: '/runners', title: '技能者管理', icon: 'Avatar' },
+      { path: '/users', title: '用户管理', icon: 'User' },
+      { path: '/credit-rank', title: '信用榜单', icon: 'TrophyBase' },
+    ],
+  },
+  {
+    label: '审核与仲裁',
+    items: [
+      { path: '/audits', title: '技能者认证', icon: 'Stamp' },
+      { path: '/portfolio-audits', title: '作品审核', icon: 'Picture' },
+      { path: '/disputes', title: '仲裁工单', icon: 'ScaleToOriginal' },
+      { path: '/withdraws', title: '提现审核', icon: 'Money' },
+    ],
+  },
+  {
+    label: '系统配置',
+    items: [
+      { path: '/types', title: '技能类目', icon: 'Grid' },
+      { path: '/employees', title: '员工管理', icon: 'Setting' },
+      { path: '/shop', title: '营业设置', icon: 'Shop' },
+    ],
+  },
 ]
 
 const activeMenu = computed(() => route.path)
@@ -113,6 +139,17 @@ async function onCommand(cmd) {
 
 .menu :deep(.el-menu-item.is-active) {
   background: #2563eb;
+}
+
+.menu :deep(.el-menu-item-group__title) {
+  padding: 12px 20px 4px;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.group-title {
+  font-size: 12px;
+  letter-spacing: 1px;
 }
 
 .header {

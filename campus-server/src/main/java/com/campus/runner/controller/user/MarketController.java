@@ -30,8 +30,9 @@ public class MarketController {
     @ApiOperation("服务市场分页（仅上架，支持类目/关键词筛选）")
     public Result<PageResult<ServiceItemVO>> page(@RequestParam(defaultValue = "1") Integer page,
                                                   @RequestParam(defaultValue = "10") Integer pageSize,
-                                                  Long categoryId, String keyword) {
-        return Result.success(serviceItemService.pageOnShelf(page, pageSize, categoryId, keyword));
+                                                  Long categoryId, String keyword,
+                                                  @RequestParam(defaultValue = "default") String sort) {
+        return Result.success(serviceItemService.pageOnShelf(page, pageSize, categoryId, keyword, sort));
     }
 
     @GetMapping("/{id}")
