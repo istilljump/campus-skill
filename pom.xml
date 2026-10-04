@@ -12,6 +12,8 @@
     <artifactId>campus-runner</artifactId>
     <packaging>pom</packaging>
     <version>1.0-SNAPSHOT</version>
+    <name>CampusSkill 校园技能工坊</name>
+    <description>CampusSkill 校园技能工坊 —— 校园技能互助服务市场：作品认证、悬赏与预约双模式撮合、担保交易、交付验收与信用体系（Maven 多模块）</description>
     <modules>
         <module>campus-common</module>
         <module>campus-pojo</module>

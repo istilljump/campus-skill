@@ -9,6 +9,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
@@ -35,5 +36,6 @@ public class BookingApplyDTO implements Serializable {
 
     //需求备注
     @ApiModelProperty("需求备注")
+    @Size(max = 500, message = "备注不能超过500字")
     private String remark;
 }

@@ -8,6 +8,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 import java.io.Serializable;
 
 /**
@@ -29,6 +30,7 @@ public class DisputeApplyDTO implements Serializable {
 
     //纠纷描述
     @ApiModelProperty("纠纷描述")
+    @Size(max = 500, message = "纠纷描述不能超过500字")
     private String description;
 
     //凭证URL列表，逗号分隔

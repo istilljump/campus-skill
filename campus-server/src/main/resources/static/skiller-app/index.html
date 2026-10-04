@@ -185,7 +185,7 @@
     <div v-if="view==='me'">
       <div class="hero">
         <h3>{{ center.name || '技能者' }} <span class="tag" style="background:rgba(255,255,255,.2);color:#fff">接单等级 {{ levelName(center.runnerLevel) }}</span></h3>
-        <p>今日已接 {{ center.todayOrderCount ?? 0 }}/{{ center.dailyOrderLimit ?? 10 }} 单 · 评分 {{ center.score ?? '5.0' }}</p>
+        <p>今日已接 {{ center.todayOrderCount ?? 0 }}/{{ center.dailyOrderLimit ?? 10 }} 单 · 评分 {{ center.score ?? '5.0' }} · 信用 {{ center.creditScore ?? 100 }}{{ center.skillLevel ? '（作品定级 C' + center.skillLevel + '）' : '' }}</p>
         <van-progress :percentage="limitPct" stroke-width="6" style="margin-top:8px" color="#ffffff" track-color="rgba(255,255,255,.25)"/>
         <div class="stat-row">
           <div class="stat-box"><div class="stat-num">{{ money(center.todayIncome) }}</div><div class="stat-lab">今日技能服务收入</div></div>

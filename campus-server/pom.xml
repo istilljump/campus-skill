@@ -9,6 +9,8 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>campus-server</artifactId>
+    <name>CampusSkill 校园技能工坊 · campus-server</name>
+    <description>CampusSkill 校园技能工坊 —— 校园技能互助服务市场：业务层：Mapper、Service、Controller（三端）、定时任务</description>
     <dependencies>
 
         <dependency>

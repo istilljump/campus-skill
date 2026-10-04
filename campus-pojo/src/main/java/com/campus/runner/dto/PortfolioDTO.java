@@ -8,6 +8,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.Size;
 import java.io.Serializable;
 
 /**
@@ -25,6 +26,7 @@ public class PortfolioDTO implements Serializable {
     //作品标题
     @ApiModelProperty(value = "作品标题", required = true)
     @NotBlank(message = "作品标题不能为空")
+    @Size(max = 64, message = "作品标题不能超过64字")
     private String title;
 
     //所属技能类目id
@@ -37,9 +39,11 @@ public class PortfolioDTO implements Serializable {
 
     //作品文件URL列表，逗号分隔
     @ApiModelProperty("作品文件URL列表，逗号分隔")
+    @Size(max = 1000, message = "作品链接过多")
     private String workUrls;
 
     //作品说明
     @ApiModelProperty("作品说明")
+    @Size(max = 500, message = "作品说明不能超过500字")
     private String description;
 }

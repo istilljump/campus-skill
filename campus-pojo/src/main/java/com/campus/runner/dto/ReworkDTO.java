@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import javax.validation.constraints.Size;
 import java.io.Serializable;
 
 /**
@@ -23,5 +24,6 @@ public class ReworkDTO implements Serializable {
 
     //返修原因
     @ApiModelProperty("返修原因")
+    @Size(max = 255, message = "返修原因不能超过255字")
     private String reason;
 }

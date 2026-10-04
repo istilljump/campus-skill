@@ -11,6 +11,7 @@ import lombok.NoArgsConstructor;
 import javax.validation.constraints.DecimalMin;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -35,14 +36,17 @@ public class OrdersSubmitDTO implements Serializable {
     //订单标题
     @ApiModelProperty(value = "订单标题", required = true)
     @NotBlank(message = "订单标题不能为空")
+    @Size(max = 100, message = "订单标题不能超过100字")
     private String title;
 
     //需求描述
     @ApiModelProperty("需求描述")
+    @Size(max = 500, message = "需求描述不能超过500字")
     private String description;
 
     //取件/服务地点（线下服务或需要现场取材时填写，纯线上交付可不填）
     @ApiModelProperty("取件/服务地点（线下服务填写，线上交付可不填）")
+    @Size(max = 255, message = "服务地点不能超过255字")
     private String pickupAddress;
 
     //送达地址id（关联地址簿），与送达地址快照二选一
@@ -51,6 +55,7 @@ public class OrdersSubmitDTO implements Serializable {
 
     //送达地址快照（不依赖地址簿时直接填入）
     @ApiModelProperty("送达地址快照")
+    @Size(max = 255, message = "交付地址不能超过255字")
     private String deliveryAddress;
 
     //校区

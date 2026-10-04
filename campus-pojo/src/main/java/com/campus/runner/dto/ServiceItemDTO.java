@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 import javax.validation.constraints.DecimalMin;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 import java.io.Serializable;
 import java.math.BigDecimal;
 
@@ -33,10 +34,12 @@ public class ServiceItemDTO implements Serializable {
     //服务标题
     @ApiModelProperty(value = "服务标题", required = true)
     @NotBlank(message = "服务标题不能为空")
+    @Size(max = 64, message = "服务标题不能超过64字")
     private String title;
 
     //服务说明（含交付物形式与修改轮次）
     @ApiModelProperty("服务说明")
+    @Size(max = 500, message = "服务说明不能超过500字")
     private String description;
 
     //挂牌价
@@ -55,5 +58,6 @@ public class ServiceItemDTO implements Serializable {
 
     //技能标签，逗号分隔
     @ApiModelProperty("技能标签，逗号分隔")
+    @Size(max = 255, message = "标签不能超过255字")
     private String tags;
 }

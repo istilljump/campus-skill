@@ -141,6 +141,12 @@
           <span class="text-secondary" style="font-size:12px;cursor:pointer" @click="view='address'">📍 新增/管理地址</span>
         </div>
         <input class="field" type="number" v-model.number="form.rewardAmount" placeholder="悬赏金额（元）"/>
+        <div class="order-line" style="margin-top:6px;gap:8px">
+          <van-tag size="large" style="cursor:pointer" :type="form.rewardAmount===20?'primary':'default'" @click="form.rewardAmount=20">¥20</van-tag>
+          <van-tag size="large" style="cursor:pointer" :type="form.rewardAmount===50?'primary':'default'" @click="form.rewardAmount=50">¥50</van-tag>
+          <van-tag size="large" style="cursor:pointer" :type="form.rewardAmount===100?'primary':'default'" @click="form.rewardAmount=100">¥100</van-tag>
+          <van-tag size="large" style="cursor:pointer" :type="form.rewardAmount===200?'primary':'default'" @click="form.rewardAmount=200">¥200</van-tag>
+        </div>
         <div v-if="form.rewardAmount > 0" class="order-line" style="margin-top:6px;font-size:13px">
           <span class="text-tertiary">平台服务费 {{ money(form.rewardAmount * feeRateNum) }}</span>
           <span class="text-secondary">技能者实得 {{ money(form.rewardAmount * (1 - feeRateNum)) }}</span>
@@ -198,7 +204,7 @@
             <div><span class="order-title">{{ s.title }}</span><span class="tag">{{ s.categoryName }}</span></div>
             <div class="money">{{ money(s.price) }}</div>
           </div>
-          <div class="text-tertiary" style="font-size:12px;margin-top:6px">{{ s.deliveryDays }}天交付 · {{ modeText(s.serviceMode) }}</div>
+          <div class="text-tertiary" style="font-size:12px;margin-top:6px">{{ s.deliveryDays }}天交付 · {{ modeText(s.serviceMode) }}<template v-if="s.salesCount"> · 已售 {{ s.salesCount }}</template></div>
           <div class="order-line" style="margin-top:4px">
             <span class="text-secondary" style="font-size:12px">{{ s.skillerName }}</span>
             <span class="text-tertiary" style="font-size:12px">评分 {{ s.skillerScore ?? '-' }} · 信用 {{ s.skillerCreditScore ?? '-' }}</span>
@@ -231,7 +237,7 @@
       <van-tabs v-model:active="orderTab" @click-tab="loadOrders">
         <van-tab title="全部" :name="null"></van-tab><van-tab title="待支付" :name="1"></van-tab>
         <van-tab title="待接单" :name="2"></van-tab><van-tab title="进行中" :name="3"></van-tab>
-        <van-tab title="已完成" :name="5"></van-tab>
+        <van-tab title="待验收" :name="4"></van-tab><van-tab title="已完成" :name="5"></van-tab>
       </van-tabs>
       <div class="section">
         <div v-for="o in orders" :key="o.id" class="card" @click="openOrder(o.id)">
