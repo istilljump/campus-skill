@@ -10,7 +10,7 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
- * 跑腿员认证审核
+ * 技能者认证审核
  */
 @Data
 @Builder
@@ -29,7 +29,7 @@ public class RunnerAudit implements Serializable {
 
     private Long id;
 
-    //跑腿员id
+    //技能者id
     private Long runnerId;
 
     //真实姓名

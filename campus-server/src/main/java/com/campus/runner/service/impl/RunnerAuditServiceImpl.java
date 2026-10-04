@@ -66,7 +66,7 @@ public class RunnerAuditServiceImpl implements RunnerAuditService {
                 .auditTime(LocalDateTime.now())
                 .build();
         runnerAuditMapper.update(upd);
-        //联动跑腿员认证状态
+        //联动技能者认证状态
         int runnerAuditStatus = dto.getStatus() == RunnerConstant.REVIEW_PASSED
                 ? RunnerConstant.AUDIT_PASSED : RunnerConstant.AUDIT_REJECTED;
         Runner runnerUpd = Runner.builder()
@@ -74,13 +74,13 @@ public class RunnerAuditServiceImpl implements RunnerAuditService {
                 .auditStatus(runnerAuditStatus)
                 .build();
         runnerMapper.update(runnerUpd);
-        //站内消息：通知申请人审核结果（audit 表无 userId，经跑腿员记录解析）
+        //站内消息：通知申请人审核结果（audit 表无 userId，经技能者记录解析）
         Runner notifiedRunner = runnerMapper.getById(audit.getRunnerId());
         if (notifiedRunner != null) {
             boolean passed = dto.getStatus() == RunnerConstant.REVIEW_PASSED;
-            messageService.notify(notifiedRunner.getUserId(), passed ? "跑腿员认证已通过" : "跑腿员认证未通过",
-                    (passed ? "恭喜！您的跑腿员认证已通过审核，现在可以登录跑腿员端接单了。"
-                            : "很抱歉，您的跑腿员认证未通过审核。" + (dto.getAuditRemark() != null ? "原因：" + dto.getAuditRemark() : "")),
+            messageService.notify(notifiedRunner.getUserId(), passed ? "技能者认证已通过" : "技能者认证未通过",
+                    (passed ? "恭喜！您的技能者认证已通过审核，现在可以登录技能者端接单了。"
+                            : "很抱歉，您的技能者认证未通过审核。" + (dto.getAuditRemark() != null ? "原因：" + dto.getAuditRemark() : "")),
                     null);
         }
         log.info("认证审核完成，auditId={}, runnerId={}, result={}", dto.getId(), audit.getRunnerId(), dto.getStatus());

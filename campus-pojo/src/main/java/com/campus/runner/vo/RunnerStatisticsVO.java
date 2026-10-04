@@ -10,13 +10,13 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 
 /**
- * 跑腿员统计（跑腿员端工作台）
+ * 技能者统计（技能者端工作台）
  */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@ApiModel("跑腿员统计")
+@ApiModel("技能者统计")
 public class RunnerStatisticsVO implements Serializable {
 
     private static final long serialVersionUID = 1L;

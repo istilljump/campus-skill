@@ -21,14 +21,14 @@ import javax.validation.Valid;
 import java.util.List;
 
 /**
- * 跑腿员端-个人信息与认证接口
- * 注意：本控制器位于 /runner/** 下，需已认证跑腿员 token 访问；
+ * 技能者端-个人信息与认证接口
+ * 注意：本控制器位于 /runner/** 下，需已认证技能者 token 访问；
  * 认证申请入口对未认证用户开放，由用户端接口提供（/user/runner/apply）
  */
 @RestController
 @Slf4j
-@Api(tags = "跑腿员端-个人信息接口")
-@RequestMapping("/runner/info")
+@Api(tags = "技能者端-个人信息接口")
+@RequestMapping("/skiller/info")
 public class RunnerController {
 
     @Autowired
@@ -37,7 +37,7 @@ public class RunnerController {
     @GetMapping("/center")
     @ApiOperation("个人中心（今日接单/收入/等级/评分/余额）")
     public Result<RunnerCenterVO> center() {
-        //BaseContext 中是跑腿员ID，getCenter 需要关联用户ID
+        //BaseContext 中是技能者ID，getCenter 需要关联用户ID
         return Result.success(runnerService.getCenter(runnerService.resolveUserId(BaseContext.getCurrentId())));
     }
 

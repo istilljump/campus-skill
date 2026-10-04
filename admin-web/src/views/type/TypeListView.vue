@@ -2,7 +2,7 @@
   <div class="page-card">
     <div class="filter-bar">
       <el-button type="primary" :icon="Plus" @click="openEdit()">新增类型</el-button>
-      <span class="muted">平台按类型费率收取服务费，跑腿员实得 = 悬赏金额 ×（1 - 费率）</span>
+      <span class="muted">平台按类型费率收取服务费，技能者实得 = 悬赏金额 ×（1 - 费率）</span>
     </div>
 
     <el-table :data="list" v-loading="loading" stripe>

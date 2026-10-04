@@ -4,7 +4,7 @@
       <el-select v-model="query.status" placeholder="订单状态" clearable style="width: 140px">
         <el-option v-for="(v, k) in ORDER_STATUS" :key="k" :label="v.label" :value="Number(k)" />
       </el-select>
-      <el-select v-model="query.typeId" placeholder="订单类型" clearable style="width: 140px">
+      <el-select v-model="query.typeId" placeholder="技能类目" clearable style="width: 140px">
         <el-option v-for="t in types" :key="t.id" :label="t.name" :value="t.id" />
       </el-select>
       <el-input v-model="query.campus" placeholder="校区" clearable />
@@ -32,7 +32,7 @@
         </template>
       </el-table-column>
       <el-table-column prop="publisherName" label="发单用户" width="100" />
-      <el-table-column prop="runnerName" label="跑腿员" width="100">
+      <el-table-column prop="runnerName" label="技能者" width="100">
         <template #default="{ row }">{{ row.runnerName || '-' }}</template>
       </el-table-column>
       <el-table-column label="下单时间" width="170">
@@ -67,18 +67,18 @@
           <el-descriptions-item label="校区">{{ detail.campus }}</el-descriptions-item>
           <el-descriptions-item label="悬赏金额">{{ fmtMoney(detail.rewardAmount) }}</el-descriptions-item>
           <el-descriptions-item label="平台服务费">{{ fmtMoney(detail.platformFee) }}</el-descriptions-item>
-          <el-descriptions-item label="跑腿员实得">{{ fmtMoney(detail.runnerIncome) }}</el-descriptions-item>
+          <el-descriptions-item label="技能者实得">{{ fmtMoney(detail.runnerIncome) }}</el-descriptions-item>
           <el-descriptions-item label="支付状态">{{ detail.payStatus === 1 ? '已支付' : '未支付' }}</el-descriptions-item>
           <el-descriptions-item label="发单用户">
             {{ detail.publisherName || '-' }} {{ detail.publisherPhone || '' }}
           </el-descriptions-item>
-          <el-descriptions-item label="跑腿员">
+          <el-descriptions-item label="技能者">
             {{ detail.runnerName || '-' }} {{ detail.runnerPhone || '' }}
           </el-descriptions-item>
           <el-descriptions-item v-if="detail.cancelReason" label="取消原因">
             {{ detail.cancelReason }}（{{ CANCEL_BY[detail.cancelBy] || '-' }}）
           </el-descriptions-item>
-          <el-descriptions-item v-if="detail.runnerScore" label="跑腿员评分">{{ detail.runnerScore }}</el-descriptions-item>
+          <el-descriptions-item v-if="detail.runnerScore" label="技能者评分">{{ detail.runnerScore }}</el-descriptions-item>
         </el-descriptions>
 
         <h4 class="timeline-title">订单时间线</h4>

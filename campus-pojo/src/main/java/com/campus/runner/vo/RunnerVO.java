@@ -12,24 +12,24 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
- * 跑腿员信息
+ * 技能者信息
  */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@ApiModel("跑腿员信息")
+@ApiModel("技能者信息")
 public class RunnerVO implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    //跑腿员id
+    //技能者id
     private Long id;
 
     //关联用户id
     private Long userId;
 
-    //跑腿员姓名
+    //技能者姓名
     private String name;
 
     //手机号
@@ -47,7 +47,7 @@ public class RunnerVO implements Serializable {
     //认证状态 0待认证 1已认证 2认证拒绝 3认证审核中
     private Integer auditStatus;
 
-    //跑腿等级 1普通 2铜牌 3银牌 4金牌
+    //技能等级 1普通 2铜牌 3银牌 4金牌
     private Integer runnerLevel;
 
     //每日接单上限

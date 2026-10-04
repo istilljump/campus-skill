@@ -3,7 +3,7 @@
     <div class="dash-header">
       <div class="dash-title">
         <span class="dash-dot"></span>
-        校园跑腿平台 · 数据大屏
+        CampusSkill 技能工坊平台 · 数据大屏
       </div>
       <div class="dash-actions">
         <el-radio-group v-model="trendDays" size="small" @change="loadTrend">
@@ -33,7 +33,7 @@
         <div ref="trendRef" class="chart"></div>
       </div>
       <div class="chart-panel">
-        <div class="panel-title">热门跑腿类型 TOP5</div>
+        <div class="panel-title">热门技能类目 TOP5</div>
         <div ref="typeRef" class="chart chart-tall"></div>
       </div>
       <div class="chart-panel">

@@ -1,7 +1,7 @@
 <template>
   <div class="page-card shop-card">
     <h3>营业状态</h3>
-    <p class="muted">打烊后用户端将无法发单、跑腿员端将无法接单。</p>
+    <p class="muted">打烊后用户端将无法发单、技能者端将无法接单。</p>
     <div class="shop-status">
       <el-icon :size="60" :color="shopStatus === 1 ? '#16a34a' : '#9ca3af'">
         <component :is="shopStatus === 1 ? 'CircleCheckFilled' : 'RemoveFilled'" />

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<title>校园跑腿 · 用户端</title>
+<title>CampusSkill 校园技能工坊 · 用户端</title>
 <link rel="stylesheet" href="/assets/tokens.css">
 <link rel="stylesheet" href="/assets/vendor/vant.css">
 <script src="/assets/vendor/vue.global.prod.js"></script>
@@ -40,9 +40,9 @@
 <div id="app">
   <!-- 登录 -->
   <div v-if="!token" style="padding:60px 24px">
-    <div style="text-align:center;font-size:56px">🚴</div>
-    <h2 style="text-align:center;margin:12px 0 4px">校园跑腿</h2>
-    <p style="text-align:center;color:var(--text-tertiary);margin-bottom:32px">登录后即可发布跑腿订单</p>
+    <div style="text-align:center;font-size:56px">🧰</div>
+    <h2 style="text-align:center;margin:12px 0 4px">CampusSkill 校园技能工坊</h2>
+    <p style="text-align:center;color:var(--text-tertiary);margin-bottom:32px">登录后即可发布技能服务需求</p>
     <van-cell-group inset>
       <van-field v-model="loginCode" label="登录码" placeholder="输入任意码即可登录（联调模式）"></van-field>
     </van-cell-group>
@@ -57,7 +57,7 @@
     <!-- 首页 -->
     <div v-if="view==='home'">
       <div class="hero" style="margin-top:0">
-        <h3>Hi，让跑腿帮你跑</h3>
+        <h3>Hi，让技能帮你搞定</h3>
         <p>信用分 {{ profile.creditScore ?? 100 }} · 已发单 {{ profile.publishOrderCount ?? 0 }} 单</p>
       </div>
       <div class="type-grid">
@@ -90,8 +90,8 @@
         <div class="card" @click="view='hall'">
           <div class="order-line"><b>🧭 订单大厅</b><span class="text-tertiary">看看大家在发什么 ›</span></div>
         </div>
-        <div class="card" @click="view='runnerApply'">
-          <div class="order-line"><b>🏃 成为跑腿员</b><span class="text-tertiary">认证后可接单赚钱 ›</span></div>
+        <div class="card" @click="view='skillerApply'">
+          <div class="order-line"><b>🌱 成为技能者</b><span class="text-tertiary">认证后可入驻接单 ›</span></div>
         </div>
       </div>
     </div>
@@ -120,20 +120,30 @@
     <div v-if="view==='submit'">
       <div class="section card">
         <div style="font-weight:600;margin-bottom:12px">发布「{{ typeName }}」订单 <span class="tag">服务费率 {{ (curType.feeRate*100).toFixed(0) }}%</span></div>
-        <input class="field" v-model="form.title" placeholder="订单标题，如：帮我取菜鸟驿站快递"/>
-        <input class="field" v-model="form.description" placeholder="需求描述（选填）"/>
-        <input class="field" v-model="form.pickupAddress" placeholder="取件地址"/>
-        <select class="field" v-model="form.addressBookId">
+        <input class="field" v-model="form.title" placeholder="服务标题，如：课程汇报PPT美化（20页内）"/>
+        <input class="field" v-model="form.description" placeholder="需求描述：写清交付物形式、修改轮次等（选填）"/>
+        <input class="field" v-model="form.pickupAddress" placeholder="服务/取件地点（线下服务填写，选填）"/>
+        <input class="field" type="datetime-local" v-model="form.expectedTime" placeholder="期望完成时间（选填）"/>
+        <div class="order-line" style="margin:10px 0 6px">
+          <span class="text-tertiary" style="font-size:12px">交付方式</span>
+          <van-radio-group v-model="form.addrMode" direction="horizontal">
+            <van-radio name="online">线上交付</van-radio>
+            <van-radio name="book">地址簿</van-radio>
+            <van-radio name="manual">手动填写</van-radio>
+          </van-radio-group>
+        </div>
+        <select class="field" v-if="form.addrMode==='book'" v-model="form.addressBookId">
           <option v-for="a in addresses" :key="a.id" :value="a.id">{{ a.campus }} {{ a.building }} {{ a.room }}（{{ a.consignee }}）</option>
         </select>
-        <div class="order-line" style="margin-top:4px">
-          <span class="text-tertiary" style="font-size:12px">{{ addresses.length ? '送达地址' : '还没有收货地址' }}</span>
+        <input class="field" v-if="form.addrMode==='manual'" v-model="form.manualAddress" placeholder="填写交付地点，如：东区3号楼502"/>
+        <div class="order-line" style="margin-top:4px" v-if="form.addrMode!=='online'">
+          <span class="text-tertiary" style="font-size:12px">{{ form.addrMode==='book' ? (addresses.length ? '交付地址' : '还没有收货地址') : '线下服务请填写具体地点' }}</span>
           <span class="text-secondary" style="font-size:12px;cursor:pointer" @click="view='address'">📍 新增/管理地址</span>
         </div>
         <input class="field" type="number" v-model.number="form.rewardAmount" placeholder="悬赏金额（元）"/>
         <div v-if="form.rewardAmount > 0" class="order-line" style="margin-top:6px;font-size:13px">
           <span class="text-tertiary">平台服务费 {{ money(form.rewardAmount * feeRateNum) }}</span>
-          <span class="text-secondary">跑腿员实得 {{ money(form.rewardAmount * (1 - feeRateNum)) }}</span>
+          <span class="text-secondary">技能者实得 {{ money(form.rewardAmount * (1 - feeRateNum)) }}</span>
         </div>
         <div class="order-line" style="margin-top:12px;font-size:14px">
           <span class="text-secondary">支付方式</span>
@@ -168,6 +178,54 @@
       </div>
     </div>
 
+    <!-- 技能市场 -->
+    <div v-if="view==='market'">
+      <van-tabs v-model:active="marketTab" @click-tab="onMarketTab">
+        <van-tab title="服务市场" :name="0"></van-tab>
+        <van-tab title="我的预约" :name="1"></van-tab>
+      </van-tabs>
+      <div class="section" v-if="marketTab===0">
+        <div class="card" style="padding:12px">
+          <input class="field" style="margin-top:0" v-model="marketKeyword" placeholder="搜索技能服务，回车搜索" @keyup.enter="loadMarket"/>
+          <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+            <van-tag :type="marketCategory===null?'primary':'default'" size="large" style="cursor:pointer" @click="marketCategory=null;loadMarket()">全部</van-tag>
+            <van-tag v-for="t in types" :key="t.id" :type="marketCategory===t.id?'primary':'default'" size="large"
+              style="cursor:pointer" @click="marketCategory=t.id;loadMarket()">{{ t.name }}</van-tag>
+          </div>
+        </div>
+        <div v-for="s in market" :key="s.id" class="card" @click="openSvc(s)">
+          <div class="order-line">
+            <div><span class="order-title">{{ s.title }}</span><span class="tag">{{ s.categoryName }}</span></div>
+            <div class="money">{{ money(s.price) }}</div>
+          </div>
+          <div class="text-tertiary" style="font-size:12px;margin-top:6px">{{ s.deliveryDays }}天交付 · {{ modeText(s.serviceMode) }}</div>
+          <div class="order-line" style="margin-top:4px">
+            <span class="text-secondary" style="font-size:12px">{{ s.skillerName }}</span>
+            <span class="text-tertiary" style="font-size:12px">评分 {{ s.skillerScore ?? '-' }} · 信用 {{ s.skillerCreditScore ?? '-' }}</span>
+          </div>
+        </div>
+        <van-empty v-if="!market.length" description="市场暂无服务，稍后再来看看"></van-empty>
+      </div>
+      <div class="section" v-else>
+        <div v-for="b in bookings" :key="b.id" class="card">
+          <div class="order-line">
+            <div><span class="order-title">{{ b.serviceTitle || b.serviceName }}</span></div>
+            <van-tag :type="bkTag(b.status)">{{ bkText(b.status) }}</van-tag>
+          </div>
+          <div class="text-tertiary" style="font-size:13px;margin-top:6px">期望时间：{{ b.expectTime }}</div>
+          <div v-if="b.remark" class="text-secondary" style="font-size:13px;margin-top:4px">备注：{{ b.remark }}</div>
+          <div v-if="b.status===0 || b.status===1" class="order-line" style="margin-top:8px">
+            <span></span>
+            <span>
+              <van-button v-if="b.status===0" size="small" plain type="danger" @click="cancelBooking(b)" :disabled="busy">取消预约</van-button>
+              <van-button v-if="b.status===1" size="small" type="primary" @click="payBooking(b)" :disabled="busy">去支付</van-button>
+            </span>
+          </div>
+        </div>
+        <van-empty v-if="!bookings.length" description="暂无预约记录"></van-empty>
+      </div>
+    </div>
+
     <!-- 我的订单 -->
     <div v-if="view==='orders'">
       <van-tabs v-model:active="orderTab" @click-tab="loadOrders">
@@ -197,30 +255,44 @@
       <div class="section card" v-if="detail">
         <van-steps :active="stepActive" active-color="var(--brand-primary)">
           <van-step>发单</van-step><van-step>支付</van-step><van-step>接单</van-step>
-          <van-step>送达</van-step><van-step>完成</van-step>
+          <van-step>交付</van-step><van-step>完成</van-step>
         </van-steps>
         <h3 style="margin:16px 0 4px">{{ detail.title }} <van-tag :type="tagType(detail.status)">{{ statusText(detail.status) }}</van-tag></h3>
         <p class="text-secondary" style="font-size:14px">{{ detail.description }}</p>
         <van-cell-group inset style="margin-top:12px">
           <van-cell title="类型" :value="detail.typeName"></van-cell>
-          <van-cell title="取件" :label="detail.pickupAddress"></van-cell>
-          <van-cell title="送达" :label="detail.deliveryAddress"></van-cell>
+          <van-cell title="开始服务" :label="detail.pickupAddress"></van-cell>
+          <van-cell title="交付" :label="detail.deliveryAddress"></van-cell>
           <van-cell title="悬赏" :value="'￥'+detail.rewardAmount"></van-cell>
           <van-cell title="服务费" :value="'￥'+detail.platformFee"></van-cell>
-          <van-cell title="跑腿员" :value="detail.runnerName ? detail.runnerName + (detail.runnerPhone ? ' ' + detail.runnerPhone : '') : '待接单'">
+          <van-cell title="技能者" :value="detail.runnerName ? detail.runnerName + (detail.runnerPhone ? ' ' + detail.runnerPhone : '') : '待接单'">
             <template #right-icon>
               <a v-if="detail.runnerPhone" :href="'tel:' + detail.runnerPhone"
                 style="display:flex;align-items:center;text-decoration:none;font-size:18px;margin-left:6px">📞</a>
             </template>
           </van-cell>
         </van-cell-group>
+        <div v-if="detail.status===8" class="text-secondary" style="font-size:13px;margin-top:12px">🔁 返修中：技能者正在重新交付，请耐心等待</div>
+        <div v-if="detail.status===9" class="text-secondary" style="font-size:13px;margin-top:12px">⚖️ 仲裁中：平台将尽快裁定</div>
+        <div v-if="detail.status===4" style="margin-top:12px">
+          <div style="background:var(--bg-secondary);border-radius:var(--radius-md);padding:12px">
+            <div style="font-weight:600;margin-bottom:6px">📦 交付成果</div>
+            <div v-if="detail.deliverableUrl" style="font-size:13px;margin-bottom:4px;word-break:break-all">
+              交付物链接：<a :href="detail.deliverableUrl" target="_blank" rel="noopener" style="color:var(--brand-primary)">{{ detail.deliverableUrl }}</a>
+            </div>
+            <div v-if="detail.deliverableNote" class="text-secondary" style="font-size:13px">交付说明：{{ detail.deliverableNote }}</div>
+          </div>
+          <div class="text-tertiary" style="font-size:12px;margin-top:6px">剩余返修次数：{{ 2 - (detail.reworkCount || 0) }} 次（最多 2 次）</div>
+          <button class="btn" style="margin-top:8px" @click="acceptOrder" :disabled="busy">✅ 验收完成</button>
+          <button class="btn ghost" style="margin-top:8px" @click="applyRework" :disabled="busy">申请返修</button>
+          <button class="btn ghost" style="margin-top:8px" @click="applyDispute" :disabled="busy">发起仲裁</button>
+        </div>
         <div v-if="detail.status===1" style="margin-top:12px"><button class="btn" @click="payOrder" :disabled="busy">立即支付</button></div>
         <div v-if="detail.status===2 && detail.payStatus===1" style="margin-top:12px">
           <div class="order-line" style="font-size:13px"><span class="text-secondary">长时间无人接单？追加悬赏提高曝光</span></div>
           <input class="field" type="number" v-model.number="boostAmount" placeholder="追加金额（元），同时顺延15分钟超时"/>
           <button class="btn ghost" style="margin-top:8px" @click="boostOrder" :disabled="busy">追加悬赏</button>
         </div>
-        <div v-if="detail.status===4" style="margin-top:12px"><button class="btn" @click="confirmOrder" :disabled="busy">✅ 确认完成</button></div>
         <div v-if="[1,2].includes(detail.status)" style="margin-top:8px"><button class="btn ghost" @click="cancelOrder" :disabled="busy">取消订单</button></div>
         <div v-if="detail.status===2 && detail.payStatus===1" class="text-tertiary" style="font-size:12px;margin-top:8px">
           💡 一直无人接单？可取消订单全额退款，或追加悬赏提高吸引力
@@ -289,23 +361,23 @@
       </div>
     </div>
 
-    <!-- 认证申请 -->
-    <div v-if="view==='runnerApply'">
+    <!-- 技能者入驻申请 -->
+    <div v-if="view==='skillerApply'">
       <div class="section card">
-        <div style="font-weight:600;margin-bottom:8px">🏃 申请成为跑腿员</div>
-        <p class="text-tertiary" style="font-size:13px;margin-bottom:12px">提交后由平台审核，通过后即可在跑腿员端登录接单。</p>
+        <div style="font-weight:600;margin-bottom:8px">🌱 技能者入驻申请</div>
+        <p class="text-tertiary" style="font-size:13px;margin-bottom:12px">提交后由平台审核，通过后即可在技能者端登录接单。</p>
         <input class="field" v-model="auditForm.realName" placeholder="真实姓名"/>
         <input class="field" v-model="auditForm.studentNo" placeholder="学号"/>
         <input class="field" v-model="auditForm.campus" placeholder="校区"/>
         <input class="field" v-model="auditForm.college" placeholder="学院"/>
-        <button class="btn" style="margin-top:12px" @click="applyRunner" :disabled="busy">提交认证申请</button>
+        <button class="btn" style="margin-top:12px" @click="applySkiller" :disabled="busy">提交入驻申请</button>
       </div>
     </div>
 
     <!-- 我的 -->
     <div v-if="view==='me'">
       <div class="section card" style="margin-top:16px">
-        <div class="order-line"><b>{{ profile.name || '跑腿用户' }}</b><span class="text-tertiary">ID: {{ profile.id }}</span></div>
+        <div class="order-line"><b>{{ profile.name || '校园用户' }}</b><span class="text-tertiary">ID: {{ profile.id }}</span></div>
         <div style="margin-top:12px">
           <van-cell-group inset>
             <van-cell title="信用分" :value="profile.creditScore ?? 100"></van-cell>
@@ -324,9 +396,36 @@
     <van-tabbar v-model="tab" @change="switchTab">
       <van-tabbar-item icon="wap-nav-o" name="home">首页</van-tabbar-item>
       <van-tabbar-item icon="orders-o" name="orders">订单</van-tabbar-item>
+      <van-tabbar-item icon="shop-o" name="market">技能市场</van-tabbar-item>
       <van-tabbar-item icon="balance-o" name="wallet">钱包</van-tabbar-item>
       <van-tabbar-item icon="user-o" name="me">我的</van-tabbar-item>
     </van-tabbar>
+
+    <!-- 服务详情/预约弹窗 -->
+    <van-popup v-model:show="showSvc" round position="bottom" style="padding:20px;max-height:72vh;overflow-y:auto">
+      <template v-if="svcDetail && !bookingMode">
+        <div style="font-weight:600;font-size:16px">{{ svcDetail.title }}</div>
+        <div class="order-line" style="margin-top:8px">
+          <span class="tag" v-if="svcDetail.categoryName">{{ svcDetail.categoryName }}</span>
+          <span class="money" style="font-size:18px">{{ money(svcDetail.price) }}</span>
+        </div>
+        <div class="text-tertiary" style="font-size:12px;margin-top:6px">{{ svcDetail.deliveryDays }}天交付 · {{ modeText(svcDetail.serviceMode) }}</div>
+        <div class="text-secondary" style="font-size:14px;margin-top:10px;white-space:pre-wrap">{{ svcDetail.description }}</div>
+        <div class="order-line" style="margin-top:12px;font-size:13px">
+          <span class="text-secondary">技能者：{{ svcDetail.skillerName }}</span>
+          <span class="text-tertiary">评分 {{ svcDetail.skillerScore ?? '-' }} · 信用 {{ svcDetail.skillerCreditScore ?? '-' }}</span>
+        </div>
+        <button class="btn" style="margin-top:16px" @click="bookingMode=true" :disabled="busy">预约服务</button>
+      </template>
+      <template v-else-if="svcDetail">
+        <div style="font-weight:600;margin-bottom:8px">预约「{{ svcDetail.title }}」</div>
+        <van-cell-group inset>
+          <van-field v-model="bookingForm.expectTime" label="期望时间" placeholder="格式 2026-10-10 14:00"></van-field>
+          <van-field v-model="bookingForm.remark" label="备注" type="textarea" rows="2" autosize placeholder="补充说明（选填）"></van-field>
+        </van-cell-group>
+        <button class="btn" style="margin-top:16px" @click="submitBooking" :disabled="busy">提交预约</button>
+      </template>
+    </van-popup>
   </div>
 
   <van-toast ref="toastRef"></van-toast>
@@ -349,8 +448,10 @@ async function api(method, url, body, token) {
   return j;
 }
 const money = v => "￥" + Number(v || 0).toFixed(2);
-const STATUS = { 1:"待支付", 2:"待接单", 3:"进行中", 4:"已送达", 5:"已完成", 6:"已取消", 7:"已超时" };
-const TAG = { 1:"primary", 2:"warning", 3:"primary", 4:"primary", 5:"success", 6:"default", 7:"danger" };
+const STATUS = { 1:"待支付", 2:"待接单", 3:"进行中", 4:"已交付", 5:"已完成", 6:"已取消", 7:"已超时", 8:"返修中", 9:"仲裁中" };
+const TAG = { 1:"primary", 2:"warning", 3:"primary", 4:"primary", 5:"success", 6:"default", 7:"danger", 8:"warning", 9:"danger" };
+const BK = { 0:"待确认", 1:"已确认", 2:"已完成", 3:"已拒绝", 4:"已取消" };
+const BKTAG = { 0:"warning", 1:"primary", 2:"success", 3:"danger", 4:"default" };
 
 createApp({
   setup() {
@@ -376,18 +477,29 @@ createApp({
     const curType = ref({});
     const reviewScore = ref(5);
     const reviewContent = ref("");
-    const form = reactive({ title: "", description: "", pickupAddress: "", addressBookId: null, rewardAmount: null, payMethod: 2, typeId: null });
+    const form = reactive({ title: "", description: "", pickupAddress: "", addressBookId: null, rewardAmount: null, payMethod: 2, typeId: null, addrMode: "online", manualAddress: "", expectedTime: "" });
     const addrForm = reactive({ consignee: "", phone: "", campus: "", building: "", room: "" });
     const auditForm = reactive({ realName: "", studentNo: "", campus: "", college: "" });
     const messages = ref([]);
     const unread = ref(0);
     const boostAmount = ref(null);
 
-    const navTitle = computed(() => ({ home:"首页", hall:"订单大厅", submit:"发布订单", orders:"我的订单",
-      orderDetail:"订单详情", wallet:"我的钱包", address:"地址管理", runnerApply:"跑腿员认证", me:"我的",
-      messages:"消息中心" }[view.value] || "校园跑腿"));
+    // 技能市场
+    const marketTab = ref(0);
+    const market = ref([]);
+    const marketKeyword = ref("");
+    const marketCategory = ref(null);
+    const svcDetail = ref(null);
+    const showSvc = ref(false);
+    const bookingMode = ref(false);
+    const bookingForm = reactive({ serviceItemId: null, expectTime: "", remark: "" });
+    const bookings = ref([]);
 
-    function toast(msg, ok = true) { showToast({ message: msg, type: ok ? "success" : "fail" }); }
+    const navTitle = computed(() => ({ home:"首页", hall:"订单大厅", submit:"发布订单", orders:"我的订单",
+      orderDetail:"订单详情", wallet:"我的钱包", address:"地址管理", skillerApply:"技能者入驻", me:"我的",
+      messages:"消息中心", market:"技能市场" }[view.value] || "CampusSkill 校园技能工坊"));
+
+    function toast(msg, ok = true) { showToast({ message: msg, type: ok ? "success" : "fail" } ); }
 
     async function doLogin() {
       if (!loginCode.value) return toast("请输入登录码", false);
@@ -401,7 +513,7 @@ createApp({
 
     async function init() {
       profile.value = (await api("GET", "/user/user/profile", null, token.value)).data || {};
-      types.value = (await api("GET", "/user/errandType/list", null, token.value)).data || [];
+      types.value = (await api("GET", "/user/skillCategory/list", null, token.value)).data || [];
       await loadAddresses();
       await loadWallet();
       loadActiveOrders();
@@ -427,6 +539,7 @@ createApp({
       return String(t).slice(5, 16);
     }
     const feeRateNum = computed(() => Number(curType.value.feeRate) || 0.1);
+    const typeName = computed(() => curType.value.name || "");
 
     async function loadUnread() {
       const r = await api("GET", "/user/message/unread", null, token.value);
@@ -490,10 +603,18 @@ createApp({
 
     async function submitOrder() {
       if (!form.title) return toast("请填写订单标题", false);
-      if (!form.addressBookId) return toast("请先选择或新增送达地址", false);
+      if (form.addrMode === "book" && !form.addressBookId) return toast("请先选择或新增交付地址", false);
+      if (form.addrMode === "manual" && !(form.manualAddress || "").trim()) return toast("请填写交付地点", false);
       if (!form.rewardAmount || form.rewardAmount <= 0) return toast("请填写正确的悬赏金额", false);
       busy.value = true;
-      const r = await api("POST", "/user/order/submit", form, token.value);
+      const payload = { ...form };
+      if (payload.addrMode === "online") { payload.deliveryAddress = "线上交付"; delete payload.addressBookId; }
+      if (payload.addrMode === "book") { delete payload.deliveryAddress; delete payload.manualAddress; }
+      if (payload.addrMode === "manual") { payload.deliveryAddress = payload.manualAddress; delete payload.addressBookId; }
+      delete payload.addrMode; delete payload.manualAddress;
+      if (payload.expectedTime) payload.expectedTime = payload.expectedTime.replace("T", " ") + ":00";
+      else delete payload.expectedTime;
+      const r = await api("POST", "/user/order/submit", payload, token.value);
       busy.value = false;
       if (r.code !== 1) return toast(r.msg || "发单失败", false);
       toast("发单成功");
@@ -544,12 +665,40 @@ createApp({
       else if ((r.msg || "").indexOf("余额") >= 0) { toast(r.msg + "，可先到「钱包」充值", false); }
       else toast(r.msg, false);
     }
-    async function confirmOrder() {
+    const stepActive = computed(() => {
+      const s = detail.value ? detail.value.status : 0;
+      const m = { 1:0, 2:1, 3:2, 4:3, 5:4, 8:3, 9:3 };
+      return m[s] === undefined ? 0 : m[s];
+    });
+    // 已交付：验收 / 返修 / 仲裁
+    async function acceptOrder() {
       try {
-        await vant.showConfirmDialog({ title: "确认完成", message: "确认跑腿员已送达？确认后订单将进入评价环节" });
+        await vant.showConfirmDialog({ title: "验收完成", message: "确认验收该交付成果？确认后订单将完成并结算报酬" });
       } catch (e) { return; }
-      const r = await api("PUT", "/user/order/confirm/" + detail.value.id, null, token.value);
-      r.code === 1 ? (toast("订单已完成"), openOrder(detail.value.id)) : toast(r.msg, false);
+      const r = await api("PUT", "/user/order/accept/" + detail.value.id, null, token.value);
+      r.code === 1 ? (toast("已验收，订单完成"), openOrder(detail.value.id)) : toast(r.msg, false);
+    }
+    async function applyRework() {
+      const reason = prompt("请输入返修原因");
+      if (!reason) return;
+      busy.value = true;
+      const r = await api("PUT", "/user/order/rework/" + detail.value.id, { reason }, token.value);
+      busy.value = false;
+      if (r.code === 1) { toast("返修申请已提交"); openOrder(detail.value.id); }
+      else if ((r.msg || "").indexOf("返修次数") >= 0) toast(r.msg, false);
+      else toast(r.msg, false);
+    }
+    async function applyDispute() {
+      const description = prompt("请描述发起仲裁的理由");
+      if (!description) return;
+      try {
+        await vant.showConfirmDialog({ title: "发起仲裁", message: "确定对该订单发起仲裁吗？平台将介入裁定" });
+      } catch (e) { return; }
+      busy.value = true;
+      const r = await api("POST", "/user/order/dispute/" + detail.value.id,
+        { reasonType: 1, description: description, evidenceUrls: "" }, token.value);
+      busy.value = false;
+      r.code === 1 ? (toast("仲裁申请已提交"), openOrder(detail.value.id)) : toast(r.msg, false);
     }
     async function cancelOrder() {
       try {
@@ -565,6 +714,60 @@ createApp({
       r.code === 1 ? (toast("评价成功"), reviewed.value = true) : toast(r.msg, false);
     }
 
+    // 技能市场
+    function modeText(m) { return m === 1 ? "线上交付" : "线下进行"; }
+    function bkText(s) { return BK[s] || s; }
+    function bkTag(s) { return BKTAG[s] || "default"; }
+    async function loadMarket() {
+      const q = new URLSearchParams({ page: 1, pageSize: 10 });
+      if (marketCategory.value) q.set("categoryId", marketCategory.value);
+      if (marketKeyword.value) q.set("keyword", marketKeyword.value);
+      const r = await api("GET", "/user/market?" + q, null, token.value);
+      market.value = (r.data && r.data.records) || [];
+    }
+    function openSvc(s) {
+      svcDetail.value = s;
+      bookingMode.value = false;
+      bookingForm.serviceItemId = s.id;
+      bookingForm.expectTime = "";
+      bookingForm.remark = "";
+      showSvc.value = true;
+    }
+    async function submitBooking() {
+      if (!bookingForm.expectTime) return toast("请填写期望服务时间，如 2026-10-10 14:00", false);
+      busy.value = true;
+      const r = await api("POST", "/user/booking", bookingForm, token.value);
+      busy.value = false;
+      if (r.code === 1) {
+        toast("预约成功，等待技能者确认");
+        showSvc.value = false;
+        marketTab.value = 1;
+        loadBookings();
+      } else toast(r.msg, false);
+    }
+    async function loadBookings() {
+      const r = await api("GET", "/user/booking/page?page=1&pageSize=20", null, token.value);
+      bookings.value = (r.data && r.data.records) || [];
+    }
+    function onMarketTab() { marketTab.value === 0 ? loadMarket() : loadBookings(); }
+    async function payBooking(b) {
+      busy.value = true;
+      const pr = await api("POST", "/user/booking/" + b.id + "/pay", null, token.value);
+      if (pr.code !== 1) { busy.value = false; return toast(pr.msg || "下单失败", false); }
+      const orderNumber = pr.data && pr.data.orderNumber;
+      const r = await api("POST", "/user/order/pay/" + orderNumber, null, token.value);
+      busy.value = false;
+      if (r.code === 1) { toast("已下单并支付成功"); loadBookings(); loadActiveOrders(); }
+      else toast(r.msg || "支付失败", false);
+    }
+    async function cancelBooking(b) {
+      try {
+        await vant.showConfirmDialog({ title: "取消预约", message: "确定取消该预约吗？" });
+      } catch (e) { return; }
+      const r = await api("PUT", "/user/booking/" + b.id + "/cancel", null, token.value);
+      r.code === 1 ? (toast("预约已取消"), loadBookings()) : toast(r.msg, false);
+    }
+
     async function loadWallet() {
       wallet.value = (await api("GET", "/user/wallet/balance", null, token.value)).data || {};
       const r = await api("GET", "/user/wallet/transactions?page=1&pageSize=20", null, token.value);
@@ -576,11 +779,11 @@ createApp({
       busy.value = false;
       r.code === 1 ? (toast("充值成功"), loadWallet()) : toast(r.msg, false);
     }
-    function txName(t) { return { 1:"跑腿收入", 2:"支付支出", 3:"充值", 4:"提现", 5:"退款", 6:"违约金" }[t] || "其他"; }
+    function txName(t) { return { 1:"技能服务收入", 2:"支付支出", 3:"充值", 4:"提现", 5:"退款", 6:"违约金" }[t] || "其他"; }
 
-    async function applyRunner() {
+    async function applySkiller() {
       busy.value = true;
-      const r = await api("POST", "/user/runner/apply", auditForm, token.value);
+      const r = await api("POST", "/user/skiller/apply", auditForm, token.value);
       busy.value = false;
       r.code === 1 ? toast("申请已提交，等待平台审核") : toast(r.msg, false);
     }
@@ -590,6 +793,7 @@ createApp({
       if (name === "orders") loadOrders();
       if (name === "wallet") loadWallet();
       if (name === "home") loadActiveOrders();
+      if (name === "market") { marketTab.value === 0 ? loadMarket() : loadBookings(); }
     }
     function statusText(s) { return STATUS[s] || s; }
     function tagType(s) { return TAG[s] || "primary"; }
@@ -600,9 +804,12 @@ createApp({
              wallet, txs, loginCode, curType, reviewScore, reviewContent, form, addrForm, auditForm,
              hallKeyword, hallType, reviewTags, editForm, toggleTag, openProfileEdit, saveProfile, money,
              navTitle, doLogin, logout, startOrder, submitOrder, loadHall, loadOrders, openOrder, payOrder,
-             confirmOrder, cancelOrder, submitReview, recharge, txName, applyRunner, saveAddress, delAddress,
-             switchTab, statusText, tagType, messages, unread, openMessages, readAll, loadUnread,
-             boostAmount, boostOrder, activeOrders, loadActiveOrders, relTime, feeRateNum };
+             acceptOrder, applyRework, applyDispute, cancelOrder, submitReview, recharge, txName, applySkiller,
+             saveAddress, delAddress, switchTab, statusText, tagType, messages, unread, openMessages, readAll,
+             loadUnread, boostAmount, boostOrder, activeOrders, loadActiveOrders, relTime, feeRateNum,
+             stepActive, marketTab, market, marketKeyword, marketCategory, svcDetail, showSvc, bookingMode,
+             bookingForm, bookings, loadMarket, loadBookings, onMarketTab, openSvc, modeText, submitBooking,
+             payBooking, cancelBooking, bkText, bkTag, typeName };
   }
 }).use(vant).mount("#app");
 

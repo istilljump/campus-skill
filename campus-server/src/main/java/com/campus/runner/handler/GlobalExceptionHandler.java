@@ -37,7 +37,7 @@ public class GlobalExceptionHandler {
         return Result.error(ex.getMessage());
     }
 
-    // ===== 跑腿业务异常：统一捕获，错误码 0，提示信息与业务场景一致 =====
+    // ===== 技能业务异常：统一捕获，错误码 0，提示信息与业务场景一致 =====
 
     @ExceptionHandler(com.campus.runner.exception.GrabFailedException.class)
     public Result<?> grabFailedHandler(com.campus.runner.exception.GrabFailedException ex) {

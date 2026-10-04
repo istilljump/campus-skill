@@ -1,7 +1,7 @@
 package com.campus.runner.constant;
 
 /**
- * 跑腿员业务常量
+ * 技能者业务常量
  */
 public class RunnerConstant {
 
@@ -21,7 +21,7 @@ public class RunnerConstant {
     public static final Integer REVIEW_REJECTED = 2;   //驳回
 
     /**
-     * 跑腿等级
+     * 技能等级
      */
     public static final Integer LEVEL_NORMAL = 1;      //普通
     public static final Integer LEVEL_BRONZE = 2;      //铜牌

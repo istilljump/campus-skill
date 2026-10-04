@@ -23,12 +23,12 @@ public interface OrderReviewMapper {
     OrderReview getByOrderId(Long orderId);
 
     /**
-     * 跑腿员收到的评价分页
+     * 技能者收到的评价分页
      */
     Page<OrderReview> pageByRunnerId(@Param("runnerId") Long runnerId);
 
     /**
-     * 重算跑腿员综合评分
+     * 重算技能者综合评分
      */
     @Select("select ifnull(round(avg(score), 1), 5.0) from order_review where runner_id = #{runnerId}")
     java.math.BigDecimal avgScoreByRunnerId(Long runnerId);

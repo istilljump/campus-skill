@@ -1,9 +1,11 @@
 package com.campus.runner.controller.user;
 
+import com.campus.runner.dto.DisputeApplyDTO;
 import com.campus.runner.dto.OrdersBoostDTO;
 import com.campus.runner.dto.OrdersCancelDTO;
 import com.campus.runner.dto.OrdersPageQueryDTO;
 import com.campus.runner.dto.OrdersSubmitDTO;
+import com.campus.runner.dto.ReworkDTO;
 import com.campus.runner.context.BaseContext;
 import com.campus.runner.result.PageResult;
 import com.campus.runner.result.Result;
@@ -25,11 +27,11 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.validation.Valid;
 
 /**
- * 用户端-跑腿订单接口
+ * 用户端-技能订单接口
  */
 @RestController("userOrderController")
 @Slf4j
-@Api(tags = "用户端-跑腿订单接口")
+@Api(tags = "用户端-技能订单接口")
 @RequestMapping("/user/order")
 public class OrderController {
 
@@ -62,11 +64,32 @@ public class OrderController {
         return Result.success(orderService.detail(id));
     }
 
+    @PutMapping("/accept/{id}")
+    @ApiOperation("验收订单（已交付→已完成并结算）")
+    public Result<String> accept(@PathVariable Long id) {
+        orderService.accept(id, BaseContext.getCurrentId());
+        return Result.success("订单已验收");
+    }
+
     @PutMapping("/confirm/{id}")
-    @ApiOperation("确认完成")
+    @ApiOperation("确认完成（兼容旧路由，等价于验收）")
     public Result<String> confirm(@PathVariable Long id) {
         orderService.confirm(id, BaseContext.getCurrentId());
         return Result.success("订单已完成");
+    }
+
+    @PutMapping("/rework/{id}")
+    @ApiOperation("申请返修（已交付→返修中，最多2次）")
+    public Result<String> rework(@PathVariable Long id, @RequestBody(required = false) ReworkDTO reworkDTO) {
+        orderService.rework(id, BaseContext.getCurrentId(), reworkDTO);
+        return Result.success("返修申请已提交");
+    }
+
+    @PostMapping("/dispute/{id}")
+    @ApiOperation("发起仲裁（已交付/返修中→仲裁中）")
+    public Result<String> dispute(@PathVariable Long id, @RequestBody @Valid DisputeApplyDTO disputeApplyDTO) {
+        orderService.applyDispute(id, BaseContext.getCurrentId(), disputeApplyDTO);
+        return Result.success("仲裁申请已提交，平台将尽快处理");
     }
 
     @PutMapping("/cancel")

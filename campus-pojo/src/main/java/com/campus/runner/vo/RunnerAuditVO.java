@@ -11,13 +11,13 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
- * 跑腿员认证审核记录（管理端列表项）
+ * 技能者认证审核记录（管理端列表项）
  */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@ApiModel("跑腿员认证审核记录")
+@ApiModel("技能者认证审核记录")
 public class RunnerAuditVO implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -25,7 +25,7 @@ public class RunnerAuditVO implements Serializable {
     //审核记录id
     private Long id;
 
-    //跑腿员id
+    //技能者id
     private Long runnerId;
 
     //关联用户id

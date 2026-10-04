@@ -28,7 +28,7 @@ public class OrderReview implements Serializable {
     //发单用户id
     private Long userId;
 
-    //跑腿员id
+    //技能者id
     private Long runnerId;
 
     //评分 1-5

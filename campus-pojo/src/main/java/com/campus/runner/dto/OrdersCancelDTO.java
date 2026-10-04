@@ -11,7 +11,7 @@ import javax.validation.constraints.NotNull;
 import java.io.Serializable;
 
 /**
- * 用户端/跑腿员端-订单取消
+ * 用户端/技能者端-订单取消
  */
 @Data
 @Builder

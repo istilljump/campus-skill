@@ -41,7 +41,7 @@ public class StatisticsController {
     }
 
     @GetMapping("/typeRank")
-    @ApiOperation("跑腿类型订单量 TOP N（默认5）")
+    @ApiOperation("技能类目订单量 TOP N（默认5）")
     public Result<List<NameCountVO>> typeRank(@RequestParam(defaultValue = "5") Integer limit) {
         return Result.success(statisticsService.typeRank(limit));
     }

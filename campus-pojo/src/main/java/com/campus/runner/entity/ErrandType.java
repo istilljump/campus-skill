@@ -11,7 +11,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
- * 跑腿订单类型
+ * 技能订单类型
  */
 @Data
 @Builder

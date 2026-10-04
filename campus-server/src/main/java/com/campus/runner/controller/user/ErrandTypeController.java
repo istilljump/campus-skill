@@ -14,19 +14,19 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 /**
- * 用户端-跑腿订单类型
+ * 用户端-技能订单类型
  */
 @RestController("userErrandTypeController")
 @Slf4j
 @Api(tags = "用户端-订单类型接口")
-@RequestMapping("/user/errandType")
+@RequestMapping("/user/skillCategory")
 public class ErrandTypeController {
 
     @Autowired
     private ErrandTypeService errandTypeService;
 
     @GetMapping("/list")
-    @ApiOperation("启用中的跑腿订单类型")
+    @ApiOperation("启用中的技能订单类型")
     public Result<List<ErrandTypeVO>> list() {
         return Result.success(errandTypeService.listEnabled());
     }

@@ -28,12 +28,18 @@ public interface WalletService {
     void changeBalance(Long userId, BigDecimal delta, Integer type, Long orderId, String remark);
 
     /**
+     * 尽力扣除（违约金场景专用）：最多扣到可用余额为止，余额不足时不抛异常，
+     * 避免内层事务抛出 InsufficientBalanceException 将外层事务标记为 rollback-only
+     */
+    void deductBestEffort(Long userId, BigDecimal amount, Integer type, Long orderId, String remark);
+
+    /**
      * 钱包充值（模拟支付）
      */
     void recharge(Long userId, BigDecimal amount);
 
     /**
-     * 跑腿员端-提现申请（余额冻结，等待审核）
+     * 技能者端-提现申请（余额冻结，等待审核）
      */
     void applyWithdraw(Long userId, WithdrawApplyDTO withdrawApplyDTO);
 

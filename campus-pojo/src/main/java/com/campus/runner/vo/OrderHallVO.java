@@ -13,7 +13,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
- * 订单大厅列表项（跑腿员抢单视图）
+ * 订单大厅列表项（技能者抢单视图）
  */
 @Data
 @Builder
@@ -54,7 +54,7 @@ public class OrderHallVO implements Serializable {
     //悬赏金额
     private BigDecimal rewardAmount;
 
-    //跑腿员实得金额
+    //技能者实得金额
     private BigDecimal runnerIncome;
 
     //期望完成时间

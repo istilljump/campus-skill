@@ -12,16 +12,16 @@ import java.util.List;
 @Mapper
 public interface RunnerAuditMapper {
 
-    @Insert("insert into runner_audit (runner_id, real_name, student_no, campus, college, id_card, student_card_img, " +
+    @Insert("insert into skiller_audit (runner_id, real_name, student_no, campus, college, id_card, student_card_img, " +
             "status, apply_time) values (#{runnerId}, #{realName}, #{studentNo}, #{campus}, #{college}, #{idCard}, " +
             "#{studentCardImg}, #{status}, #{applyTime})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void insert(RunnerAudit runnerAudit);
 
-    @Select("select * from runner_audit where id = #{id}")
+    @Select("select * from skiller_audit where id = #{id}")
     RunnerAudit getById(Long id);
 
-    @Select("select * from runner_audit where runner_id = #{runnerId} order by apply_time desc limit 1")
+    @Select("select * from skiller_audit where runner_id = #{runnerId} order by apply_time desc limit 1")
     RunnerAudit getLatestByRunnerId(Long runnerId);
 
     /**

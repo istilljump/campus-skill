@@ -9,7 +9,7 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
- * 站内消息（用户端/跑腿员端共用收件箱，recipient_id 为用户ID）
+ * 站内消息（用户端/技能者端共用收件箱，recipient_id 为用户ID）
  */
 @Data
 @Builder

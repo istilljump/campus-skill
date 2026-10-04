@@ -11,7 +11,7 @@ public class RedisConstant {
     //抢单分布式锁 key 前缀，完整键为 campus:order:grab:lock:{orderId}
     public static final String ORDER_GRAB_LOCK = "campus:order:grab:lock:";
 
-    //跑腿员当日接单计数 key 前缀，完整键为 campus:runner:daily:count:{runnerId}:{yyyyMMdd}
+    //技能者当日接单计数 key 前缀，完整键为 campus:runner:daily:count:{runnerId}:{yyyyMMdd}
     public static final String RUNNER_DAILY_COUNT = "campus:runner:daily:count:";
 
     //订单超时标记 key 前缀，完整键为 campus:order:timeout:{orderId}

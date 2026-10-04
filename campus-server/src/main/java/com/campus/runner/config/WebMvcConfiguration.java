@@ -51,8 +51,8 @@ public class WebMvcConfiguration extends WebMvcConfigurationSupport {
                 .excludePathPatterns("/user/shop/status");
 
         registry.addInterceptor(jwtTokenRunnerInterceptor)
-                .addPathPatterns("/runner/**")
-                .excludePathPatterns("/runner/auth/login");
+                .addPathPatterns("/skiller/**")
+                .excludePathPatterns("/skiller/auth/login");
     }
 
     /**
@@ -62,9 +62,9 @@ public class WebMvcConfiguration extends WebMvcConfigurationSupport {
     @Bean
     public Docket adminDocket() {
         ApiInfo apiInfo = new ApiInfoBuilder()
-                .title("校园跑腿项目接口文档")
+                .title("CampusSkill 校园技能工坊接口文档")
                 .version("2.0")
-                .description("校园跑腿项目接口文档")
+                .description("CampusSkill 校园技能工坊接口文档")
                 .build();
         return new Docket(DocumentationType.SWAGGER_2)
                 .groupName("管理端接口")
@@ -82,9 +82,9 @@ public class WebMvcConfiguration extends WebMvcConfigurationSupport {
     @Bean
     public Docket userDocket() {
         ApiInfo apiInfo = new ApiInfoBuilder()
-                .title("校园跑腿项目接口文档")
+                .title("CampusSkill 校园技能工坊接口文档")
                 .version("2.0")
-                .description("校园跑腿项目接口文档")
+                .description("CampusSkill 校园技能工坊接口文档")
                 .build();
         return new Docket(DocumentationType.SWAGGER_2)
                 .groupName("用户端接口")
@@ -102,12 +102,12 @@ public class WebMvcConfiguration extends WebMvcConfigurationSupport {
     @Bean
     public Docket runnerDocket() {
         ApiInfo apiInfo = new ApiInfoBuilder()
-                .title("校园跑腿项目接口文档")
+                .title("CampusSkill 校园技能工坊接口文档")
                 .version("2.0")
-                .description("校园跑腿项目接口文档")
+                .description("CampusSkill 校园技能工坊接口文档")
                 .build();
         return new Docket(DocumentationType.SWAGGER_2)
-                .groupName("跑腿员端接口")
+                .groupName("技能者端接口")
                 .apiInfo(apiInfo)
                 .select()
                 .apis(RequestHandlerSelectors.basePackage("com.campus.runner.controller.runner"))
@@ -122,7 +122,7 @@ public class WebMvcConfiguration extends WebMvcConfigurationSupport {
     protected void addResourceHandlers(ResourceHandlerRegistry registry) {
         registry.addResourceHandler("/doc.html").addResourceLocations("classpath:/META-INF/resources/");
         registry.addResourceHandler("/webjars/**").addResourceLocations("classpath:/META-INF/resources/webjars/");
-        //前端静态页面（管理端/用户端H5/跑腿员端H5），目录入口由 PageController 重定向
+        //前端静态页面（管理端/用户端H5/技能者端H5），目录入口由 PageController 重定向
         registry.addResourceHandler("/**").addResourceLocations("classpath:/static/");
     }
 }

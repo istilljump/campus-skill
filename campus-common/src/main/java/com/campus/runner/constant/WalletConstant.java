@@ -8,7 +8,7 @@ public class WalletConstant {
     /**
      * 钱包流水类型
      */
-    public static final Integer TYPE_INCOME = 1;      //跑腿收入
+    public static final Integer TYPE_INCOME = 1;      //技能收入
     public static final Integer TYPE_EXPENSE = 2;     //支付支出
     public static final Integer TYPE_RECHARGE = 3;    //充值
     public static final Integer TYPE_WITHDRAW = 4;    //提现

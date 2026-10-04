@@ -21,12 +21,12 @@ import javax.validation.Valid;
 import java.util.List;
 
 /**
- * 管理端-跑腿订单类型管理
+ * 管理端-技能订单类型管理
  */
 @RestController
 @Slf4j
 @Api(tags = "管理端-订单类型管理接口")
-@RequestMapping("/admin/errandType")
+@RequestMapping("/admin/skillCategory")
 public class ErrandTypeController {
 
     @Autowired

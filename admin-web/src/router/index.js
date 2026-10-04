@@ -10,10 +10,13 @@ const routes = [
     children: [
       { path: 'dashboard', name: 'dashboard', component: () => import('@/views/dashboard/DashboardView.vue'), meta: { title: '数据大屏' } },
       { path: 'orders', name: 'orders', component: () => import('@/views/order/OrderListView.vue'), meta: { title: '订单管理' } },
-      { path: 'runners', name: 'runners', component: () => import('@/views/runner/RunnerListView.vue'), meta: { title: '跑腿员管理' } },
-      { path: 'audits', name: 'audits', component: () => import('@/views/runner/AuditListView.vue'), meta: { title: '认证审核' } },
+      { path: 'runners', name: 'runners', component: () => import('@/views/runner/RunnerListView.vue'), meta: { title: '技能者管理' } },
+      { path: 'audits', name: 'audits', component: () => import('@/views/runner/AuditListView.vue'), meta: { title: '技能者认证' } },
       { path: 'withdraws', name: 'withdraws', component: () => import('@/views/finance/WithdrawListView.vue'), meta: { title: '提现审核' } },
-      { path: 'types', name: 'types', component: () => import('@/views/type/TypeListView.vue'), meta: { title: '订单类型' } },
+      { path: 'types', name: 'types', component: () => import('@/views/type/TypeListView.vue'), meta: { title: '技能类目' } },
+      { path: 'portfolio-audits', name: 'portfolio-audits', component: () => import('@/views/skill/PortfolioAuditView.vue'), meta: { title: '作品审核' } },
+      { path: 'disputes', name: 'disputes', component: () => import('@/views/skill/DisputeView.vue'), meta: { title: '仲裁工单' } },
+      { path: 'credit-rank', name: 'credit-rank', component: () => import('@/views/skill/CreditRankView.vue'), meta: { title: '信用榜单' } },
       { path: 'users', name: 'users', component: () => import('@/views/user/UserListView.vue'), meta: { title: '用户管理' } },
       { path: 'employees', name: 'employees', component: () => import('@/views/employee/EmployeeListView.vue'), meta: { title: '员工管理' } },
       { path: 'shop', name: 'shop', component: () => import('@/views/shop/ShopView.vue'), meta: { title: '营业设置' } },
@@ -35,7 +38,7 @@ router.beforeEach((to) => {
 })
 
 router.afterEach((to) => {
-  document.title = to.meta.title ? `${to.meta.title} · 校园跑腿管理端` : '校园跑腿管理端'
+  document.title = to.meta.title ? `${to.meta.title} · CampusSkill 技能工坊管理端` : 'CampusSkill 技能工坊管理端'
 })
 
 export default router

@@ -18,12 +18,12 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 /**
- * 跑腿员端-消息中心（收件箱与用户端共用，按用户ID存储）
+ * 技能者端-消息中心（收件箱与用户端共用，按用户ID存储）
  */
 @RestController("runnerMessageController")
 @Slf4j
-@Api(tags = "跑腿员端-消息中心接口")
-@RequestMapping("/runner/message")
+@Api(tags = "技能者端-消息中心接口")
+@RequestMapping("/skiller/message")
 public class MessageController {
 
     @Autowired

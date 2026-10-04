@@ -21,12 +21,12 @@ import java.util.Map;
 @Mapper
 public interface OrderMapper {
 
-    @Insert("insert into orders (number, user_id, type_id, title, description, pickup_address, delivery_address, campus, " +
+    @Insert("insert into orders (number, user_id, runner_id, type_id, mode, service_item_id, title, description, pickup_address, delivery_address, campus, " +
             "reward_amount, platform_fee, runner_income, status, expected_time, timeout_time, pay_method, pay_status, " +
-            "order_time, pay_time, create_time, update_time) " +
-            "values (#{number}, #{userId}, #{typeId}, #{title}, #{description}, #{pickupAddress}, #{deliveryAddress}, #{campus}, " +
+            "order_time, pay_time, create_time, update_time, deliverable_url, deliverable_note, deliver_time, rework_count, auto_accept_time) " +
+            "values (#{number}, #{userId}, #{runnerId}, #{typeId}, #{mode}, #{serviceItemId}, #{title}, #{description}, #{pickupAddress}, #{deliveryAddress}, #{campus}, " +
             "#{rewardAmount}, #{platformFee}, #{runnerIncome}, #{status}, #{expectedTime}, #{timeoutTime}, #{payMethod}, #{payStatus}, " +
-            "#{orderTime}, #{payTime}, #{createTime}, #{updateTime})")
+            "#{orderTime}, #{payTime}, #{createTime}, #{updateTime}, #{deliverableUrl}, #{deliverableNote}, #{deliverTime}, #{reworkCount}, #{autoAcceptTime})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void insert(Orders order);
 
@@ -55,12 +55,12 @@ public interface OrderMapper {
     Page<Orders> pageUserOrders(@Param("userId") Long userId, @Param("q") OrdersPageQueryDTO ordersPageQueryDTO);
 
     /**
-     * 跑腿员端-订单大厅分页（待接单订单）
+     * 技能者端-订单大厅分页（待接单订单）
      */
     Page<OrderHallVO> pageHallOrders(OrdersPageQueryDTO ordersPageQueryDTO);
 
     /**
-     * 跑腿员端-接单记录分页
+     * 技能者端-接单记录分页
      */
     Page<Orders> pageRunnerOrders(@Param("runnerId") Long runnerId, @Param("q") OrdersPageQueryDTO ordersPageQueryDTO);
 
@@ -90,27 +90,27 @@ public interface OrderMapper {
     OrderStatisticsVO statistics();
 
     /**
-     * 跑腿员当日已接单数（进行中+已送达）
+     * 技能者当日已接单数（进行中+已送达）
      */
     @Select("select count(1) from orders where runner_id = #{runnerId} and status in (3, 4) and date(update_time) = curdate()")
     int countRunnerTodayOrders(@Param("runnerId") Long runnerId);
 
     /**
-     * 跑腿员今日收入（今日完成订单的实得金额合计）
+     * 技能者今日收入（今日完成订单的实得金额合计）
      */
     @Select("select ifnull(sum(runner_income), 0) from orders " +
             "where runner_id = #{runnerId} and status = 5 and date(finish_time) = curdate()")
     BigDecimal sumRunnerTodayIncome(@Param("runnerId") Long runnerId);
 
     /**
-     * 时间区间内跑腿员完成订单数
+     * 时间区间内技能者完成订单数
      */
     @Select("select count(1) from orders where runner_id = #{runnerId} and status = 5 " +
             "and date(finish_time) between #{begin} and #{end}")
     int countRunnerOrdersBetween(@Param("runnerId") Long runnerId, @Param("begin") LocalDate begin, @Param("end") LocalDate end);
 
     /**
-     * 时间区间内跑腿员收入合计
+     * 时间区间内技能者收入合计
      */
     @Select("select ifnull(sum(runner_income), 0) from orders where runner_id = #{runnerId} and status = 5 " +
             "and date(finish_time) between #{begin} and #{end}")
@@ -123,10 +123,16 @@ public interface OrderMapper {
     List<Orders> findUnpaidTimeoutOrders();
 
     /**
-     * 超时未送达订单（进行中且超过超时时间）
+     * 超时未交付订单（进行中或返修中且超过超时时间）
      */
-    @Select("select * from orders where status = 3 and timeout_time is not null and timeout_time <= #{now}")
+    @Select("select * from orders where status in (3, 8) and timeout_time is not null and timeout_time <= #{now}")
     List<Orders> findOverdueDeliveryOrders(@Param("now") LocalDateTime now);
+
+    /**
+     * 到达自动验收截止时间仍为已交付的订单（48小时未验收自动确认）
+     */
+    @Select("select * from orders where status = 4 and auto_accept_time is not null and auto_accept_time <= #{now}")
+    List<Orders> findAutoAcceptOrders(@Param("now") LocalDateTime now);
 
     /**
      * 超时无人接单订单（已支付但超过超时时间仍待接单）
@@ -145,10 +151,10 @@ public interface OrderMapper {
     List<Map<String, Object>> statDailyTrend(@Param("begin") LocalDate begin);
 
     /**
-     * 数据大屏-跑腿类型订单量 TOP N
+     * 数据大屏-技能类目订单量 TOP N
      */
     @Select("select t.name as name, count(*) as count from orders o " +
-            "join errand_type t on o.type_id = t.id " +
+            "join skill_category t on o.type_id = t.id " +
             "group by t.name order by count desc limit #{limit}")
     List<Map<String, Object>> statTypeRank(@Param("limit") int limit);
 
@@ -160,7 +166,7 @@ public interface OrderMapper {
     List<Map<String, Object>> statCampusRank();
 
     /**
-     * 跑腿员端-按日统计完成单量与收入（按送达时间）
+     * 技能者端-按日统计完成单量与收入（按送达时间）
      */
     @Select("select date_format(finish_time, '%Y-%m-%d') as date, count(*) as orderCount, " +
             "ifnull(sum(runner_income), 0) as amount from orders " +

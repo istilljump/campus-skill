@@ -20,12 +20,12 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.validation.Valid;
 
 /**
- * 管理端-跑腿员认证审核
+ * 管理端-技能者认证审核
  */
 @RestController
 @Slf4j
 @Api(tags = "管理端-认证审核接口")
-@RequestMapping("/admin/runnerAudit")
+@RequestMapping("/admin/skillerAudit")
 public class RunnerAuditController {
 
     @Autowired

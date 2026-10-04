@@ -113,7 +113,7 @@ public class RunnerServiceImpl implements RunnerService {
     public void applyAudit(Long userId, RunnerAuditApplyDTO dto) {
         Runner runner = runnerMapper.getByUserId(userId);
         if (runner == null) {
-            //首次申请：创建跑腿员档案并初始化钱包
+            //首次申请：创建技能者档案并初始化钱包
             runner = Runner.builder()
                     .userId(userId)
                     .name(dto.getRealName())
@@ -150,7 +150,7 @@ public class RunnerServiceImpl implements RunnerService {
 
         Runner upd = Runner.builder().id(runner.getId()).auditStatus(RunnerConstant.AUDIT_REVIEWING).build();
         runnerMapper.update(upd);
-        log.info("跑腿员认证申请已提交，userId={}, runnerId={}", userId, runner.getId());
+        log.info("技能者认证申请已提交，userId={}, runnerId={}", userId, runner.getId());
     }
 
     @Override
@@ -169,6 +169,8 @@ public class RunnerServiceImpl implements RunnerService {
                 .todayIncome(orderMapper.sumRunnerTodayIncome(runner.getId()))
                 .completedOrders(runner.getCompletedOrders())
                 .score(runner.getScore())
+                .creditScore(runner.getCreditScore())
+                .skillLevel(runner.getSkillLevel())
                 .balance(walletService.getWallet(userId).getBalance())
                 .build();
     }
@@ -221,7 +223,7 @@ public class RunnerServiceImpl implements RunnerService {
         if (level != runner.getRunnerLevel()) {
             Runner upd = Runner.builder().id(runnerId).runnerLevel(level).build();
             runnerMapper.update(upd);
-            log.info("跑腿员等级更新，runnerId={}, level={}", runnerId, level);
+            log.info("技能者等级更新，runnerId={}, level={}", runnerId, level);
         }
     }
 
@@ -269,7 +271,7 @@ public class RunnerServiceImpl implements RunnerService {
         }
         Runner upd = Runner.builder().id(runnerId).status(status).build();
         runnerMapper.update(upd);
-        log.info("跑腿员状态更新，runnerId={}, status={}", runnerId, status);
+        log.info("技能者状态更新，runnerId={}, status={}", runnerId, status);
     }
 
     @Override

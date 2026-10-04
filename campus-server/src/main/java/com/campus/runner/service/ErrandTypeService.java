@@ -8,7 +8,7 @@ import java.util.List;
 public interface ErrandTypeService {
 
     /**
-     * 用户端/跑腿员端-启用中的订单类型
+     * 用户端/技能者端-启用中的订单类型
      */
     List<ErrandTypeVO> listEnabled();
 

@@ -11,7 +11,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
- * 跑腿订单
+ * 技能订单
  */
 @Data
 @Builder
@@ -20,7 +20,7 @@ import java.time.LocalDateTime;
 public class Orders implements Serializable {
 
     /**
-     * 订单状态 1待支付 2待接单 3进行中 4已送达 5已完成 6已取消 7已超时
+     * 订单状态 1待支付 2待接单 3进行中 4已交付 5已完成 6已取消 7已超时 8返修中 9仲裁中
      */
     public static final Integer PENDING_PAYMENT = 1;
     public static final Integer TO_BE_TAKEN = 2;
@@ -29,6 +29,8 @@ public class Orders implements Serializable {
     public static final Integer COMPLETED = 5;
     public static final Integer CANCELLED = 6;
     public static final Integer TIMEOUT = 7;
+    public static final Integer REWORK = 8;
+    public static final Integer DISPUTE = 9;
 
     /**
      * 支付状态 0未支付 1已支付 2已退款
@@ -38,7 +40,13 @@ public class Orders implements Serializable {
     public static final Integer REFUND = 2;
 
     /**
-     * 取消方 1用户 2跑腿员 3平台
+     * 撮合模式 1悬赏 2服务预约
+     */
+    public static final Integer MODE_REWARD = 1;
+    public static final Integer MODE_BOOKING = 2;
+
+    /**
+     * 取消方 1用户 2技能者 3平台
      */
     public static final Integer CANCEL_BY_USER = 1;
     public static final Integer CANCEL_BY_RUNNER = 2;
@@ -54,11 +62,17 @@ public class Orders implements Serializable {
     //发单用户id
     private Long userId;
 
-    //跑腿员id（接单后回填）
+    //技能者id（接单后回填）
     private Long runnerId;
 
     //订单类型id
     private Long typeId;
+
+    //撮合模式 1悬赏 2服务预约
+    private Integer mode;
+
+    //关联服务货架id（预约模式）
+    private Long serviceItemId;
 
     //订单标题
     private String title;
@@ -72,6 +86,12 @@ public class Orders implements Serializable {
     //送达地址
     private String deliveryAddress;
 
+    //交付物地址（文件/图片URL）
+    private String deliverableUrl;
+
+    //交付说明
+    private String deliverableNote;
+
     //校区
     private String campus;
 
@@ -81,10 +101,10 @@ public class Orders implements Serializable {
     //平台服务费
     private BigDecimal platformFee;
 
-    //跑腿员实得金额
+    //技能者实得金额
     private BigDecimal runnerIncome;
 
-    //订单状态 1待支付 2待接单 3进行中 4已送达 5已完成 6已取消 7已超时
+    //订单状态 1待支付 2待接单 3进行中 4已交付 5已完成 6已取消 7已超时 8返修中 9仲裁中
     private Integer status;
 
     //期望完成时间
@@ -98,7 +118,7 @@ public class Orders implements Serializable {
     //取消原因
     private String cancelReason;
 
-    //取消方 1用户 2跑腿员 3平台
+    //取消方 1用户 2技能者 3平台
     private Integer cancelBy;
 
     //是否申诉 0否 1是
@@ -121,6 +141,17 @@ public class Orders implements Serializable {
     //取件时间
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime pickupTime;
+
+    //交付时间
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime deliverTime;
+
+    //返修次数
+    private Integer reworkCount;
+
+    //自动验收截止时间
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime autoAcceptTime;
 
     //完成时间
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")

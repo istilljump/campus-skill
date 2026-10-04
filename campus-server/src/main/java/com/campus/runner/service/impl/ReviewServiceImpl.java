@@ -42,6 +42,9 @@ public class ReviewServiceImpl implements ReviewService {
     @Autowired
     private RunnerService runnerService;
 
+    @Autowired
+    private com.campus.runner.service.CreditService creditService;
+
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void submit(Long userId, ReviewSubmitDTO dto) {
@@ -70,8 +73,12 @@ public class ReviewServiceImpl implements ReviewService {
                 .createTime(LocalDateTime.now())
                 .build();
         orderReviewMapper.insert(review);
-        //重算跑腿员综合评分
+        //重算技能者综合评分
         runnerService.updateScore(order.getRunnerId());
+        //信用联动：4星及以上好评加信用分
+        if (dto.getScore() != null && dto.getScore() >= 4) {
+            creditService.addCredit(order.getRunnerId(), 2, "好评+2", order.getId());
+        }
     }
 
     @Override

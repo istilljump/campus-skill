@@ -11,13 +11,13 @@ import javax.validation.constraints.NotBlank;
 import java.io.Serializable;
 
 /**
- * 跑腿员端-认证申请
+ * 技能者端-认证申请
  */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@ApiModel("跑腿员认证申请模型")
+@ApiModel("技能者认证申请模型")
 public class RunnerAuditApplyDTO implements Serializable {
 
     private static final long serialVersionUID = 1L;

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>campus-runner 管理端</title>
+<title>CampusSkill 技能工坊管理端</title>
 <link rel="stylesheet" href="/assets/tokens.css">
 <link rel="stylesheet" href="/assets/vendor/element-plus.css">
 <script src="/assets/vendor/vue.global.prod.js"></script>
@@ -52,8 +52,8 @@ async function api(method, url, body, token) {
   return j;
 }
 
-const STATUS = { 1:"待支付", 2:"待接单", 3:"进行中", 4:"已送达", 5:"已完成", 6:"已取消", 7:"已超时" };
-const STATUS_TAG = { 1:"info", 2:"warning", 3:"", 4:"", 5:"success", 6:"danger", 7:"danger" };
+const STATUS = { 1:"待支付", 2:"待接单", 3:"进行中", 4:"已送达", 5:"已完成", 6:"已取消", 7:"已超时", 8:"返修中", 9:"仲裁中" };
+const STATUS_TAG = { 1:"info", 2:"warning", 3:"", 4:"", 5:"success", 6:"danger", 7:"danger", 8:"warning", 9:"danger" };
 
 const app = createApp({
   setup() {
@@ -82,12 +82,22 @@ const app = createApp({
     const orders = ref({ records: [], total: 0 });
     const orderQuery = reactive({ page: 1, pageSize: 10, status: null });
     const orderDetail = ref(null); const detailVisible = ref(false);
-    /* runners */
-    const runners = ref({ records: [], total: 0 });
-    const runnerQuery = reactive({ page: 1, pageSize: 10 });
+    /* skillers */
+    const skillers = ref({ records: [], total: 0 });
+    const skillerQuery = reactive({ page: 1, pageSize: 10 });
     /* audits */
     const audits = ref({ records: [], total: 0 });
     const auditQuery = reactive({ page: 1, pageSize: 10, status: 0 });
+    /* portfolios */
+    const portfolios = ref({ list: [], total: 0 });
+    const portfolioQuery = reactive({ page: 1, pageSize: 10, status: 0 });
+    const portfolioDialog = ref(false);
+    const portfolioForm = reactive({ id: null, status: 1, skillLevel: null, auditOpinion: "" });
+    /* disputes */
+    const disputes = ref({ list: [], total: 0 });
+    const disputeQuery = reactive({ page: 1, pageSize: 10, status: 0 });
+    const disputeDialog = ref(false);
+    const disputeForm = reactive({ id: null, status: null, verdict: "" });
     /* withdraws */
     const withdraws = ref({ records: [], total: 0 });
     const wdQuery = reactive({ page: 1, pageSize: 10, status: 0 });
@@ -118,25 +128,65 @@ const app = createApp({
     }
     async function showOrder(id) { orderDetail.value = (await api("GET", "/admin/order/detail/" + id, null, token)).data; detailVisible.value = true; }
 
-    async function loadRunners() {
-      const q = new URLSearchParams({ page: runnerQuery.page, pageSize: runnerQuery.pageSize });
-      runners.value = (await api("GET", "/admin/runner/page?" + q, null, token)).data || { records: [], total: 0 };
+    async function loadSkillers() {
+      const q = new URLSearchParams({ page: skillerQuery.page, pageSize: skillerQuery.pageSize });
+      skillers.value = (await api("GET", "/admin/skiller/page?" + q, null, token)).data || { records: [], total: 0 };
     }
-    async function toggleRunner(row) {
-      const r = await api("POST", "/admin/runner/status/" + (row.status === 1 ? 0 : 1) + "?runnerId=" + row.id, null, token);
-      r.code === 1 ? (ElementPlus.ElMessage.success("已更新"), loadRunners()) : ElementPlus.ElMessage.error(r.msg);
+    async function toggleSkiller(row) {
+      const r = await api("POST", "/admin/skiller/status/" + (row.status === 1 ? 0 : 1) + "?skillerId=" + row.id, null, token);
+      r.code === 1 ? (ElementPlus.ElMessage.success("已更新"), loadSkillers()) : ElementPlus.ElMessage.error(r.msg);
     }
 
     async function loadAudits() {
       const q = new URLSearchParams({ page: auditQuery.page, pageSize: auditQuery.pageSize });
       if (auditQuery.status !== null && auditQuery.status !== "") q.set("status", auditQuery.status);
-      audits.value = (await api("GET", "/admin/runnerAudit/page?" + q, null, token)).data || { records: [], total: 0 };
+      audits.value = (await api("GET", "/admin/skillerAudit/page?" + q, null, token)).data || { records: [], total: 0 };
     }
     async function processAudit(row, status) {
       const { value } = await ElementPlus.ElMessageBox.prompt(
-        status === 1 ? "通过该认证申请？" : "驳回该认证申请？请填写原因", "认证审核", { inputValue: status === 1 ? "信息无误" : "" });
-      const r = await api("PUT", "/admin/runnerAudit/process", { id: row.id, status, auditRemark: value || "-" }, token);
+        status === 1 ? "通过该认证申请？" : "驳回该认证申请？请填写原因", "技能者认证", { inputValue: status === 1 ? "信息无误" : "" });
+      const r = await api("PUT", "/admin/skillerAudit/process", { id: row.id, status, auditRemark: value || "-" }, token);
       r.code === 1 ? (ElementPlus.ElMessage.success("已处理"), loadAudits()) : ElementPlus.ElMessage.error(r.msg);
+    }
+
+    async function loadPortfolios() {
+      const q = new URLSearchParams({ page: portfolioQuery.page, pageSize: portfolioQuery.pageSize });
+      if (portfolioQuery.status !== null && portfolioQuery.status !== "") q.set("status", portfolioQuery.status);
+      const data = (await api("GET", "/admin/portfolioAudit/page?" + q, null, token)).data || {};
+      portfolios.value = { list: data.list || data.records || [], total: Number(data.total) || 0 };
+    }
+    function openPortfolio(row) {
+      Object.assign(portfolioForm, { id: row.id, status: 1, skillLevel: null, auditOpinion: "" });
+      portfolioDialog.value = true;
+    }
+    async function savePortfolio() {
+      if (portfolioForm.status === 1 && !portfolioForm.skillLevel) {
+        ElementPlus.ElMessage.warning("通过时必须选择技能等级");
+        return;
+      }
+      const body = { id: portfolioForm.id, status: portfolioForm.status,
+                     auditOpinion: portfolioForm.auditOpinion || "-" };
+      if (portfolioForm.status === 1) body.skillLevel = portfolioForm.skillLevel;
+      const r = await api("PUT", "/admin/portfolioAudit/process", body, token);
+      r.code === 1 ? (portfolioDialog.value = false, ElementPlus.ElMessage.success("已处理"), loadPortfolios()) : ElementPlus.ElMessage.error(r.msg);
+    }
+
+    async function loadDisputes() {
+      const q = new URLSearchParams({ page: disputeQuery.page, pageSize: disputeQuery.pageSize });
+      if (disputeQuery.status !== null && disputeQuery.status !== "") q.set("status", disputeQuery.status);
+      const data = (await api("GET", "/admin/dispute/page?" + q, null, token)).data || {};
+      disputes.value = { list: data.list || data.records || [], total: Number(data.total) || 0 };
+    }
+    function openDispute(row) {
+      Object.assign(disputeForm, { id: row.id, status: null, verdict: "" });
+      disputeDialog.value = true;
+    }
+    async function saveDispute() {
+      if (!disputeForm.status) { ElementPlus.ElMessage.warning("请选择仲裁结果"); return; }
+      if (!disputeForm.verdict) { ElementPlus.ElMessage.warning("请填写仲裁结论"); return; }
+      const r = await api("PUT", "/admin/dispute/" + disputeForm.id + "/verdict",
+        { status: disputeForm.status, verdict: disputeForm.verdict }, token);
+      r.code === 1 ? (disputeDialog.value = false, ElementPlus.ElMessage.success("已仲裁"), loadDisputes()) : ElementPlus.ElMessage.error(r.msg);
     }
 
     async function loadWithdraws() {
@@ -151,21 +201,21 @@ const app = createApp({
       r.code === 1 ? (ElementPlus.ElMessage.success("已处理"), loadWithdraws()) : ElementPlus.ElMessage.error(r.msg);
     }
 
-    async function loadTypes() { types.value = (await api("GET", "/admin/errandType/list", null, token)).data || []; }
+    async function loadTypes() { types.value = (await api("GET", "/admin/skillCategory/list", null, token)).data || []; }
     function editType(row) { Object.assign(typeForm, row || { id: null, name: "", description: "", feeRate: 0.1, sort: 0 }); typeDialog.value = true; }
     async function saveType() {
       const r = typeForm.id
-        ? await api("PUT", "/admin/errandType", typeForm, token)
-        : await api("POST", "/admin/errandType", typeForm, token);
+        ? await api("PUT", "/admin/skillCategory", typeForm, token)
+        : await api("POST", "/admin/skillCategory", typeForm, token);
       r.code === 1 ? (typeDialog.value = false, ElementPlus.ElMessage.success("保存成功"), loadTypes()) : ElementPlus.ElMessage.error(r.msg);
     }
     async function toggleType(row) {
-      const r = await api("PUT", "/admin/errandType/status/" + (row.status === 1 ? 0 : 1) + "?id=" + row.id, null, token);
+      const r = await api("PUT", "/admin/skillCategory/status/" + (row.status === 1 ? 0 : 1) + "?id=" + row.id, null, token);
       r.code === 1 ? loadTypes() : ElementPlus.ElMessage.error(r.msg);
     }
     async function delType(row) {
       await ElementPlus.ElMessageBox.confirm("确认删除该类型？", "提示", { type: "warning" });
-      const r = await api("DELETE", "/admin/errandType/" + row.id, null, token);
+      const r = await api("DELETE", "/admin/skillCategory/" + row.id, null, token);
       r.code === 1 ? (ElementPlus.ElMessage.success("已删除"), loadTypes()) : ElementPlus.ElMessage.error(r.msg);
     }
 
@@ -174,15 +224,18 @@ const app = createApp({
       users.value = (await api("GET", "/admin/user/page?" + q, null, token)).data || { records: [], total: 0 };
     }
 
-    const loaders = { dashboard: loadStat, orders: loadOrders, runners: loadRunners, audits: loadAudits,
-                      withdraws: loadWithdraws, types: loadTypes, users: loadUsers };
+    const loaders = { dashboard: loadStat, orders: loadOrders, skillers: loadSkillers, audits: loadAudits,
+                      withdraws: loadWithdraws, types: loadTypes, users: loadUsers,
+                      portfolios: loadPortfolios, disputes: loadDisputes };
     function go(key) { menu.value = key; page.value = key; loaders[key] && loaders[key](); }
     onMounted(() => { if (token) loadStat(); });
 
     return { token, page, loginForm, doLogin, logout, menu, go, loading, statusBars, money,
              stat, orders, orderQuery, loadOrders, showOrder, orderDetail, detailVisible, STATUS, STATUS_TAG,
-             runners, runnerQuery, loadRunners, toggleRunner,
+             skillers, skillerQuery, loadSkillers, toggleSkiller,
              audits, auditQuery, loadAudits, processAudit,
+             portfolios, portfolioQuery, loadPortfolios, openPortfolio, portfolioDialog, portfolioForm, savePortfolio,
+             disputes, disputeQuery, loadDisputes, openDispute, disputeDialog, disputeForm, saveDispute,
              withdraws, wdQuery, loadWithdraws, processWd,
              types, typeDialog, typeForm, editType, saveType, toggleType, delType,
              users, userQuery, loadUsers };
@@ -190,8 +243,8 @@ const app = createApp({
   template: `
   <div v-if="page==='login'" class="login-wrap">
     <div class="login-card">
-      <div class="login-title">campus-runner 管理端</div>
-      <p style="text-align:center;color:var(--text-tertiary);margin-bottom:24px">校园综合跑腿服务平台</p>
+      <div class="login-title">CampusSkill 技能工坊管理端</div>
+      <p style="text-align:center;color:var(--text-tertiary);margin-bottom:24px">CampusSkill 校园技能服务平台</p>
       <el-input v-model="loginForm.username" placeholder="用户名" size="large" style="margin-bottom:16px"></el-input>
       <el-input v-model="loginForm.password" type="password" placeholder="密码" size="large" show-password style="margin-bottom:24px" @keyup.enter="doLogin"></el-input>
       <el-button type="primary" size="large" style="width:100%" @click="doLogin">登 录</el-button>
@@ -200,13 +253,13 @@ const app = createApp({
 
   <div v-else class="layout">
     <div class="side">
-      <div class="logo">🚴 campus-runner</div>
-      <div v-for="m in [['dashboard','📊 数据看板'],['orders','🧾 订单管理'],['runners','🏃 跑腿员管理'],['audits','✅ 认证审核'],['withdraws','💰 提现审核'],['types','🏷️ 订单类型'],['users','👥 用户管理']]"
+      <div class="logo">🛠️ CampusSkill 技能工坊</div>
+      <div v-for="m in [['dashboard','📊 数据看板'],['orders','🧾 订单管理'],['skillers','🏃 技能者管理'],['audits','✅ 技能者认证'],['withdraws','💰 提现审核'],['types','🏷️ 技能类目'],['portfolios','🎨 作品审核'],['disputes','⚖️ 仲裁工单'],['users','👥 用户管理']]"
         :key="m[0]" class="menu-item" :class="{active: menu===m[0]}" @click="go(m[0])">{{ m[1] }}</div>
       <div class="menu-item" style="margin-top:40px" @click="logout">🚪 退出登录</div>
     </div>
     <div class="main">
-      <div class="topbar"><h2>{{ {dashboard:'数据看板',orders:'订单管理',runners:'跑腿员管理',audits:'认证审核',withdraws:'提现审核',types:'订单类型',users:'用户管理'}[menu] }}</h2>
+      <div class="topbar"><h2>{{ {dashboard:'数据看板',orders:'订单管理',skillers:'技能者管理',audits:'技能者认证',withdraws:'提现审核',types:'技能类目',portfolios:'作品审核',disputes:'仲裁工单',users:'用户管理'}[menu] }}</h2>
         <el-tag type="info">管理端 · admin</el-tag></div>
 
       <!-- 看板 -->
@@ -258,9 +311,9 @@ const app = createApp({
           :page-size="orderQuery.pageSize" v-model:current-page="orderQuery.page" @current-change="loadOrders"></el-pagination>
       </div>
 
-      <!-- 跑腿员 -->
-      <div v-if="menu==='runners'" class="stat-panel">
-        <el-table :data="runners.records" stripe>
+      <!-- 技能者 -->
+      <div v-if="menu==='skillers'" class="stat-panel">
+        <el-table :data="skillers.records" stripe>
           <el-table-column prop="id" label="ID" width="60"></el-table-column>
           <el-table-column prop="name" label="姓名" width="100"></el-table-column>
           <el-table-column prop="phone" label="手机号" width="120"></el-table-column>
@@ -272,14 +325,77 @@ const app = createApp({
             <template #default="{row}"><el-tag :type="row.auditStatus===1?'success':'info'" size="small">
               {{ ['待认证','已认证','已拒绝','审核中'][row.auditStatus] }}</el-tag></template></el-table-column>
           <el-table-column label="操作"><template #default="{row}">
-            <el-button link :type="row.status===1?'danger':'success'" @click="toggleRunner(row)">{{ row.status===1?'禁用':'启用' }}</el-button>
+            <el-button link :type="row.status===1?'danger':'success'" @click="toggleSkiller(row)">{{ row.status===1?'禁用':'启用' }}</el-button>
           </template></el-table-column>
         </el-table>
-        <el-pagination style="margin-top:16px" layout="prev, pager, next, total" :total="Number(runners.total)"
-          :page-size="runnerQuery.pageSize" v-model:current-page="runnerQuery.page" @current-change="loadRunners"></el-pagination>
+        <el-pagination style="margin-top:16px" layout="prev, pager, next, total" :total="Number(skillers.total)"
+          :page-size="skillerQuery.pageSize" v-model:current-page="skillerQuery.page" @current-change="loadSkillers"></el-pagination>
       </div>
 
-      <!-- 认证审核 -->
+      <!-- 作品审核 -->
+      <div v-if="menu==='portfolios'" class="stat-panel">
+        <el-radio-group v-model="portfolioQuery.status" style="margin-bottom:16px" @change="loadPortfolios">
+          <el-radio-button :label="0">待审核</el-radio-button><el-radio-button :label="1">通过</el-radio-button>
+          <el-radio-button :label="2">驳回</el-radio-button><el-radio-button label="">全部</el-radio-button>
+        </el-radio-group>
+        <el-table :data="portfolios.list" stripe>
+          <el-table-column prop="id" label="ID" width="60"></el-table-column>
+          <el-table-column prop="skillerId" label="技能者ID" width="90"></el-table-column>
+          <el-table-column prop="title" label="作品标题" min-width="140"></el-table-column>
+          <el-table-column prop="categoryId" label="类目ID" width="80"></el-table-column>
+          <el-table-column label="封面" width="90">
+            <template #default="{row}">
+              <el-image v-if="row.coverUrl" :src="row.coverUrl" :preview-src-list="[row.coverUrl]"
+                preview-teleported fit="cover" style="width:40px;height:40px;border-radius:4px"></el-image>
+              <span v-else>无</span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="description" label="作品描述" min-width="140" show-overflow-tooltip></el-table-column>
+          <el-table-column label="状态" width="90">
+            <template #default="{row}"><el-tag :type="['warning','success','danger'][row.status]" size="small">
+              {{ ['待审核','通过','驳回'][row.status] }}</el-tag></template>
+          </el-table-column>
+          <el-table-column prop="auditOpinion" label="审核意见" min-width="110" show-overflow-tooltip></el-table-column>
+          <el-table-column prop="createTime" label="提交时间" width="170"></el-table-column>
+          <el-table-column label="操作" width="90"><template #default="{row}">
+            <el-button link type="primary" :disabled="row.status!==0" @click="openPortfolio(row)">审核</el-button>
+          </template></el-table-column>
+        </el-table>
+        <el-pagination style="margin-top:16px" layout="prev, pager, next, total" :total="Number(portfolios.total)"
+          :page-size="portfolioQuery.pageSize" v-model:current-page="portfolioQuery.page" @current-change="loadPortfolios"></el-pagination>
+      </div>
+
+      <!-- 仲裁工单 -->
+      <div v-if="menu==='disputes'" class="stat-panel">
+        <el-radio-group v-model="disputeQuery.status" style="margin-bottom:16px" @change="loadDisputes">
+          <el-radio-button :label="0">待仲裁</el-radio-button><el-radio-button :label="1">退款用户</el-radio-button>
+          <el-radio-button :label="2">放款技能者</el-radio-button><el-radio-button :label="3">已驳回</el-radio-button>
+          <el-radio-button label="">全部</el-radio-button>
+        </el-radio-group>
+        <el-table :data="disputes.list" stripe>
+          <el-table-column prop="id" label="ID" width="60"></el-table-column>
+          <el-table-column prop="orderNumber" label="订单号" width="190"></el-table-column>
+          <el-table-column prop="orderTitle" label="订单标题" min-width="130" show-overflow-tooltip></el-table-column>
+          <el-table-column prop="userName" label="用户" width="100"></el-table-column>
+          <el-table-column label="仲裁原因" width="100">
+            <template #default="{row}">{{ {1:'质量不符',2:'延期',3:'其他'}[row.reasonType] || row.reasonType }}</template>
+          </el-table-column>
+          <el-table-column prop="description" label="问题描述" min-width="140" show-overflow-tooltip></el-table-column>
+          <el-table-column label="状态" width="130">
+            <template #default="{row}"><el-tag :type="['warning','success','','danger'][row.status]" size="small">
+              {{ ['待仲裁','仲裁-退款用户','仲裁-放款技能者','已驳回'][row.status] }}</el-tag></template>
+          </el-table-column>
+          <el-table-column prop="verdict" label="仲裁结论" min-width="120" show-overflow-tooltip></el-table-column>
+          <el-table-column prop="createTime" label="发起时间" width="170"></el-table-column>
+          <el-table-column label="操作" width="90"><template #default="{row}">
+            <el-button link type="primary" :disabled="row.status!==0" @click="openDispute(row)">仲裁</el-button>
+          </template></el-table-column>
+        </el-table>
+        <el-pagination style="margin-top:16px" layout="prev, pager, next, total" :total="Number(disputes.total)"
+          :page-size="disputeQuery.pageSize" v-model:current-page="disputeQuery.page" @current-change="loadDisputes"></el-pagination>
+      </div>
+
+      <!-- 技能者认证 -->
       <div v-if="menu==='audits'" class="stat-panel">
         <el-radio-group v-model="auditQuery.status" style="margin-bottom:16px" @change="loadAudits">
           <el-radio-button :label="0">待审核</el-radio-button><el-radio-button :label="1">已通过</el-radio-button>
@@ -328,7 +444,7 @@ const app = createApp({
           :page-size="wdQuery.pageSize" v-model:current-page="wdQuery.page" @current-change="loadWithdraws"></el-pagination>
       </div>
 
-      <!-- 订单类型 -->
+      <!-- 技能类目 -->
       <div v-if="menu==='types'" class="stat-panel">
         <el-button type="primary" style="margin-bottom:16px" @click="editType(null)">新增类型</el-button>
         <el-table :data="types" stripe>
@@ -378,7 +494,7 @@ const app = createApp({
       <el-descriptions-item label="悬赏">￥{{ orderDetail.rewardAmount }}</el-descriptions-item>
       <el-descriptions-item label="服务费">￥{{ orderDetail.platformFee }}</el-descriptions-item>
       <el-descriptions-item label="发布者">{{ orderDetail.publisherName }} {{ orderDetail.publisherPhone }}</el-descriptions-item>
-      <el-descriptions-item label="跑腿员">{{ orderDetail.runnerName || '暂无' }}</el-descriptions-item>
+      <el-descriptions-item label="技能者">{{ orderDetail.runnerName || '暂无' }}</el-descriptions-item>
     </el-descriptions>
   </el-dialog>
 
@@ -392,6 +508,48 @@ const app = createApp({
     </el-form>
     <template #footer><el-button @click="typeDialog=false">取消</el-button>
       <el-button type="primary" @click="saveType">保存</el-button></template>
+  </el-dialog>
+
+  <!-- 作品审核弹窗 -->
+  <el-dialog v-model="portfolioDialog" title="作品审核" width="440px">
+    <el-form label-width="80px">
+      <el-form-item label="审核结果">
+        <el-radio-group v-model="portfolioForm.status">
+          <el-radio :label="1">通过</el-radio>
+          <el-radio :label="2">驳回</el-radio>
+        </el-radio-group>
+      </el-form-item>
+      <el-form-item v-if="portfolioForm.status===1" label="技能等级">
+        <el-select v-model="portfolioForm.skillLevel" placeholder="请选择技能等级" style="width:160px">
+          <el-option label="C1" :value="1"></el-option>
+          <el-option label="C2" :value="2"></el-option>
+          <el-option label="C3" :value="3"></el-option>
+        </el-select>
+      </el-form-item>
+      <el-form-item label="审核意见">
+        <el-input v-model="portfolioForm.auditOpinion" type="textarea" :rows="3" placeholder="选填"></el-input>
+      </el-form-item>
+    </el-form>
+    <template #footer><el-button @click="portfolioDialog=false">取消</el-button>
+      <el-button type="primary" @click="savePortfolio">提交</el-button></template>
+  </el-dialog>
+
+  <!-- 仲裁弹窗 -->
+  <el-dialog v-model="disputeDialog" title="仲裁处理" width="440px">
+    <el-form label-width="80px">
+      <el-form-item label="仲裁结果">
+        <el-select v-model="disputeForm.status" placeholder="请选择仲裁结果" style="width:200px">
+          <el-option label="退款用户" :value="1"></el-option>
+          <el-option label="放款技能者" :value="2"></el-option>
+          <el-option label="驳回" :value="3"></el-option>
+        </el-select>
+      </el-form-item>
+      <el-form-item label="仲裁结论">
+        <el-input v-model="disputeForm.verdict" type="textarea" :rows="3" placeholder="请填写仲裁结论说明"></el-input>
+      </el-form-item>
+    </el-form>
+    <template #footer><el-button @click="disputeDialog=false">取消</el-button>
+      <el-button type="primary" @click="saveDispute">提交</el-button></template>
   </el-dialog>
   `
 });

@@ -12,7 +12,7 @@ public interface RunnerAuditService {
     PageResult<RunnerAuditVO> page(Integer page, Integer pageSize, Integer status, String studentNo);
 
     /**
-     * 管理端-审核处理：更新审核记录并联动跑腿员认证状态
+     * 管理端-审核处理：更新审核记录并联动技能者认证状态
      */
     void process(RunnerAuditProcessDTO runnerAuditProcessDTO);
 }

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.campus.runner.mapper.DisputeMapper">
+
+    <!-- 新增仲裁工单 -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        insert into dispute (order_id, raised_by, reason_type, description, evidence_urls, status,
+                             verdict, admin_id, create_time, update_time)
+        values (#{orderId}, #{raisedBy}, #{reasonType}, #{description}, #{evidenceUrls}, #{status},
+                #{verdict}, #{adminId}, #{createTime}, #{updateTime})
+    </insert>
+
+    <!-- 按id查询 -->
+    <select id="getById" resultType="com.campus.runner.entity.Dispute">
+        select * from dispute where id = #{id}
+    </select>
+
+    <!-- 管理端-仲裁工单分页（status 为空查全部） -->
+    <select id="listByStatus" resultType="com.campus.runner.entity.Dispute">
+        select * from dispute
+        <where>
+            <if test="status != null">and status = #{status}</if>
+        </where>
+        order by create_time desc
+    </select>
+
+    <!-- 仲裁判决：更新状态/意见/仲裁人 -->
+    <update id="updateStatusVerdict">
+        update dispute
+        set status = #{status},
+            verdict = #{verdict},
+            admin_id = #{adminId},
+            update_time = now()
+        where id = #{id}
+    </update>
+</mapper>

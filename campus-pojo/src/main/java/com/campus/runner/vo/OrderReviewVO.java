@@ -44,7 +44,7 @@ public class OrderReviewVO implements Serializable {
     //评价人昵称（匿名时脱敏）
     private String userName;
 
-    //跑腿员姓名
+    //技能者姓名
     private String runnerName;
 
     //评价时间

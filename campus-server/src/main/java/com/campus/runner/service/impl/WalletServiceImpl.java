@@ -112,6 +112,40 @@ public class WalletServiceImpl implements WalletService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
+    public void deductBestEffort(Long userId, BigDecimal amount, Integer type, Long orderId, String remark) {
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+            return;
+        }
+        WalletAccount wallet = ensureWallet(userId);
+        if (wallet.getStatus() == null || wallet.getStatus() != 1
+                || wallet.getBalance() == null || wallet.getBalance().compareTo(BigDecimal.ZERO) <= 0) {
+            log.warn("[尽力扣除]无可扣余额，跳过，userId={}, amount={}, orderId={}", userId, amount, orderId);
+            return;
+        }
+        BigDecimal deduct = amount.min(wallet.getBalance());
+        int rows = walletAccountMapper.adjustBalance(wallet.getId(), deduct.negate());
+        if (rows == 0) {
+            log.warn("[尽力扣除]并发变动导致扣款失败，userId={}, amount={}, orderId={}", userId, amount, orderId);
+            return;
+        }
+        WalletAccount upd = new WalletAccount();
+        upd.setId(wallet.getId());
+        upd.setTotalExpense(wallet.getTotalExpense().add(deduct));
+        walletAccountMapper.update(upd);
+        WalletTransaction tx = WalletTransaction.builder()
+                .walletId(wallet.getId())
+                .type(type)
+                .amount(deduct)
+                .orderId(orderId)
+                .remark(deduct.compareTo(amount) < 0 ? remark + "（余额不足，实际扣除" + deduct + "元）" : remark)
+                .createTime(LocalDateTime.now())
+                .build();
+        walletTransactionMapper.insert(tx);
+        log.info("尽力扣除完成，userId={}, 请求={}, 实扣={}, orderId={}", userId, amount, deduct, orderId);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
     public void recharge(Long userId, BigDecimal amount) {
         //模拟充值：实际接入微信支付后由支付回调触发
         changeBalance(userId, amount, WalletConstant.TYPE_RECHARGE, null, "钱包充值");

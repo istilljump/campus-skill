@@ -20,7 +20,7 @@ public interface WithdrawRequestMapper {
     WithdrawRequest getById(Long id);
 
     /**
-     * 提现申请分页（跑腿员查自己的，管理端查全部的）
+     * 提现申请分页（技能者查自己的，管理端查全部的）
      */
     Page<WithdrawRequest> page(@Param("userId") Long userId, @Param("status") Integer status);
 

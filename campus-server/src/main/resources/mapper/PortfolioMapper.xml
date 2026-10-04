@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.campus.runner.mapper.PortfolioMapper">
+
+    <!-- 新增作品 -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        insert into portfolio (skiller_id, title, category_id, cover_url, work_urls, description, status,
+                               audit_opinion, auditor_id, create_time, update_time)
+        values (#{skillerId}, #{title}, #{categoryId}, #{coverUrl}, #{workUrls}, #{description}, #{status},
+                #{auditOpinion}, #{auditorId}, #{createTime}, #{updateTime})
+    </insert>
+
+    <!-- 按id查询 -->
+    <select id="getById" resultType="com.campus.runner.entity.Portfolio">
+        select * from portfolio where id = #{id}
+    </select>
+
+    <!-- 技能者自己的作品列表 -->
+    <select id="listBySkiller" resultType="com.campus.runner.entity.Portfolio">
+        select * from portfolio where skiller_id = #{skillerId} order by create_time desc
+    </select>
+
+    <!-- 管理端-作品审核分页（可按状态过滤） -->
+    <select id="listPending" resultType="com.campus.runner.entity.Portfolio">
+        select * from portfolio
+        <where>
+            <if test="status != null">and status = #{status}</if>
+        </where>
+        order by create_time desc
+    </select>
+
+    <!-- 审核处理：更新状态/意见/审核人 -->
+    <update id="updateStatus">
+        update portfolio
+        set status = #{status},
+            audit_opinion = #{auditOpinion},
+            auditor_id = #{auditorId},
+            update_time = now()
+        where id = #{id}
+    </update>
+
+    <!-- 删除自己的作品（归属校验由 where skiller_id 保证） -->
+    <delete id="deleteByIdAndSkiller">
+        delete from portfolio where id = #{id} and skiller_id = #{skillerId}
+    </delete>
+</mapper>

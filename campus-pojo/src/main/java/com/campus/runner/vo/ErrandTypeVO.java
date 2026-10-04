@@ -10,13 +10,13 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 
 /**
- * 跑腿订单类型（用户端展示）
+ * 技能订单类型（用户端展示）
  */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@ApiModel("跑腿订单类型")
+@ApiModel("技能订单类型")
 public class ErrandTypeVO implements Serializable {
 
     private static final long serialVersionUID = 1L;

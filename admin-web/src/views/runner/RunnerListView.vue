@@ -58,7 +58,7 @@
 import { onMounted, reactive, ref } from 'vue'
 import { Search } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { pageRunners, setRunnerStatus } from '@/api'
+import { pageSkillers, setSkillerStatus } from '@/api'
 import { AUDIT_STATUS } from '@/utils/dict'
 
 const query = reactive({ page: 1, pageSize: 10, name: '', campus: '', auditStatus: null, status: null })
@@ -69,7 +69,7 @@ const loading = ref(false)
 async function load() {
   loading.value = true
   try {
-    const data = await pageRunners(query)
+    const data = await pageSkillers(query)
     list.value = data.records || []
     total.value = Number(data.total) || 0
   } finally {
@@ -89,8 +89,8 @@ function onReset() {
 
 async function toggleStatus(row, status) {
   const action = status === 1 ? '启用' : '禁用'
-  await ElMessageBox.confirm(`确定${action}跑腿员「${row.name}」吗？`, '提示', { type: 'warning' })
-  await setRunnerStatus(status, row.id)
+  await ElMessageBox.confirm(`确定${action}技能者「${row.name}」吗？`, '提示', { type: 'warning' })
+  await setSkillerStatus(status, row.id)
   ElMessage.success(`${action}成功`)
   load()
 }

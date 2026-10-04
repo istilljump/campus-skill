@@ -23,7 +23,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
  * 实时推送服务端点：/ws/{token}
- * 浏览器 WebSocket 无法自定义请求头，故通过路径携带 JWT（用户端/跑腿员端用户 token 均含 userId 声明）
+ * 浏览器 WebSocket 无法自定义请求头，故通过路径携带 JWT（用户端/技能者端用户 token 均含 userId 声明）
  * 同一用户允许多个页面连接，按 userId 分组管理
  */
 @Component

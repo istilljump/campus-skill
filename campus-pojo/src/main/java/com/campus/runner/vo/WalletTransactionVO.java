@@ -26,7 +26,7 @@ public class WalletTransactionVO implements Serializable {
     //流水id
     private Long id;
 
-    //流水类型 1跑腿收入 2支付支出 3充值 4提现 5退款 6违约金
+    //流水类型 1技能收入 2支付支出 3充值 4提现 5退款 6违约金
     private Integer type;
 
     //发生金额

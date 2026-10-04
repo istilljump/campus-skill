@@ -3,25 +3,36 @@ package com.campus.runner.service.impl;
 import com.campus.runner.constant.MessageConstant;
 import com.campus.runner.constant.RedisConstant;
 import com.campus.runner.constant.RunnerConstant;
+import com.campus.runner.dto.DisputeApplyDTO;
+import com.campus.runner.dto.DisputeVerdictDTO;
 import com.campus.runner.dto.OrdersBoostDTO;
 import com.campus.runner.dto.OrdersCancelDTO;
+import com.campus.runner.dto.OrdersDeliverDTO;
 import com.campus.runner.dto.OrdersGrabDTO;
 import com.campus.runner.dto.OrdersPageQueryDTO;
 import com.campus.runner.dto.OrdersSubmitDTO;
+import com.campus.runner.dto.ReworkDTO;
 import com.campus.runner.entity.AddressBook;
+import com.campus.runner.entity.Booking;
+import com.campus.runner.entity.Dispute;
 import com.campus.runner.entity.ErrandType;
 import com.campus.runner.entity.Orders;
 import com.campus.runner.entity.Runner;
+import com.campus.runner.entity.ServiceItem;
 import com.campus.runner.entity.User;
 import com.campus.runner.exception.BusinessException;
 import com.campus.runner.exception.GrabFailedException;
 import com.campus.runner.exception.OrderBusinessException;
 import com.campus.runner.mapper.AddressBookMapper;
+import com.campus.runner.mapper.BookingMapper;
+import com.campus.runner.mapper.DisputeMapper;
 import com.campus.runner.mapper.ErrandTypeMapper;
 import com.campus.runner.mapper.OrderMapper;
 import com.campus.runner.mapper.RunnerMapper;
+import com.campus.runner.mapper.ServiceItemMapper;
 import com.campus.runner.mapper.UserMapper;
 import com.campus.runner.result.PageResult;
+import com.campus.runner.service.CreditService;
 import com.campus.runner.service.MessageService;
 import com.campus.runner.service.OrderService;
 import com.campus.runner.service.WalletService;
@@ -53,6 +64,9 @@ public class OrderServiceImpl implements OrderService {
     //抢单限流：10 秒窗口内最大请求数
     private static final int GRAB_RATE_LIMIT = 5;
 
+    //订单号随机位
+    private static final java.security.SecureRandom SECURE_RANDOM = new java.security.SecureRandom();
+
     @Autowired
     private OrderMapper orderMapper;
 
@@ -69,6 +83,15 @@ public class OrderServiceImpl implements OrderService {
     private RunnerMapper runnerMapper;
 
     @Autowired
+    private BookingMapper bookingMapper;
+
+    @Autowired
+    private DisputeMapper disputeMapper;
+
+    @Autowired
+    private ServiceItemMapper serviceItemMapper;
+
+    @Autowired
     private WalletService walletService;
 
     @Autowired
@@ -76,6 +99,9 @@ public class OrderServiceImpl implements OrderService {
 
     @Autowired
     private com.campus.runner.service.RunnerService runnerService;
+
+    @Autowired
+    private CreditService creditService;
 
     @Autowired
     private RedisTemplate<String, Object> redisTemplate;
@@ -108,10 +134,10 @@ public class OrderServiceImpl implements OrderService {
             campus = addressBook.getCampus();
         }
         if (deliveryAddress == null || deliveryAddress.isBlank()) {
-            throw new BusinessException("送达地址不能为空");
+            throw new BusinessException("送达地址不能为空：请选择地址簿联系人或直接填写交付地址");
         }
 
-        //平台服务费按类型费率从悬赏中扣除，跑腿员实得 = 悬赏 - 服务费
+        //平台服务费按类型费率从悬赏中扣除，技能者实得 = 悬赏 - 服务费
         BigDecimal reward = dto.getRewardAmount();
         BigDecimal platformFee = reward.multiply(type.getFeeRate()).setScale(2, RoundingMode.HALF_UP);
         BigDecimal runnerIncome = reward.subtract(platformFee);
@@ -130,6 +156,8 @@ public class OrderServiceImpl implements OrderService {
                 .platformFee(platformFee)
                 .runnerIncome(runnerIncome)
                 .status(Orders.PENDING_PAYMENT)
+                .mode(Orders.MODE_REWARD)
+                .reworkCount(0)
                 .expectedTime(dto.getExpectedTime())
                 //未填期望时间时默认2小时超时
                 .timeoutTime(dto.getExpectedTime() != null ? dto.getExpectedTime() : now.plusHours(2))
@@ -164,14 +192,27 @@ public class OrderServiceImpl implements OrderService {
         //钱包余额支付：扣款并记录支出流水
         if (order.getPayMethod() != null && order.getPayMethod() == 2) {
             walletService.changeBalance(userId, order.getRewardAmount().negate(),
-                    com.campus.runner.constant.WalletConstant.TYPE_EXPENSE, order.getId(), "跑腿订单支付-" + order.getNumber());
+                    com.campus.runner.constant.WalletConstant.TYPE_EXPENSE, order.getId(), "技能订单支付-" + order.getNumber());
         }
         Orders upd = Orders.builder().id(order.getId())
                 .payStatus(Orders.PAID)
                 .payTime(LocalDateTime.now())
-                .status(Orders.TO_BE_TAKEN)
                 .build();
+        if (Orders.MODE_BOOKING.equals(order.getMode())) {
+            //预约模式：双方已确认，支付后直接进入进行中，无需再进大厅抢单
+            upd.setStatus(Orders.IN_PROGRESS);
+            upd.setPickupTime(LocalDateTime.now());
+        } else {
+            upd.setStatus(Orders.TO_BE_TAKEN);
+        }
         orderMapper.update(upd);
+        if (Orders.MODE_BOOKING.equals(order.getMode()) && order.getRunnerId() != null) {
+            Runner skiller = runnerMapper.getById(order.getRunnerId());
+            if (skiller != null) {
+                messageService.notify(skiller.getUserId(), "预约订单已支付",
+                        "订单「" + order.getTitle() + "」已完成支付，请按预约时间开始服务并及时交付", order.getId());
+            }
+        }
         log.info("订单支付成功，orderNumber={}, userId={}", orderNumber, userId);
     }
 
@@ -219,8 +260,12 @@ public class OrderServiceImpl implements OrderService {
                 .title(order.getTitle())
                 .description(order.getDescription())
                 .typeId(order.getTypeId())
+                .mode(order.getMode())
+                .serviceItemId(order.getServiceItemId())
                 .pickupAddress(order.getPickupAddress())
                 .deliveryAddress(order.getDeliveryAddress())
+                .deliverableUrl(order.getDeliverableUrl())
+                .deliverableNote(order.getDeliverableNote())
                 .campus(order.getCampus())
                 .rewardAmount(order.getRewardAmount())
                 .platformFee(order.getPlatformFee())
@@ -233,6 +278,9 @@ public class OrderServiceImpl implements OrderService {
                 .payStatus(order.getPayStatus())
                 .orderTime(order.getOrderTime())
                 .payTime(order.getPayTime())
+                .deliverTime(order.getDeliverTime())
+                .reworkCount(order.getReworkCount())
+                .autoAcceptTime(order.getAutoAcceptTime())
                 .finishTime(order.getFinishTime())
                 .createTime(order.getCreateTime())
                 .build();
@@ -261,7 +309,7 @@ public class OrderServiceImpl implements OrderService {
         //接单权限校验：认证状态、账号状态、每日接单上限
         checkGrabPermission(runnerId, dto.getId());
         Long orderId = dto.getId();
-        //限流：同一跑腿员 10 秒内最多 5 次抢单请求，防止刷接口
+        //限流：同一技能者 10 秒内最多 5 次抢单请求，防止刷接口
         String limitKey = RedisConstant.RUNNER_GRAB_LIMIT + runnerId;
         Long count = redisTemplate.opsForValue().increment(limitKey);
         if (count != null && count == 1) {
@@ -285,10 +333,16 @@ public class OrderServiceImpl implements OrderService {
             //站内消息：通知发单用户
             Orders grabbed = orderMapper.getById(orderId);
             if (grabbed != null) {
+                //用户未定期限的技能订单：接单后交付窗口从2小时(接单等待)放宽为24小时，避免被超时任务误杀
+                if (grabbed.getExpectedTime() == null) {
+                    orderMapper.update(Orders.builder().id(orderId)
+                            .timeoutTime(LocalDateTime.now().plusHours(24))
+                            .build());
+                }
                 Runner grabRunner = runnerMapper.getById(runnerId);
                 messageService.notify(grabbed.getUserId(), "订单已被接单",
                         "您的订单「" + grabbed.getTitle() + "」已被"
-                                + (grabRunner != null ? grabRunner.getName() : "跑腿员") + "接单，请留意取送进度",
+                                + (grabRunner != null ? grabRunner.getName() : "技能者") + "接单，请留意服务进度",
                         grabbed.getId());
             }
         } finally {
@@ -313,7 +367,7 @@ public class OrderServiceImpl implements OrderService {
                     com.campus.runner.constant.WalletConstant.TYPE_EXPENSE, order.getId(),
                     "追加悬赏-" + order.getNumber());
         }
-        //按类型费率重算服务费与跑腿员实得
+        //按类型费率重算服务费与技能者实得
         ErrandType type = errandTypeMapper.getById(order.getTypeId());
         BigDecimal feeRate = type != null && type.getFeeRate() != null ? type.getFeeRate() : new BigDecimal("0.10");
         BigDecimal newReward = order.getRewardAmount().add(amount);
@@ -331,7 +385,7 @@ public class OrderServiceImpl implements OrderService {
         }
         orderMapper.update(upd);
         messageService.notify(userId, "追加悬赏成功",
-                "订单「" + order.getTitle() + "」悬赏已追加至 ¥" + newReward + "，将继续等待跑腿员接单", order.getId());
+                "订单「" + order.getTitle() + "」悬赏已追加至 ¥" + newReward + "，将继续等待技能者接单", order.getId());
         log.info("追加悬赏成功，orderId={}, userId={}, amount={}, newReward={}", order.getId(), userId, amount, newReward);
     }
 
@@ -347,40 +401,40 @@ public class OrderServiceImpl implements OrderService {
                 .build();
         orderMapper.update(upd);
         messageService.notify(order.getUserId(), "订单已取件",
-                "订单「" + order.getTitle() + "」跑腿员已确认取件，正在配送中", order.getId());
+                "订单「" + order.getTitle() + "」技能者已确认取件，正在配送中", order.getId());
         log.info("确认取件，orderId={}, runnerId={}", orderId, runnerId);
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void deliver(Long orderId, Long runnerId) {
+    public void deliver(Long orderId, Long runnerId, OrdersDeliverDTO dto) {
         Orders order = getOwnedOrder(orderId, runnerId);
         if (order.getStatus() != Orders.IN_PROGRESS) {
             throw new OrderBusinessException(MessageConstant.ORDER_STATUS_ERROR);
         }
-        //自动结算：跑腿员到账 = 悬赏 - 平台服务费，生成双方流水
-        Runner runner = runnerMapper.getById(runnerId);
-        if (runner == null) {
-            throw new OrderBusinessException(MessageConstant.RUNNER_NOT_FOUND);
+        //交付物地址必填
+        if (dto == null || dto.getDeliverableUrl() == null || dto.getDeliverableUrl().isBlank()) {
+            throw new BusinessException("请填写交付物地址");
         }
-        walletService.changeBalance(runner.getUserId(), order.getRunnerIncome(),
-                com.campus.runner.constant.WalletConstant.TYPE_INCOME, order.getId(),
-                "跑腿订单收入-" + order.getNumber());
-        //累计完成订单数并自动更新跑腿等级
-        runnerMapper.incrementCompletedOrders(runnerId);
-        runnerService.updateLevel(runnerId);
+        LocalDateTime now = LocalDateTime.now();
         Orders upd = Orders.builder().id(order.getId())
                 .status(Orders.DELIVERED)
+                .deliverableUrl(dto.getDeliverableUrl())
+                .deliverableNote(dto.getDeliverableNote())
+                .deliverTime(now)
+                //48小时未验收自动确认
+                .autoAcceptTime(now.plusHours(48))
                 .build();
         orderMapper.update(upd);
-        messageService.notify(order.getUserId(), "订单已送达",
-                "订单「" + order.getTitle() + "」已送达，请及时确认完成", order.getId());
-        log.info("确认送达并完成结算，orderId={}, runnerId={}, income={}", orderId, runnerId, order.getRunnerIncome());
+        //站内消息：通知用户及时验收
+        messageService.notify(order.getUserId(), "技能服务已交付",
+                "订单「" + order.getTitle() + "」已交付，请及时验收（48小时未验收将自动确认）", order.getId());
+        log.info("提交交付物，orderId={}, runnerId={}, deliverableUrl={}", orderId, runnerId, dto.getDeliverableUrl());
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void confirm(Long orderId, Long userId) {
+    public void accept(Long orderId, Long userId) {
         Orders order = orderMapper.getByIdAndUserId(orderId, userId);
         if (order == null) {
             throw new OrderBusinessException(MessageConstant.ORDER_NOT_FOUND);
@@ -388,11 +442,168 @@ public class OrderServiceImpl implements OrderService {
         if (order.getStatus() != Orders.DELIVERED) {
             throw new OrderBusinessException(MessageConstant.ORDER_STATUS_ERROR);
         }
+        settleAndComplete(order);
+        //站内消息：通知技能者报酬到账
+        notifySkilledIncome(order, "订单已验收",
+                "订单「" + order.getTitle() + "」已验收，报酬 ¥" + order.getRunnerIncome() + " 已到账");
+        log.info("订单验收完成，orderId={}, userId={}, income={}", orderId, userId, order.getRunnerIncome());
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void confirm(Long orderId, Long userId) {
+        //旧路由兼容：确认完成等价于验收
+        accept(orderId, userId);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void rework(Long orderId, Long userId, ReworkDTO dto) {
+        Orders order = orderMapper.getByIdAndUserId(orderId, userId);
+        if (order == null) {
+            throw new OrderBusinessException(MessageConstant.ORDER_NOT_FOUND);
+        }
+        if (order.getStatus() != Orders.DELIVERED) {
+            throw new OrderBusinessException(MessageConstant.ORDER_STATUS_ERROR);
+        }
+        int reworkCount = order.getReworkCount() == null ? 0 : order.getReworkCount();
+        if (reworkCount >= 2) {
+            throw new BusinessException("返修次数已用完，可发起仲裁");
+        }
         Orders upd = Orders.builder().id(order.getId())
-                .status(Orders.COMPLETED)
-                .finishTime(LocalDateTime.now())
+                .status(Orders.REWORK)
+                .reworkCount(reworkCount + 1)
                 .build();
         orderMapper.update(upd);
+        //返修扣减技能者信用分
+        creditService.addCredit(order.getRunnerId(), -3, "返修-3", order.getId());
+        //站内消息：通知技能者返修原因
+        notifySkilledIncome(order, "订单需返修",
+                "订单「" + order.getTitle() + "」被用户申请返修" + (dto != null && dto.getReason() != null ? "，原因：" + dto.getReason() : "")
+                        + "，请及时响应并重新交付");
+        log.info("订单申请返修，orderId={}, userId={}, reworkCount={}", orderId, userId, reworkCount + 1);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void respondRework(Long orderId, Long runnerId) {
+        Orders order = getOwnedOrder(orderId, runnerId);
+        if (order.getStatus() != Orders.REWORK) {
+            throw new OrderBusinessException(MessageConstant.ORDER_STATUS_ERROR);
+        }
+        Orders upd = Orders.builder().id(order.getId())
+                .status(Orders.IN_PROGRESS)
+                //清空旧交付物，等待重新交付
+                .deliverableUrl("")
+                .deliverableNote("")
+                .build();
+        orderMapper.update(upd);
+        //站内消息：通知用户重新交付中
+        messageService.notify(order.getUserId(), "技能者已响应返修",
+                "订单「" + order.getTitle() + "」技能者已响应返修，正在重新交付", order.getId());
+        log.info("响应返修，orderId={}, runnerId={}", orderId, runnerId);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void applyDispute(Long orderId, Long userId, DisputeApplyDTO dto) {
+        Orders order = orderMapper.getByIdAndUserId(orderId, userId);
+        if (order == null) {
+            throw new OrderBusinessException(MessageConstant.ORDER_NOT_FOUND);
+        }
+        if (order.getStatus() != Orders.DELIVERED && order.getStatus() != Orders.REWORK) {
+            throw new OrderBusinessException("仅已交付或返修中的订单可发起仲裁");
+        }
+        Dispute dispute = Dispute.builder()
+                .orderId(order.getId())
+                .raisedBy(userId)
+                .reasonType(dto.getReasonType())
+                .description(dto.getDescription())
+                .evidenceUrls(dto.getEvidenceUrls())
+                .status(Dispute.PENDING)
+                .createTime(LocalDateTime.now())
+                .updateTime(LocalDateTime.now())
+                .build();
+        disputeMapper.insert(dispute);
+        Orders upd = Orders.builder().id(order.getId())
+                .status(Orders.DISPUTE)
+                .build();
+        orderMapper.update(upd);
+        //站内消息：通知技能者订单进入仲裁
+        notifySkilledIncome(order, "订单发起仲裁",
+                "订单「" + order.getTitle() + "」已发起仲裁，平台将尽快介入处理，请留意仲裁结果");
+        log.info("订单发起仲裁，orderId={}, userId={}, disputeId={}", orderId, userId, dispute.getId());
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void verdictDispute(Long disputeId, DisputeVerdictDTO dto, Long adminId) {
+        Dispute dispute = disputeMapper.getById(disputeId);
+        if (dispute == null) {
+            throw new BusinessException("仲裁工单不存在");
+        }
+        if (dispute.getStatus() == null || dispute.getStatus() != Dispute.PENDING) {
+            throw new BusinessException("该工单已仲裁，请勿重复处理");
+        }
+        Orders order = orderMapper.getById(dispute.getOrderId());
+        if (order == null) {
+            throw new OrderBusinessException(MessageConstant.ORDER_NOT_FOUND);
+        }
+        String verdictText = dto.getVerdict() == null ? "" : dto.getVerdict();
+        if (dto.getStatus() != null && dto.getStatus() == Dispute.REFUND_USER) {
+            //1退款用户：退款 + 扣技能者报酬（尽力扣除）+ 扣信用分
+            refund(order);
+            if (order.getRunnerId() != null && order.getRunnerIncome() != null) {
+                Runner runner = runnerMapper.getById(order.getRunnerId());
+                if (runner != null) {
+                    //尽力扣除技能者报酬作为判责违约金：余额不足时扣到0为止
+                    walletService.deductBestEffort(runner.getUserId(), order.getRunnerIncome(),
+                            com.campus.runner.constant.WalletConstant.TYPE_PENALTY, order.getId(),
+                            "仲裁判责违约金-" + order.getNumber());
+                    creditService.addCredit(order.getRunnerId(), -10, "仲裁判责-10", order.getId());
+                }
+            }
+            Orders upd = Orders.builder().id(order.getId())
+                    .status(Orders.CANCELLED)
+                    .cancelBy(RunnerConstant.CANCEL_BY_PLATFORM)
+                    .cancelReason("仲裁判定：退款用户")
+                    .cancelTime(LocalDateTime.now())
+                    .build();
+            orderMapper.update(upd);
+            disputeMapper.updateStatusVerdict(disputeId, Dispute.REFUND_USER, dto.getVerdict(), adminId);
+            messageService.notify(order.getUserId(), "仲裁结果",
+                    "订单「" + order.getTitle() + "」仲裁判定：退款用户。已为您退款" + (verdictText.isEmpty() ? "" : "，仲裁意见：" + verdictText),
+                    order.getId());
+            notifySkilledIncome(order, "仲裁结果",
+                    "订单「" + order.getTitle() + "」仲裁判定：退款用户，报酬不予结算并扣除相应信用分" + (verdictText.isEmpty() ? "" : "，仲裁意见：" + verdictText));
+            log.info("[仲裁]退款用户判决完成，disputeId={}, orderId={}", disputeId, order.getId());
+        } else if (dto.getStatus() != null && dto.getStatus() == Dispute.RELEASE_SKILLER) {
+            //2放款技能者：按正常验收完成结算
+            settleAndComplete(order);
+            disputeMapper.updateStatusVerdict(disputeId, Dispute.RELEASE_SKILLER, dto.getVerdict(), adminId);
+            messageService.notify(order.getUserId(), "仲裁结果",
+                    "订单「" + order.getTitle() + "」仲裁判定：交付合格，订单已确认完成" + (verdictText.isEmpty() ? "" : "，仲裁意见：" + verdictText),
+                    order.getId());
+            notifySkilledIncome(order, "仲裁结果",
+                    "订单「" + order.getTitle() + "」仲裁判定：交付合格，报酬 ¥" + order.getRunnerIncome() + " 已到账" + (verdictText.isEmpty() ? "" : "，仲裁意见：" + verdictText));
+            log.info("[仲裁]放款技能者判决完成，disputeId={}, orderId={}", disputeId, order.getId());
+        } else if (dto.getStatus() != null && dto.getStatus() == Dispute.REJECTED) {
+            //3驳回：订单回到待验收，重新起算自动验收时间
+            Orders upd = Orders.builder().id(order.getId())
+                    .status(Orders.DELIVERED)
+                    .autoAcceptTime(LocalDateTime.now().plusHours(48))
+                    .build();
+            orderMapper.update(upd);
+            disputeMapper.updateStatusVerdict(disputeId, Dispute.REJECTED, dto.getVerdict(), adminId);
+            messageService.notify(order.getUserId(), "仲裁结果",
+                    "订单「" + order.getTitle() + "」仲裁已驳回，订单恢复待验收" + (verdictText.isEmpty() ? "" : "，仲裁意见：" + verdictText),
+                    order.getId());
+            notifySkilledIncome(order, "仲裁结果",
+                    "订单「" + order.getTitle() + "」仲裁已驳回，订单恢复待验收" + (verdictText.isEmpty() ? "" : "，仲裁意见：" + verdictText));
+            log.info("[仲裁]驳回判决完成，disputeId={}, orderId={}", disputeId, order.getId());
+        } else {
+            throw new BusinessException("仲裁结果不合法");
+        }
     }
 
     @Override
@@ -412,7 +623,7 @@ public class OrderServiceImpl implements OrderService {
         }
 
         boolean userCancel = cancelBy.equals(RunnerConstant.CANCEL_BY_USER);
-        //用户：待支付/待接单可取消；跑腿员：进行中可取消（订单作废并退款）
+        //用户：待支付/待接单可取消；技能者：进行中可取消（订单作废并退款）
         boolean cancellable = userCancel
                 ? (order.getStatus() == Orders.PENDING_PAYMENT || order.getStatus() == Orders.TO_BE_TAKEN)
                 : order.getStatus() == Orders.IN_PROGRESS;
@@ -445,10 +656,10 @@ public class OrderServiceImpl implements OrderService {
             }
         } else if (!userCancel) {
             messageService.notify(order.getUserId(), "订单已取消",
-                    "您的订单「" + order.getTitle() + "」已被跑腿员取消，已支付金额将自动退回", order.getId());
+                    "您的订单「" + order.getTitle() + "」已被技能者取消，已支付金额将自动退回", order.getId());
         }
         log.info("[操作日志]订单取消，orderId={}, 操作方={}({}), 原因={}",
-                order.getId(), cancelBy == RunnerConstant.CANCEL_BY_USER ? "用户" : "跑腿员", operatorId, dto.getCancelReason());
+                order.getId(), cancelBy == RunnerConstant.CANCEL_BY_USER ? "用户" : "技能者", operatorId, dto.getCancelReason());
     }
 
     @Override
@@ -490,43 +701,98 @@ public class OrderServiceImpl implements OrderService {
             orderMapper.update(upd);
             log.info("[超时订单]无人接单退款，orderId={}, userId={}", order.getId(), order.getUserId());
         }
-        //3. 超时未送达：取消订单、退款用户、扣除跑腿员违约金
+        //3. 超时未交付（含返修中超时）：取消订单、退款用户、扣除技能者违约金与信用分
         List<Orders> overdue = orderMapper.findOverdueDeliveryOrders(LocalDateTime.now());
         for (Orders order : overdue) {
             handleOverdueDelivery(order);
         }
-        if (!unpaid.isEmpty() || !unclaimed.isEmpty() || !overdue.isEmpty()) {
-            log.info("[超时订单]本轮处理完成：未支付取消 {} 单，无人接单退款 {} 单，超时未送达 {} 单",
-                    unpaid.size(), unclaimed.size(), overdue.size());
+        //4. 48小时未验收：系统自动验收并结算
+        List<Orders> autoAccept = orderMapper.findAutoAcceptOrders(LocalDateTime.now());
+        for (Orders order : autoAccept) {
+            settleAndComplete(order);
+            notifySkilledIncome(order, "系统自动验收",
+                    "订单「" + order.getTitle() + "」已超过48小时未验收，系统已自动验收，报酬 ¥" + order.getRunnerIncome() + " 已到账");
+            log.info("[超时订单]系统自动验收，orderId={}, userId={}", order.getId(), order.getUserId());
+        }
+        if (!unpaid.isEmpty() || !unclaimed.isEmpty() || !overdue.isEmpty() || !autoAccept.isEmpty()) {
+            log.info("[超时订单]本轮处理完成：未支付取消 {} 单，无人接单退款 {} 单，超时未交付 {} 单，自动验收 {} 单",
+                    unpaid.size(), unclaimed.size(), overdue.size(), autoAccept.size());
         }
     }
 
     /**
-     * 超时未送达处理：退款用户，扣除跑腿员违约金（等于其实得金额，余额不足则尽力扣除）
+     * 结算并完成订单（用户验收 / 系统自动验收 / 仲裁放款技能者共用）：
+     * 技能者到账 = 悬赏 - 平台服务费，累计完成数、更新等级、信用分+1、服务销量与预约单联动
+     */
+    private void settleAndComplete(Orders order) {
+        if (order.getRunnerId() == null) {
+            throw new OrderBusinessException(MessageConstant.RUNNER_NOT_FOUND);
+        }
+        Runner runner = runnerMapper.getById(order.getRunnerId());
+        if (runner == null) {
+            throw new OrderBusinessException(MessageConstant.RUNNER_NOT_FOUND);
+        }
+        walletService.changeBalance(runner.getUserId(), order.getRunnerIncome(),
+                com.campus.runner.constant.WalletConstant.TYPE_INCOME, order.getId(),
+                "技能服务收入-" + order.getNumber());
+        //累计完成订单数并自动更新技能等级
+        runnerMapper.incrementCompletedOrders(order.getRunnerId());
+        runnerService.updateLevel(order.getRunnerId());
+        //信用分+1
+        creditService.addCredit(order.getRunnerId(), 1, "交付完成+1", order.getId());
+        //预约模式订单：累计服务销量
+        if (order.getMode() != null && order.getMode() == Orders.MODE_BOOKING && order.getServiceItemId() != null) {
+            serviceItemMapper.incrementSales(order.getServiceItemId());
+        }
+        //关联预约单置为已完成
+        Booking booking = bookingMapper.getByOrderId(order.getId());
+        if (booking != null) {
+            bookingMapper.updateStatus(booking.getId(), Booking.COMPLETED);
+        }
+        Orders upd = Orders.builder().id(order.getId())
+                .status(Orders.COMPLETED)
+                .finishTime(LocalDateTime.now())
+                .build();
+        orderMapper.update(upd);
+    }
+
+    /**
+     * 站内消息：通知技能者关联用户（经技能者记录解析 userId）
+     */
+    private void notifySkilledIncome(Orders order, String title, String content) {
+        if (order.getRunnerId() == null) {
+            return;
+        }
+        Runner runner = runnerMapper.getById(order.getRunnerId());
+        if (runner != null) {
+            messageService.notify(runner.getUserId(), title, content, order.getId());
+        }
+    }
+
+    /**
+     * 超时未交付处理：退款用户，扣除技能者违约金（等于其实得金额，余额不足则尽力扣除）并扣信用分
      */
     private void handleOverdueDelivery(Orders order) {
         refund(order);
         if (order.getRunnerId() != null && order.getRunnerIncome() != null) {
             Runner runner = runnerMapper.getById(order.getRunnerId());
             if (runner != null) {
-                try {
-                    walletService.changeBalance(runner.getUserId(), order.getRunnerIncome().negate(),
-                            com.campus.runner.constant.WalletConstant.TYPE_PENALTY, order.getId(),
-                            "超时未送达违约金-" + order.getNumber());
-                } catch (Exception e) {
-                    log.warn("[超时订单]跑腿员违约金扣除失败（余额不足），orderId={}, runnerId={}",
-                            order.getId(), order.getRunnerId());
-                }
+                //尽力扣除违约金：余额不足时扣到0为止，不影响外层事务
+                walletService.deductBestEffort(runner.getUserId(), order.getRunnerIncome(),
+                        com.campus.runner.constant.WalletConstant.TYPE_PENALTY, order.getId(),
+                        "超时未交付违约金-" + order.getNumber());
+                //超时未交付扣减信用分
+                creditService.addCredit(order.getRunnerId(), -5, "超时未交付-5", order.getId());
             }
         }
         Orders upd = Orders.builder().id(order.getId())
                 .status(Orders.CANCELLED)
                 .cancelBy(RunnerConstant.CANCEL_BY_PLATFORM)
-                .cancelReason("超时未送达，系统自动取消并退款")
+                .cancelReason("超时未交付，系统自动取消并退款")
                 .cancelTime(LocalDateTime.now())
                 .build();
         orderMapper.update(upd);
-        log.info("[超时订单]超时未送达处理，orderId={}, runnerId={}, 违约金={}",
+        log.info("[超时订单]超时未交付处理，orderId={}, runnerId={}, 违约金={}",
                 order.getId(), order.getRunnerId(), order.getRunnerIncome());
     }
 
@@ -574,7 +840,9 @@ public class OrderServiceImpl implements OrderService {
     }
 
     private String generateOrderNumber() {
-        return "CR" + System.currentTimeMillis() + (int) ((Math.random() * 9 + 1) * 1000);
+        //SecureRandom 避免可预测订单号，毫秒+6位随机降低撞号概率
+        return "CR" + System.currentTimeMillis()
+                + String.format("%06d", SECURE_RANDOM.nextInt(1_000_000));
     }
 
     private String maskName(String name) {

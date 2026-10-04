@@ -20,7 +20,7 @@ import java.time.LocalDateTime;
 public class WalletTransaction implements Serializable {
 
     /**
-     * 流水类型 1跑腿收入 2支付支出 3充值 4提现 5退款 6违约金
+     * 流水类型 1技能收入 2支付支出 3充值 4提现 5退款 6违约金
      */
     public static final Integer INCOME = 1;
     public static final Integer EXPENSE = 2;
@@ -36,7 +36,7 @@ public class WalletTransaction implements Serializable {
     //钱包账户id
     private Long walletId;
 
-    //流水类型 1跑腿收入 2支付支出 3充值 4提现 5退款 6违约金
+    //流水类型 1技能收入 2支付支出 3充值 4提现 5退款 6违约金
     private Integer type;
 
     //发生金额

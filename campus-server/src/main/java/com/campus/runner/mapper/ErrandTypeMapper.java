@@ -12,22 +12,22 @@ import java.util.List;
 @Mapper
 public interface ErrandTypeMapper {
 
-    @Select("select * from errand_type where status = 1 order by sort")
+    @Select("select * from skill_category where status = 1 order by sort")
     List<ErrandType> listEnabled();
 
-    @Select("select * from errand_type order by sort")
+    @Select("select * from skill_category order by sort")
     List<ErrandType> listAll();
 
-    @Select("select * from errand_type where id = #{id}")
+    @Select("select * from skill_category where id = #{id}")
     ErrandType getById(Long id);
 
-    @Insert("insert into errand_type (name, icon, description, fee_rate, sort, status, create_time, update_time) " +
+    @Insert("insert into skill_category (name, icon, description, fee_rate, sort, status, create_time, update_time) " +
             "values (#{name}, #{icon}, #{description}, #{feeRate}, #{sort}, #{status}, #{createTime}, #{updateTime})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void insert(ErrandType errandType);
 
     int update(ErrandType errandType);
 
-    @Update("update errand_type set status = #{status}, update_time = now() where id = #{id}")
+    @Update("update skill_category set status = #{status}, update_time = now() where id = #{id}")
     void updateStatus(@org.apache.ibatis.annotations.Param("id") Long id, @org.apache.ibatis.annotations.Param("status") Integer status);
 }

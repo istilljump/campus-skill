@@ -10,7 +10,7 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
- * 用户（发单用户，认证后可成为跑腿员）
+ * 用户（发单用户，认证后可成为技能者）
  */
 @Data
 @Builder

@@ -3,9 +3,9 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
 <mapper namespace="com.campus.runner.mapper.RunnerMapper">
 
-    <!-- 动态更新跑腿员 -->
+    <!-- 动态更新技能者 -->
     <update id="update">
-        update runner
+        update skiller
         <set>
             <if test="name != null">name = #{name},</if>
             <if test="phone != null">phone = #{phone},</if>
@@ -17,6 +17,8 @@
             <if test="dailyOrderLimit != null">daily_order_limit = #{dailyOrderLimit},</if>
             <if test="completedOrders != null">completed_orders = #{completedOrders},</if>
             <if test="score != null">score = #{score},</if>
+            <if test="creditScore != null">credit_score = #{creditScore},</if>
+            <if test="skillLevel != null">skill_level = #{skillLevel},</if>
             <if test="status != null">status = #{status},</if>
             update_time = now()
         </set>
@@ -25,7 +27,7 @@
 
     <!-- 管理端-跑腿员列表分页 -->
     <select id="page" resultType="com.campus.runner.entity.Runner">
-        select * from runner
+        select * from skiller
         <where>
             <if test="name != null and name != ''">and name like concat('%', #{name}, '%')</if>
             <if test="campus != null and campus != ''">and campus like concat('%', #{campus}, '%')</if>

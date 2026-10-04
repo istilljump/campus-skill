@@ -41,14 +41,12 @@ public class OrdersSubmitDTO implements Serializable {
     @ApiModelProperty("需求描述")
     private String description;
 
-    //取件地址
-    @ApiModelProperty(value = "取件地址", required = true)
-    @NotBlank(message = "取件地址不能为空")
+    //取件/服务地点（线下服务或需要现场取材时填写，纯线上交付可不填）
+    @ApiModelProperty("取件/服务地点（线下服务填写，线上交付可不填）")
     private String pickupAddress;
 
-    //送达地址id（关联地址簿）
-    @ApiModelProperty(value = "送达地址id", required = true)
-    @NotNull(message = "送达地址不能为空")
+    //送达地址id（关联地址簿），与送达地址快照二选一
+    @ApiModelProperty("送达地址id（与送达地址快照二选一）")
     private Long addressBookId;
 
     //送达地址快照（不依赖地址簿时直接填入）

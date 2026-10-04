@@ -11,7 +11,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
- * 跑腿员（完成认证的用户）
+ * 技能者（完成认证的用户）
  */
 @Data
 @Builder
@@ -34,7 +34,7 @@ public class Runner implements Serializable {
     //关联用户id
     private Long userId;
 
-    //跑腿员姓名
+    //技能者姓名
     private String name;
 
     //手机号
@@ -52,7 +52,7 @@ public class Runner implements Serializable {
     //认证状态 0待认证 1已认证 2认证拒绝 3认证审核中
     private Integer auditStatus;
 
-    //跑腿等级 1普通 2铜牌 3银牌 4金牌
+    //技能等级 1普通 2铜牌 3银牌 4金牌
     private Integer runnerLevel;
 
     //每日接单上限
@@ -63,6 +63,12 @@ public class Runner implements Serializable {
 
     //综合评分
     private BigDecimal score;
+
+    //技能信用分（C3≥90 C2≥70 C1<70）
+    private Integer creditScore;
+
+    //作品定级 1 C1 2 C2 3 C3（作品审核通过后由管理员评定）
+    private Integer skillLevel;
 
     //提现密码(加密存储)
     private String withdrawPassword;

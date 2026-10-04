@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 import java.io.Serializable;
 
 /**
- * 订单分页查询（用户端我的订单 / 跑腿员端接单记录 / 管理端订单列表）
+ * 订单分页查询（用户端我的订单 / 技能者端接单记录 / 管理端订单列表）
  */
 @Data
 @Builder

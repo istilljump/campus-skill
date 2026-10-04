@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.campus.runner.mapper.BookingMapper">
+
+    <!-- 新增预约单 -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        insert into booking (service_item_id, order_id, user_id, skiller_id, expect_time, remark, status,
+                             create_time, update_time)
+        values (#{serviceItemId}, #{orderId}, #{userId}, #{skillerId}, #{expectTime}, #{remark}, #{status},
+                #{createTime}, #{updateTime})
+    </insert>
+
+    <!-- 按id查询 -->
+    <select id="getById" resultType="com.campus.runner.entity.Booking">
+        select * from booking where id = #{id}
+    </select>
+
+    <!-- 公共联查字段 -->
+    <sql id="voColumns">
+        b.id,
+        b.service_item_id as serviceItemId,
+        b.order_id        as orderId,
+        b.user_id         as userId,
+        b.skiller_id      as skillerId,
+        b.expect_time     as expectTime,
+        b.remark,
+        b.status,
+        b.create_time     as createTime,
+        b.update_time     as updateTime,
+        si.title          as serviceTitle,
+        si.price          as servicePrice,
+        u.name            as userName,
+        sk.name           as skillerName
+    </sql>
+
+    <!-- 用户端-我的预约分页 -->
+    <select id="listByUser" resultType="com.campus.runner.vo.BookingVO">
+        select <include refid="voColumns"/>
+        from booking b
+        left join service_item si on b.service_item_id = si.id
+        left join user u on b.user_id = u.id
+        left join skiller sk on b.skiller_id = sk.id
+        where b.user_id = #{userId}
+        order by b.create_time desc
+    </select>
+
+    <!-- 技能者端-收到的预约分页（可按状态过滤） -->
+    <select id="listBySkiller" resultType="com.campus.runner.vo.BookingVO">
+        select <include refid="voColumns"/>
+        from booking b
+        left join service_item si on b.service_item_id = si.id
+        left join user u on b.user_id = u.id
+        left join skiller sk on b.skiller_id = sk.id
+        <where>
+            b.skiller_id = #{skillerId}
+            <if test="status != null">and b.status = #{status}</if>
+        </where>
+        order by b.create_time desc
+    </select>
+</mapper>

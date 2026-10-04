@@ -4,16 +4,18 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * 跑腿订单状态枚举
+ * 技能订单状态枚举
  */
 public enum OrderStatus {
     PENDING_PAYMENT(1, "待支付"),
     TO_BE_TAKEN(2, "待接单"),
     IN_PROGRESS(3, "进行中"),
-    DELIVERED(4, "已送达"),
+    DELIVERED(4, "已交付"),
     COMPLETED(5, "已完成"),
     CANCELLED(6, "已取消"),
-    TIMEOUT(7, "已超时");
+    TIMEOUT(7, "已超时"),
+    REWORK(8, "返修中"),
+    DISPUTE(9, "仲裁中");
 
     private static final Map<Integer, OrderStatus> STATE_MAP = new HashMap<>();
 

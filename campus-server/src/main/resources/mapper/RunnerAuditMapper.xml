@@ -5,7 +5,7 @@
 
     <!-- 动态更新审核记录（审核通过/驳回时使用） -->
     <update id="update">
-        update runner_audit
+        update skiller_audit
         <set>
             <if test="status != null">status = #{status},</if>
             <if test="auditRemark != null">audit_remark = #{auditRemark},</if>
@@ -17,7 +17,7 @@
 
     <!-- 管理端-审核记录列表 -->
     <select id="page" resultType="com.campus.runner.entity.RunnerAudit">
-        select * from runner_audit
+        select * from skiller_audit
         <where>
             <if test="status != null">and status = #{status}</if>
             <if test="studentNo != null and studentNo != ''">and student_no like concat('%', #{studentNo}, '%')</if>

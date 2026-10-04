@@ -44,7 +44,7 @@
         @change="load" />
     </div>
 
-    <el-dialog v-model="processVisible" title="认证审核" width="440px">
+    <el-dialog v-model="processVisible" title="技能者认证审核" width="440px">
       <el-form label-width="80px">
         <el-form-item label="申请人">{{ current?.realName }}（{{ current?.studentNo }}）</el-form-item>
         <el-form-item label="审核结果">

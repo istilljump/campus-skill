@@ -14,7 +14,7 @@ import java.io.IOException;
 @RestController
 public class PageController {
 
-    @GetMapping({"/", "/admin-app", "/admin-web", "/user-app", "/runner-app"})
+    @GetMapping({"/", "/admin-app", "/admin-web", "/user-app", "/skiller-app"})
     public void index(HttpServletRequest request, HttpServletResponse response) throws IOException {
         String uri = request.getRequestURI();
         // 去掉尾部斜杠，避免拼接出 /xxx//index.html

@@ -40,7 +40,9 @@ request.interceptors.response.use(
     if (res.code === 1) return res.data
     const msg = res.msg || '请求失败'
     if (msg.includes('token')) {
+      //token 缺失或过期：静默清理并回登录页，避免登录前弹一串过期提示
       toLogin()
+      return Promise.reject(new Error(msg))
     }
     ElMessage.error(msg)
     return Promise.reject(new Error(msg))

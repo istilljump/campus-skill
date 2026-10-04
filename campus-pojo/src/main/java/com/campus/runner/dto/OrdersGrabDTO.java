@@ -11,13 +11,13 @@ import javax.validation.constraints.NotNull;
 import java.io.Serializable;
 
 /**
- * 跑腿员端-抢单
+ * 技能者端-抢单
  */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@ApiModel("跑腿员抢单模型")
+@ApiModel("技能者抢单模型")
 public class OrdersGrabDTO implements Serializable {
 
     private static final long serialVersionUID = 1L;

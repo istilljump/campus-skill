@@ -5,7 +5,7 @@
 
     <!-- 动态更新订单类型 -->
     <update id="update">
-        update errand_type
+        update skill_category
         <set>
             <if test="name != null">name = #{name},</if>
             <if test="icon != null">icon = #{icon},</if>

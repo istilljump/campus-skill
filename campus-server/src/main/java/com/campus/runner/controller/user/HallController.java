@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * 用户端/跑腿员端-订单大厅（待接单订单浏览）
+ * 用户端/技能者端-订单大厅（待接单订单浏览）
  */
 @RestController
 @Slf4j
@@ -32,14 +32,14 @@ public class HallController {
     @Autowired
     private ErrandTypeService errandTypeService;
 
-    @GetMapping("/errandType/list")
-    @ApiOperation("启用中的跑腿订单类型")
+    @GetMapping("/skillCategory/list")
+    @ApiOperation("启用中的技能订单类型")
     public Result<List<ErrandTypeVO>> errandTypes() {
         return Result.success(errandTypeService.listEnabled());
     }
 
     @GetMapping("/list")
-    @ApiOperation("订单大厅分页查询（跑腿员端登录后同样可访问）")
+    @ApiOperation("订单大厅分页查询（技能者端登录后同样可访问）")
     public Result<PageResult<OrderHallVO>> list(OrdersPageQueryDTO ordersPageQueryDTO) {
         return Result.success(orderService.hallPage(ordersPageQueryDTO));
     }

@@ -12,7 +12,7 @@ public interface ReviewService {
     void submit(Long userId, ReviewSubmitDTO reviewSubmitDTO);
 
     /**
-     * 跑腿员收到的评价分页
+     * 技能者收到的评价分页
      */
     PageResult<OrderReviewVO> pageByRunner(Long runnerId, Integer page, Integer pageSize);
 

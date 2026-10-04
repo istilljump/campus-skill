@@ -29,9 +29,9 @@ public class MessageConstant {
     public static final String CREDIT_TOO_LOW = "信用分不足，无法发单";
     public static final String APPEAL_SUBMITTED = "申诉已提交，请等待平台处理";
 
-    // ===== 跑腿员相关 =====
-    public static final String RUNNER_NOT_FOUND = "跑腿员不存在";
-    public static final String RUNNER_NOT_CERTIFIED = "您尚未通过跑腿员认证";
+    // ===== 技能者相关 =====
+    public static final String RUNNER_NOT_FOUND = "技能者不存在";
+    public static final String RUNNER_NOT_CERTIFIED = "您尚未通过技能者认证";
     public static final String RUNNER_AUDIT_REVIEWING = "认证审核中，请耐心等待";
     public static final String AUDIT_NOT_PASSED = "认证未通过";
     public static final String AUDIT_NOT_FOUND = "审核记录不存在";

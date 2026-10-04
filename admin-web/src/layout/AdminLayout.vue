@@ -3,7 +3,7 @@
     <el-aside width="220px" class="aside">
       <div class="logo">
         <el-icon :size="24"><Bicycle /></el-icon>
-        <span>校园跑腿管理端</span>
+        <span>CampusSkill 技能工坊管理端</span>
       </div>
       <el-menu :default-active="activeMenu" router background-color="#0f172a" text-color="#94a3b8"
         active-text-color="#ffffff" class="menu">
@@ -57,10 +57,13 @@ const userStore = useUserStore()
 const menus = [
   { path: '/dashboard', title: '数据大屏', icon: 'DataBoard' },
   { path: '/orders', title: '订单管理', icon: 'List' },
-  { path: '/runners', title: '跑腿员管理', icon: 'Avatar' },
-  { path: '/audits', title: '认证审核', icon: 'Stamp' },
+  { path: '/runners', title: '技能者管理', icon: 'Avatar' },
+  { path: '/audits', title: '技能者认证', icon: 'Stamp' },
   { path: '/withdraws', title: '提现审核', icon: 'Money' },
-  { path: '/types', title: '订单类型', icon: 'Grid' },
+  { path: '/types', title: '技能类目', icon: 'Grid' },
+  { path: '/portfolio-audits', title: '作品审核', icon: 'Picture' },
+  { path: '/disputes', title: '仲裁工单', icon: 'ScaleToOriginal' },
+  { path: '/credit-rank', title: '信用榜单', icon: 'TrophyBase' },
   { path: '/users', title: '用户管理', icon: 'User' },
   { path: '/employees', title: '员工管理', icon: 'Setting' },
   { path: '/shop', title: '营业设置', icon: 'Shop' },

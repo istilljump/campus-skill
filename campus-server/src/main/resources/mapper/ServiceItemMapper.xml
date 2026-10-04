@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.campus.runner.mapper.ServiceItemMapper">
+
+    <!-- 新增服务 -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        insert into service_item (skiller_id, category_id, title, description, price, delivery_days,
+                                  service_mode, tags, status, sales_count, avg_score, create_time, update_time)
+        values (#{skillerId}, #{categoryId}, #{title}, #{description}, #{price}, #{deliveryDays},
+                #{serviceMode}, #{tags}, #{status}, #{salesCount}, #{avgScore}, #{createTime}, #{updateTime})
+    </insert>
+
+    <!-- 动态更新服务 -->
+    <update id="update">
+        update service_item
+        <set>
+            <if test="categoryId != null">category_id = #{categoryId},</if>
+            <if test="title != null">title = #{title},</if>
+            <if test="description != null">description = #{description},</if>
+            <if test="price != null">price = #{price},</if>
+            <if test="deliveryDays != null">delivery_days = #{deliveryDays},</if>
+            <if test="serviceMode != null">service_mode = #{serviceMode},</if>
+            <if test="tags != null">tags = #{tags},</if>
+            <if test="status != null">status = #{status},</if>
+            update_time = now()
+        </set>
+        where id = #{id}
+    </update>
+
+    <!-- 按id查询 -->
+    <select id="getById" resultType="com.campus.runner.entity.ServiceItem">
+        select * from service_item where id = #{id}
+    </select>
+
+    <!-- 技能者自己的服务列表 -->
+    <select id="listBySkiller" resultType="com.campus.runner.entity.ServiceItem">
+        select * from service_item where skiller_id = #{skillerId} order by create_time desc
+    </select>
+
+    <!-- 用户端-服务市场（仅上架，按销量、评分排序） -->
+    <select id="listOnShelf" resultType="com.campus.runner.vo.ServiceItemVO">
+        select
+            si.id,
+            si.skiller_id    as skillerId,
+            si.category_id   as categoryId,
+            si.title,
+            si.description,
+            si.price,
+            si.delivery_days as deliveryDays,
+            si.service_mode  as serviceMode,
+            si.tags,
+            si.status,
+            si.sales_count   as salesCount,
+            si.avg_score     as avgScore,
+            si.create_time   as createTime,
+            si.update_time   as updateTime,
+            sk.name          as skillerName,
+            sk.score         as skillerScore,
+            sk.credit_score  as skillerCreditScore,
+            sk.skill_level   as skillerSkillLevel,
+            c.name           as categoryName
+        from service_item si
+        left join skiller sk on si.skiller_id = sk.id
+        left join skill_category c on si.category_id = c.id
+        <where>
+            si.status = 1
+            <if test="categoryId != null">and si.category_id = #{categoryId}</if>
+            <if test="keyword != null and keyword != ''">
+                and (si.title like concat('%', #{keyword}, '%')
+                    or si.description like concat('%', #{keyword}, '%')
+                    or si.tags like concat('%', #{keyword}, '%'))
+            </if>
+        </where>
+        order by si.sales_count desc, si.avg_score desc
+    </select>
+
+    <!-- 用户端-服务详情（含技能者/类目冗余信息） -->
+    <select id="getVOById" resultType="com.campus.runner.vo.ServiceItemVO">
+        select
+            si.id,
+            si.skiller_id    as skillerId,
+            si.category_id   as categoryId,
+            si.title,
+            si.description,
+            si.price,
+            si.delivery_days as deliveryDays,
+            si.service_mode  as serviceMode,
+            si.tags,
+            si.status,
+            si.sales_count   as salesCount,
+            si.avg_score     as avgScore,
+            si.create_time   as createTime,
+            si.update_time   as updateTime,
+            sk.name          as skillerName,
+            sk.score         as skillerScore,
+            sk.credit_score  as skillerCreditScore,
+            sk.skill_level   as skillerSkillLevel,
+            c.name           as categoryName
+        from service_item si
+        left join skiller sk on si.skiller_id = sk.id
+        left join skill_category c on si.category_id = c.id
+        where si.id = #{id}
+    </select>
+</mapper>

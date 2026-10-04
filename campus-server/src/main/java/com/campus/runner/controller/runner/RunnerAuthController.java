@@ -16,21 +16,21 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.validation.Valid;
 
 /**
- * 跑腿员端-登录接口
+ * 技能者端-登录接口
  */
 @RestController
 @Slf4j
-@Api(tags = "跑腿员端-登录接口")
-@RequestMapping("/runner/auth")
+@Api(tags = "技能者端-登录接口")
+@RequestMapping("/skiller/auth")
 public class RunnerAuthController {
 
     @Autowired
     private RunnerService runnerService;
 
     @PostMapping("/login")
-    @ApiOperation("跑腿员登录（token中携带跑腿员身份）")
+    @ApiOperation("技能者登录（token中携带技能者身份）")
     public Result<UserLoginVO> login(@RequestBody @Valid UserLoginDTO userLoginDTO) {
-        log.info("跑腿员登录：{}", userLoginDTO.getCode());
+        log.info("技能者登录：{}", userLoginDTO.getCode());
         return Result.success(runnerService.login(userLoginDTO.getCode()));
     }
 }

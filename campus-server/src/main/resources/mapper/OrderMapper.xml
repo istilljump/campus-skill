@@ -10,10 +10,14 @@
         <result column="user_id" property="userId"/>
         <result column="runner_id" property="runnerId"/>
         <result column="type_id" property="typeId"/>
+        <result column="mode" property="mode"/>
+        <result column="service_item_id" property="serviceItemId"/>
         <result column="title" property="title"/>
         <result column="description" property="description"/>
         <result column="pickup_address" property="pickupAddress"/>
         <result column="delivery_address" property="deliveryAddress"/>
+        <result column="deliverable_url" property="deliverableUrl"/>
+        <result column="deliverable_note" property="deliverableNote"/>
         <result column="campus" property="campus"/>
         <result column="reward_amount" property="rewardAmount"/>
         <result column="platform_fee" property="platformFee"/>
@@ -29,6 +33,9 @@
         <result column="order_time" property="orderTime"/>
         <result column="pay_time" property="payTime"/>
         <result column="pickup_time" property="pickupTime"/>
+        <result column="deliver_time" property="deliverTime"/>
+        <result column="rework_count" property="reworkCount"/>
+        <result column="auto_accept_time" property="autoAcceptTime"/>
         <result column="finish_time" property="finishTime"/>
         <result column="cancel_time" property="cancelTime"/>
         <result column="create_time" property="createTime"/>
@@ -41,10 +48,14 @@
         <set>
             <if test="runnerId != null">runner_id = #{runnerId},</if>
             <if test="typeId != null">type_id = #{typeId},</if>
+            <if test="mode != null">mode = #{mode},</if>
+            <if test="serviceItemId != null">service_item_id = #{serviceItemId},</if>
             <if test="title != null">title = #{title},</if>
             <if test="description != null">description = #{description},</if>
             <if test="pickupAddress != null">pickup_address = #{pickupAddress},</if>
             <if test="deliveryAddress != null">delivery_address = #{deliveryAddress},</if>
+            <if test="deliverableUrl != null">deliverable_url = #{deliverableUrl},</if>
+            <if test="deliverableNote != null">deliverable_note = #{deliverableNote},</if>
             <if test="campus != null">campus = #{campus},</if>
             <if test="rewardAmount != null">reward_amount = #{rewardAmount},</if>
             <if test="platformFee != null">platform_fee = #{platformFee},</if>
@@ -59,6 +70,9 @@
             <if test="payStatus != null">pay_status = #{payStatus},</if>
             <if test="payTime != null">pay_time = #{payTime},</if>
             <if test="pickupTime != null">pickup_time = #{pickupTime},</if>
+            <if test="deliverTime != null">deliver_time = #{deliverTime},</if>
+            <if test="reworkCount != null">rework_count = #{reworkCount},</if>
+            <if test="autoAcceptTime != null">auto_accept_time = #{autoAcceptTime},</if>
             <if test="finishTime != null">finish_time = #{finishTime},</if>
             <if test="cancelTime != null">cancel_time = #{cancelTime},</if>
             update_time = now()
@@ -99,7 +113,7 @@
             u.name          as publisherName,
             o.create_time   as createTime
         from orders o
-        left join errand_type t on o.type_id = t.id
+        left join skill_category t on o.type_id = t.id
         left join user u on o.user_id = u.id
         <where>
             o.status = 2 and o.pay_status = 1

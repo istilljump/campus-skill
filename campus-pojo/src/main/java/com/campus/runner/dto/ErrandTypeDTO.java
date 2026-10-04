@@ -14,13 +14,13 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 
 /**
- * 管理端-跑腿订单类型维护
+ * 管理端-技能订单类型维护
  */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@ApiModel("跑腿订单类型模型")
+@ApiModel("技能订单类型模型")
 public class ErrandTypeDTO implements Serializable {
 
     private static final long serialVersionUID = 1L;

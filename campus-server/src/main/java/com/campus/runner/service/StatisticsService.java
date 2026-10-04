@@ -15,7 +15,7 @@ public interface StatisticsService {
     OrderStatisticsVO overview();
 
     /**
-     * 跑腿员端-个人统计
+     * 技能者端-个人统计
      */
     RunnerStatisticsVO runnerStats(Long runnerId);
 
@@ -25,7 +25,7 @@ public interface StatisticsService {
     List<TrendPointVO> dailyTrend(int days);
 
     /**
-     * 管理端-跑腿类型订单量 TOP N
+     * 管理端-技能类型订单量 TOP N
      */
     List<NameCountVO> typeRank(int limit);
 

@@ -3,7 +3,7 @@
     <div class="login-box">
       <div class="login-brand">
         <el-icon :size="40" color="#2563eb"><Bicycle /></el-icon>
-        <h1>校园跑腿平台</h1>
+        <h1>CampusSkill 技能工坊</h1>
         <p>管理端控制台</p>
       </div>
       <el-form ref="formRef" :model="form" :rules="rules" size="large" @keyup.enter="onSubmit">

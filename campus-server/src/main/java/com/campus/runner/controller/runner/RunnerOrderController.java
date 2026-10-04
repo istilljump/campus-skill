@@ -2,6 +2,7 @@ package com.campus.runner.controller.runner;
 
 import com.campus.runner.context.BaseContext;
 import com.campus.runner.dto.OrdersCancelDTO;
+import com.campus.runner.dto.OrdersDeliverDTO;
 import com.campus.runner.dto.OrdersGrabDTO;
 import com.campus.runner.dto.OrdersPageQueryDTO;
 import com.campus.runner.result.PageResult;
@@ -26,12 +27,12 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.validation.Valid;
 
 /**
- * 跑腿员端-订单接口（抢单、取件、送达、我的订单）
+ * 技能者端-订单接口（抢单、取件、送达、我的订单）
  */
 @RestController
 @Slf4j
-@Api(tags = "跑腿员端-订单接口")
-@RequestMapping("/runner/orders")
+@Api(tags = "技能者端-订单接口")
+@RequestMapping("/skiller/orders")
 public class RunnerOrderController {
 
     @Autowired
@@ -62,10 +63,17 @@ public class RunnerOrderController {
     }
 
     @PutMapping("/deliver/{id}")
-    @ApiOperation("确认送达（自动结算）")
-    public Result<String> deliver(@PathVariable Long id) {
-        orderService.deliver(id, BaseContext.getCurrentId());
-        return Result.success("送达成功，报酬已到账");
+    @ApiOperation("提交交付物（已交付，等待用户验收，48小时未验收自动确认）")
+    public Result<String> deliver(@PathVariable Long id, @RequestBody @Valid OrdersDeliverDTO ordersDeliverDTO) {
+        orderService.deliver(id, BaseContext.getCurrentId(), ordersDeliverDTO);
+        return Result.success("交付成功，等待用户验收");
+    }
+
+    @PostMapping("/rework/{id}")
+    @ApiOperation("响应返修（返修中→进行中，重新交付）")
+    public Result<String> respondRework(@PathVariable Long id) {
+        orderService.respondRework(id, BaseContext.getCurrentId());
+        return Result.success("已响应返修，请重新交付");
     }
 
     @GetMapping("/page")
@@ -85,7 +93,7 @@ public class RunnerOrderController {
     @PutMapping("/cancel")
     @ApiOperation("取消订单（进行中订单作废并退款）")
     public Result<String> cancel(@RequestBody @Valid OrdersCancelDTO ordersCancelDTO) {
-        //2-跑腿员取消
+        //2-技能者取消
         orderService.cancel(BaseContext.getCurrentId(), 2, ordersCancelDTO);
         return Result.success("订单已取消");
     }

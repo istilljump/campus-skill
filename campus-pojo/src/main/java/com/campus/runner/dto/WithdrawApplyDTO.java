@@ -14,7 +14,7 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 
 /**
- * 跑腿员端-提现申请
+ * 技能者端-提现申请
  */
 @Data
 @Builder

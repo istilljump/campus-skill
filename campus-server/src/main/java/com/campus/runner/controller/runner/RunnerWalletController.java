@@ -23,12 +23,12 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.validation.Valid;
 
 /**
- * 跑腿员端-钱包接口（余额、流水、提现）
+ * 技能者端-钱包接口（余额、流水、提现）
  */
 @RestController
 @Slf4j
-@Api(tags = "跑腿员端-钱包接口")
-@RequestMapping("/runner/wallet")
+@Api(tags = "技能者端-钱包接口")
+@RequestMapping("/skiller/wallet")
 public class RunnerWalletController {
 
     @Autowired
@@ -74,7 +74,7 @@ public class RunnerWalletController {
     }
 
     /**
-     * 钱包按用户维度记账，这里把跑腿员id解析为用户id
+     * 钱包按用户维度记账，这里把技能者id解析为用户id
      */
     private Long currentUserId() {
         return runnerService.resolveUserId(BaseContext.getCurrentId());

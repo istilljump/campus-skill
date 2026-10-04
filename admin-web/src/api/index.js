@@ -12,28 +12,39 @@ export const setEmployeeStatus = (status, id) => request.post(`/admin/employee/s
 // ========== 用户 ==========
 export const pageUsers = (params) => request.get('/admin/user/page', { params })
 
-// ========== 跑腿员 ==========
-export const pageRunners = (params) => request.get('/admin/runner/page', { params })
-export const setRunnerStatus = (status, runnerId) => request.post(`/admin/runner/status/${status}`, null, { params: { runnerId } })
+// ========== 技能者 ==========
+export const pageSkillers = (params) => request.get('/admin/skiller/page', { params })
+export const setSkillerStatus = (status, skillerId) => request.post(`/admin/skiller/status/${status}`, null, { params: { skillerId } })
 
-// ========== 认证审核 ==========
-export const pageAudits = (params) => request.get('/admin/runnerAudit/page', { params })
-export const processAudit = (data) => request.put('/admin/runnerAudit/process', data)
+// ========== 技能者认证 ==========
+export const pageAudits = (params) => request.get('/admin/skillerAudit/page', { params })
+export const processAudit = (data) => request.put('/admin/skillerAudit/process', data)
 
 // ========== 订单 ==========
 export const pageOrders = (params) => request.get('/admin/order/page', { params })
 export const getOrderDetail = (id) => request.get(`/admin/order/detail/${id}`)
 
-// ========== 订单类型 ==========
-export const listTypes = () => request.get('/admin/errandType/list')
-export const addType = (data) => request.post('/admin/errandType', data)
-export const updateType = (data) => request.put('/admin/errandType', data)
-export const setTypeStatus = (status, id) => request.put(`/admin/errandType/status/${status}`, null, { params: { id } })
-export const deleteType = (id) => request.delete(`/admin/errandType/${id}`)
+// ========== 技能类目 ==========
+export const listTypes = () => request.get('/admin/skillCategory/list')
+export const addType = (data) => request.post('/admin/skillCategory', data)
+export const updateType = (data) => request.put('/admin/skillCategory', data)
+export const setTypeStatus = (status, id) => request.put(`/admin/skillCategory/status/${status}`, null, { params: { id } })
+export const deleteType = (id) => request.delete(`/admin/skillCategory/${id}`)
 
 // ========== 提现 ==========
 export const pageWithdraws = (params) => request.get('/admin/withdraw/page', { params })
 export const processWithdraw = (data) => request.put('/admin/withdraw/process', data)
+
+// ========== 作品审核 ==========
+export const pagePortfolioAudit = (params) => request.get('/admin/portfolioAudit/page', { params })
+export const processPortfolioAudit = (data) => request.put('/admin/portfolioAudit/process', data)
+
+// ========== 仲裁工单 ==========
+export const pageDisputes = (params) => request.get('/admin/dispute/page', { params })
+export const verdictDispute = (id, data) => request.put(`/admin/dispute/${id}/verdict`, data)
+
+// ========== 信用榜单 ==========
+export const creditRank = (limit = 10) => request.get('/admin/credit/rank', { params: { limit } })
 
 // ========== 营业状态 ==========
 export const getShopStatus = () => request.get('/admin/shop/status')

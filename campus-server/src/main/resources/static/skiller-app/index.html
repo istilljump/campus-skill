@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>CampusSkill 校园技能工坊 · 技能者端</title>
+<link rel="stylesheet" href="/assets/tokens.css">
+<link rel="stylesheet" href="/assets/vendor/vant.css">
+<script src="/assets/vendor/vue.global.prod.js"></script>
+<script src="/assets/vendor/vant.js"></script>
+<style>
+  body { max-width: 480px; margin: 0 auto; min-height: 100vh; background: var(--bg-secondary); }
+  .page { padding-bottom: 70px; }
+  .hero { background: linear-gradient(135deg, var(--blue-700), var(--blue-500)); color:#fff;
+    padding: var(--sp-6) var(--sp-4); border-radius: 0 0 var(--radius-xl) var(--radius-xl); }
+  .hero h3 { font-weight: var(--weight-bold); }
+  .hero p { opacity:.85; font-size: var(--text-sm); margin-top: var(--sp-1); }
+  .stat-row { display:grid; grid-template-columns:repeat(3,1fr); gap: var(--sp-2); margin-top: var(--sp-4); }
+  .stat-box { background: rgba(255,255,255,.15); border-radius: var(--radius-md); padding: var(--sp-3); text-align:center; }
+  .stat-num { font-weight: var(--weight-bold); font-size: var(--text-lg); }
+  .stat-lab { font-size: var(--text-xs); opacity: .8; }
+  .section { margin: var(--sp-4) var(--sp-4) 0; }
+  .card { background:#fff; border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); padding: var(--sp-4); margin-top: var(--sp-3); }
+  .order-line { display:flex; justify-content:space-between; align-items:center; }
+  .order-title { font-weight: var(--weight-medium); }
+  .money { color: var(--brand-primary); font-weight: var(--weight-bold); }
+  .tag { display:inline-block; font-size: var(--text-xs); padding: 1px 8px; border-radius: var(--radius-full);
+    background: var(--brand-soft); color: var(--brand-primary); margin-left: var(--sp-2); }
+  .btn { width:100%; padding: var(--sp-3); border:none; border-radius: var(--radius-md);
+    background: var(--brand-primary); color:#fff; font-size: var(--text-base); font-weight: var(--weight-medium); cursor:pointer; }
+  .btn.ghost { background: var(--brand-soft); color: var(--brand-primary); }
+  .field { width:100%; padding: var(--sp-3); border:1px solid var(--blue-100); border-radius: var(--radius-md);
+    font-size: var(--text-base); margin-top: var(--sp-1); background: var(--bg-secondary); }
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- 登录/认证 -->
+  <div v-if="!token" style="padding:60px 24px">
+    <div style="text-align:center;font-size:56px">🛠️</div>
+    <h2 style="text-align:center;margin:12px 0 4px">CampusSkill 技能者端</h2>
+    <p style="text-align:center;color:var(--text-tertiary);margin-bottom:32px">认证技能者登录后即可接单</p>
+    <input class="field" v-model="loginCode" placeholder="输入登录码（与用户端一致）"/>
+    <div style="margin-top:16px"><button class="btn" @click="doLogin" :disabled="busy">登录</button></div>
+    <div style="margin-top:24px" class="card">
+      <div style="font-weight:600;margin-bottom:8px">还没有入驻？提交技能者入驻申请</div>
+      <input class="field" v-model="auditForm.realName" placeholder="真实姓名"/>
+      <input class="field" v-model="auditForm.studentNo" placeholder="学号"/>
+      <input class="field" v-model="auditForm.campus" placeholder="校区"/>
+      <input class="field" v-model="auditForm.college" placeholder="学院"/>
+      <button class="btn ghost" style="margin-top:12px" @click="applyAudit" :disabled="busy">提交入驻申请</button>
+    </div>
+  </div>
+
+  <div v-else class="page">
+    <van-nav-bar :title="navTitle"></van-nav-bar>
+
+    <!-- 悬赏大厅 -->
+    <div v-if="view==='hall'">
+      <div class="section">
+        <div class="card" style="padding:12px">
+          <input class="field" style="margin-top:0" v-model="hallKeyword" placeholder="搜索标题 / 订单号，回车搜索" @keyup.enter="loadHall"/>
+          <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+            <van-tag :type="hallTypeId===null?'primary':'default'" size="large" style="cursor:pointer" @click="hallTypeId=null;loadHall()">全部</van-tag>
+            <van-tag v-for="t in hallTypes" :key="t.id" :type="hallTypeId===t.id?'primary':'default'" size="large"
+              style="cursor:pointer" @click="hallTypeId=t.id;loadHall()">{{ t.name }}</van-tag>
+          </div>
+        </div>
+        <div v-for="o in hall" :key="o.id" class="card">
+          <div class="order-line">
+            <div><span class="order-title">{{ o.title }}</span><span class="tag">{{ o.typeName }}</span></div>
+            <div class="money">实得{{ money(o.runnerIncome) }}</div>
+          </div>
+          <div class="text-tertiary" style="font-size:13px;margin:6px 0">{{ o.pickupAddress }} → {{ o.deliveryAddress }}</div>
+          <div class="order-line">
+            <span class="text-tertiary" style="font-size:12px">{{ o.campus }} · {{ o.publisherName }} 发布于 {{ relTime(o.createTime) }}</span>
+            <van-button size="small" type="primary" @click="grab(o)">立即抢单</van-button>
+          </div>
+        </div>
+        <van-empty v-if="!hall.length" description="悬赏大厅暂无需求，稍后再来看看"></van-empty>
+      </div>
+    </div>
+
+    <!-- 订单（接单 + 预约单） -->
+    <div v-if="view==='myOrders'">
+      <van-tabs v-model:active="orderSub" @click-tab="loadOrderSub">
+        <van-tab title="接单" :name="0"></van-tab>
+        <van-tab title="预约单" :name="1"></van-tab>
+      </van-tabs>
+      <div class="section" v-if="orderSub===0">
+        <div v-for="o in myOrders" :key="o.id" class="card">
+          <div class="order-line">
+            <div><span class="order-title">{{ o.title }}</span></div>
+            <van-tag :type="tagType(o.status)">{{ statusText(o.status) }}</van-tag>
+          </div>
+          <div class="text-tertiary" style="font-size:13px;margin:6px 0">{{ o.pickupAddress }} → {{ o.deliveryAddress }}</div>
+          <div class="order-line">
+            <span class="money">实得{{ money(o.runnerIncome) }}</span>
+            <span>
+              <a v-if="o.publisherPhone && o.status===3" :href="'tel:' + o.publisherPhone"
+                style="text-decoration:none;font-size:16px;margin-right:6px">📞</a>
+              <van-button v-if="o.status===3 && !o.pickupTime" size="small" type="primary" plain @click="pickup(o)">确认开始服务</van-button>
+              <van-button v-if="o.status===3" size="small" type="success" @click="openDeliver(o)">交付成果</van-button>
+              <van-button v-if="o.status===8" size="small" type="warning" @click="respondRework(o)">响应返修</van-button>
+            </span>
+          </div>
+          <div v-if="o.status===3" class="text-tertiary" style="font-size:12px;margin-top:6px">
+            💡 交付前可点击 📞 联系用户确认服务细节
+          </div>
+          <div v-if="o.status===8" style="font-size:12px;margin-top:6px;color:var(--brand-primary)">
+            🔁 用户已申请返修，点击「响应返修」重新开始服务
+          </div>
+        </div>
+        <van-empty v-if="!myOrders.length" description="还没有接单记录"></van-empty>
+      </div>
+      <div class="section" v-else>
+        <div v-for="b in skBookings" :key="b.id" class="card">
+          <div class="order-line">
+            <div><span class="order-title">{{ b.serviceTitle || b.serviceName }}</span></div>
+            <van-tag :type="bkTag(b.status)">{{ bkText(b.status) }}</van-tag>
+          </div>
+          <div class="text-tertiary" style="font-size:13px;margin-top:6px">客户：{{ b.userName }} · 期望时间：{{ b.expectTime }}</div>
+          <div v-if="b.remark" class="text-secondary" style="font-size:13px;margin-top:4px">备注：{{ b.remark }}</div>
+          <div v-if="b.status===0" class="order-line" style="margin-top:8px">
+            <span></span>
+            <span>
+              <van-button size="small" type="primary" @click="confirmBooking(b)" :disabled="busy">接受预约</van-button>
+              <van-button size="small" type="danger" plain style="margin-left:8px" @click="rejectBooking(b)" :disabled="busy">拒绝</van-button>
+            </span>
+          </div>
+        </div>
+        <van-empty v-if="!skBookings.length" description="暂无预约单"></van-empty>
+      </div>
+    </div>
+
+    <!-- 我的服务 -->
+    <div v-if="view==='services'">
+      <div class="section card order-line" style="padding:12px">
+        <b>🛍️ 我的服务</b>
+        <van-button size="small" type="primary" @click="openSvcForm()" :disabled="busy">新增服务</van-button>
+      </div>
+      <div class="section">
+        <div v-for="s in services" :key="s.id" class="card">
+          <div class="order-line">
+            <div><span class="order-title">{{ s.title }}</span><span class="tag" v-if="s.categoryName">{{ s.categoryName }}</span></div>
+            <div class="money">{{ money(s.price) }}</div>
+          </div>
+          <div class="text-tertiary" style="font-size:12px;margin-top:6px">
+            {{ s.deliveryDays }}天交付 · {{ modeText(s.serviceMode) }}<span v-if="s.tags"> · {{ s.tags }}</span>
+          </div>
+          <div v-if="s.description" class="text-secondary" style="font-size:13px;margin-top:4px">{{ s.description }}</div>
+          <div class="order-line" style="margin-top:8px">
+            <van-tag :type="s.status===1?'success':'default'">{{ s.status===1 ? '上架中' : '已下架' }}</van-tag>
+            <span>
+              <van-button size="small" plain @click="toggleSvc(s)" :disabled="busy">{{ s.status===1 ? '下架' : '上架' }}</van-button>
+              <van-button size="small" type="primary" plain style="margin-left:6px" @click="openSvcForm(s)">编辑</van-button>
+            </span>
+          </div>
+        </div>
+        <van-empty v-if="!services.length" description="还没有服务，点击右上角新增"></van-empty>
+      </div>
+    </div>
+
+    <!-- 我的作品 -->
+    <div v-if="view==='portfolio'">
+      <div class="section card order-line" style="padding:12px">
+        <b>🎨 我的作品</b>
+        <van-button size="small" type="primary" @click="openPfForm" :disabled="busy">发布作品</van-button>
+      </div>
+      <div class="section">
+        <div v-for="p in portfolios" :key="p.id" class="card">
+          <img v-if="p.coverUrl" :src="p.coverUrl" style="width:100%;border-radius:var(--radius-md);margin-bottom:8px" onerror="this.style.display='none'"/>
+          <div class="order-line">
+            <div><span class="order-title">{{ p.title }}</span><van-tag :type="pfTag(p.status)" style="margin-left:6px">{{ pfText(p.status) }}</van-tag></div>
+            <van-button size="small" type="danger" plain @click="delPortfolio(p)" :disabled="busy">删除</van-button>
+          </div>
+          <div v-if="p.description" class="text-secondary" style="font-size:13px;margin-top:4px">{{ p.description }}</div>
+          <div v-if="p.status===2 && p.auditOpinion" style="font-size:12px;margin-top:4px;color:#ee0a24">驳回意见：{{ p.auditOpinion }}</div>
+        </div>
+        <van-empty v-if="!portfolios.length" description="还没有作品，快发布第一个吧"></van-empty>
+      </div>
+    </div>
+
+    <!-- 技能者中心 + 收入 -->
+    <div v-if="view==='me'">
+      <div class="hero">
+        <h3>{{ center.name || '技能者' }} <span class="tag" style="background:rgba(255,255,255,.2);color:#fff">接单等级 {{ levelName(center.runnerLevel) }}</span></h3>
+        <p>今日已接 {{ center.todayOrderCount ?? 0 }}/{{ center.dailyOrderLimit ?? 10 }} 单 · 评分 {{ center.score ?? '5.0' }}</p>
+        <van-progress :percentage="limitPct" stroke-width="6" style="margin-top:8px" color="#ffffff" track-color="rgba(255,255,255,.25)"/>
+        <div class="stat-row">
+          <div class="stat-box"><div class="stat-num">{{ money(center.todayIncome) }}</div><div class="stat-lab">今日技能服务收入</div></div>
+          <div class="stat-box"><div class="stat-num">{{ center.completedOrders ?? 0 }}</div><div class="stat-lab">完成单数</div></div>
+          <div class="stat-box"><div class="stat-num">{{ money(center.balance) }}</div><div class="stat-lab">钱包余额</div></div>
+        </div>
+      </div>
+      <div class="section" v-if="currentTask">
+        <div class="card" style="border-left:3px solid var(--brand-primary)">
+          <div class="order-line"><b>🚀 当前任务</b><van-tag type="primary">{{ statusText(currentTask.status) }}</van-tag></div>
+          <div style="font-weight:600;margin:8px 0 2px">{{ currentTask.title }}</div>
+          <div class="text-tertiary" style="font-size:13px">{{ currentTask.pickupAddress }} → {{ currentTask.deliveryAddress }}</div>
+          <div class="order-line" style="margin-top:10px">
+            <span class="money">实得{{ money(currentTask.runnerIncome) }}</span>
+            <span>
+              <a v-if="currentTask.publisherPhone" :href="'tel:' + currentTask.publisherPhone"
+                style="text-decoration:none;font-size:16px;margin-right:8px">📞</a>
+              <van-button v-if="!currentTask.pickupTime" size="small" type="primary" plain @click="pickup(currentTask)">确认开始服务</van-button>
+              <van-button size="small" type="success" @click="openDeliver(currentTask)">交付成果</van-button>
+            </span>
+          </div>
+        </div>
+      </div>
+      <div class="section">
+        <div class="card" @click="openMessages()">
+          <div class="order-line">
+            <b>🔔 消息中心</b>
+            <span><van-badge v-if="unread > 0" :content="unread" max="99"></van-badge><span class="text-tertiary"> 查看消息 ›</span></span>
+          </div>
+        </div>
+      </div>
+      <div class="section card">
+        <div style="font-weight:600;margin-bottom:8px">近7日技能服务收入趋势</div>
+        <div style="display:flex;align-items:flex-end;gap:6px;height:130px;margin-top:12px">
+          <div v-for="p in trend" :key="p.date" style="flex:1;text-align:center;height:100%;display:flex;flex-direction:column;justify-content:flex-end">
+            <div class="text-tertiary" style="font-size:10px;min-height:12px">{{ p.amount > 0 ? Number(p.amount).toFixed(0) : '' }}</div>
+            <div style="background:var(--brand-primary);border-radius:4px 4px 0 0;margin:2px auto 0;width:62%;min-height:3px"
+              :style="{ height: barH(p) + 'px' }"></div>
+            <div class="text-tertiary" style="font-size:10px;margin-top:4px">{{ p.date.slice(5) }}</div>
+          </div>
+        </div>
+        <div class="text-tertiary" style="font-size:12px;margin-top:6px">近7日完成 {{ trendTotal }} 单 · 技能服务收入 {{ money(trendIncome) }}</div>
+      </div>
+      <div class="section card">
+        <div style="font-weight:600;margin-bottom:8px">申请提现</div>
+        <input class="field" type="number" v-model.number="wdAmount" placeholder="提现金额（元）"/>
+        <input class="field" type="password" v-model="wdPassword" placeholder="提现密码（首次请先设置）"/>
+        <div class="order-line" style="margin-top:8px">
+          <button class="btn" style="width:48%" @click="applyWd" :disabled="busy">申请提现</button>
+          <button class="btn ghost" style="width:48%" @click="setPwd" :disabled="busy">设置提现密码</button>
+        </div>
+      </div>
+      <div class="section card">
+        <div style="font-weight:600;margin-bottom:8px">提现记录</div>
+        <van-cell-group inset>
+          <van-cell v-for="w in wdRecords" :key="w.id" :title="money(w.amount)"
+            :value="['待处理','已打款','已驳回'][w.status]" :label="w.applyTime"></van-cell>
+        </van-cell-group>
+        <van-empty v-if="!wdRecords.length" description="暂无提现记录" image-size="64"></van-empty>
+      </div>
+      <div class="section card">
+        <div style="font-weight:600;margin-bottom:8px">收支明细</div>
+        <van-cell-group inset>
+          <van-cell v-for="t in txs" :key="t.id" :title="txName(t.type)" :label="t.remark"
+            :value="(t.type===1||t.type===3||t.type===5?'+':'-')+money(t.amount)"></van-cell>
+        </van-cell-group>
+        <van-empty v-if="!txs.length" description="暂无流水" image-size="64"></van-empty>
+      </div>
+      <div class="section card">
+        <div class="order-line"><b>🏅 接单等级权益</b><span class="tag">{{ levelName(center.runnerLevel) }}</span></div>
+        <van-progress :percentage="levelPct" stroke-width="8" style="margin-top:10px"></van-progress>
+        <div class="text-tertiary" style="font-size:12px;margin-top:6px">
+          累计完成 {{ center.completedOrders ?? 0 }} 单{{ nextGoal ? '，再完成 ' + nextGoal + ' 单升级' + nextLevelName : '，已达最高等级' }}
+          · 当前每日可接 {{ center.dailyOrderLimit ?? 10 }} 单
+        </div>
+      </div>
+    </div>
+
+    <!-- 消息中心 -->
+    <div v-if="view==='messages'">
+      <div class="section card order-line" style="padding:12px">
+        <b>🔔 消息中心</b>
+        <van-button size="small" plain type="primary" @click="readAll" :disabled="busy">全部已读</van-button>
+      </div>
+      <div class="section">
+        <div v-for="m in messages" :key="m.id" class="card" @click="goOrderOfMessage(m)"
+          :style="(m.isRead===0 ? 'border-left:3px solid var(--brand-primary)' : '') + (m.orderId ? ';cursor:pointer' : '')">
+          <div class="order-line">
+            <b style="font-size:14px">{{ m.title }}</b>
+            <span class="text-tertiary" style="font-size:11px">{{ relTime(m.createTime) }}</span>
+          </div>
+          <div class="text-secondary" style="font-size:13px;margin-top:4px">{{ m.content }}</div>
+          <div v-if="m.orderId" class="text-secondary" style="font-size:12px;margin-top:4px;color:var(--brand-primary)">查看我的接单 ›</div>
+        </div>
+        <van-empty v-if="!messages.length" description="暂无消息"></van-empty>
+      </div>
+    </div>
+
+    <van-tabbar v-model="tab" @change="switchTab">
+      <van-tabbar-item icon="fire-o" name="hall">大厅</van-tabbar-item>
+      <van-tabbar-item icon="orders-o" name="myOrders">订单</van-tabbar-item>
+      <van-tabbar-item icon="shop-o" name="services">服务</van-tabbar-item>
+      <van-tabbar-item icon="photo-o" name="portfolio">作品</van-tabbar-item>
+      <van-tabbar-item icon="user-o" name="me">我的</van-tabbar-item>
+    </van-tabbar>
+
+    <!-- 交付成果弹窗 -->
+    <van-popup v-model:show="deliverShow" round position="bottom" style="padding:20px">
+      <div style="font-weight:600;margin-bottom:8px">📦 交付成果</div>
+      <van-cell-group inset>
+        <van-field v-model="deliverForm.deliverableUrl" label="交付物链接" placeholder="粘贴交付物链接（网盘/图片URL）"></van-field>
+        <van-field v-model="deliverForm.deliverableNote" label="交付说明" type="textarea" rows="2" autosize placeholder="补充说明（选填）"></van-field>
+      </van-cell-group>
+      <button class="btn" style="margin-top:16px" @click="submitDeliver" :disabled="busy">确认交付</button>
+    </van-popup>
+
+    <!-- 服务新增/编辑弹窗 -->
+    <van-popup v-model:show="svcShow" round position="bottom" style="padding:20px;max-height:80vh;overflow-y:auto">
+      <div style="font-weight:600;margin-bottom:8px">{{ svcForm.id ? '编辑服务' : '新增服务' }}</div>
+      <select class="field" v-model="svcForm.categoryId">
+        <option :value="null" disabled>选择分类</option>
+        <option v-for="c in cats" :key="c.id" :value="c.id">{{ c.name }}</option>
+      </select>
+      <input class="field" v-model="svcForm.title" placeholder="服务标题，如：课程汇报PPT美化（20页内）"/>
+      <textarea class="field" v-model="svcForm.description" rows="3" placeholder="服务描述"></textarea>
+      <input class="field" type="number" v-model.number="svcForm.price" placeholder="价格（元）"/>
+      <input class="field" type="number" v-model.number="svcForm.deliveryDays" placeholder="交付天数"/>
+      <div class="order-line" style="margin-top:8px;font-size:14px">
+        <span class="text-secondary">服务方式</span>
+        <van-radio-group v-model="svcForm.serviceMode" direction="horizontal">
+          <van-radio :name="1">线上交付</van-radio><van-radio :name="2">线下进行</van-radio>
+        </van-radio-group>
+      </div>
+      <input class="field" v-model="svcForm.tags" placeholder="标签，逗号分隔，如：PPT,设计"/>
+      <button class="btn" style="margin-top:12px" @click="submitSvc" :disabled="busy">保存</button>
+    </van-popup>
+
+    <!-- 作品发布弹窗 -->
+    <van-popup v-model:show="pfShow" round position="bottom" style="padding:20px;max-height:80vh;overflow-y:auto">
+      <div style="font-weight:600;margin-bottom:8px">发布作品</div>
+      <select class="field" v-model="pfForm.categoryId">
+        <option :value="null" disabled>选择分类</option>
+        <option v-for="c in cats" :key="c.id" :value="c.id">{{ c.name }}</option>
+      </select>
+      <input class="field" v-model="pfForm.title" placeholder="作品标题"/>
+      <input class="field" v-model="pfForm.coverUrl" placeholder="封面图 URL（选填）"/>
+      <input class="field" v-model="pfForm.workUrls" placeholder="作品图/链接，逗号分隔"/>
+      <textarea class="field" v-model="pfForm.description" rows="3" placeholder="作品描述（选填）"></textarea>
+      <button class="btn" style="margin-top:12px" @click="submitPf" :disabled="busy">提交审核</button>
+    </van-popup>
+  </div>
+  <van-toast ref="toastRef"></van-toast>
+</div>
+
+<script>
+const { createApp, ref, reactive, computed } = Vue;
+const { showToast } = vant;
+
+async function api(method, url, body, token, header) {
+  const opt = { method, headers: { "Content-Type": "application/json" } };
+  if (token) opt.headers[header || "authentication"] = token;
+  if (body !== undefined && body !== null) opt.body = JSON.stringify(body);
+  const r = await fetch(url, opt);
+  const j = await r.json();
+  if (j.code === 0 && j.msg && j.msg.indexOf("token") >= 0) {
+    localStorage.removeItem("runner_token");
+    setTimeout(() => location.reload(), 800);
+  }
+  return j;
+}
+const money = v => "￥" + Number(v || 0).toFixed(2);
+const STATUS = { 1:"待支付", 2:"待接单", 3:"进行中", 4:"已交付·待验收", 5:"已完成", 6:"已取消", 7:"已超时", 8:"返修中", 9:"仲裁中" };
+const TAG = { 1:"primary", 2:"warning", 3:"primary", 4:"primary", 5:"success", 6:"default", 7:"danger", 8:"warning", 9:"danger" };
+const BK = { 0:"待确认", 1:"已确认", 2:"已完成", 3:"已拒绝", 4:"已取消" };
+const BKTAG = { 0:"warning", 1:"primary", 2:"success", 3:"danger", 4:"default" };
+const PF = { 0:"待审核", 1:"已通过", 2:"已驳回" };
+const PFTAG = { 0:"warning", 1:"success", 2:"danger" };
+
+createApp({
+  setup() {
+    const token = ref(localStorage.getItem("runner_token") || "");
+    const view = ref("hall");
+    const tab = ref("hall");
+    const busy = ref(false);
+    const loginCode = ref("");
+    const hallKeyword = ref("");
+    const center = ref({});
+    const hall = ref([]);
+    const myOrders = ref([]);
+    const wallet = ref({});
+    const txs = ref([]);
+    const wdRecords = ref([]);
+    const wdAmount = ref(null);
+    const wdPassword = ref("");
+    const auditForm = reactive({ realName: "", studentNo: "", campus: "", college: "" });
+    const hallTypes = ref([]);
+    const hallTypeId = ref(null);
+    const trend = ref([]);
+    const messages = ref([]);
+    const unread = ref(0);
+    const orderSub = ref(0);
+    const skBookings = ref([]);
+    const services = ref([]);
+    const portfolios = ref([]);
+    const cats = ref([]);
+    const svcShow = ref(false);
+    const svcForm = reactive({ id: null, categoryId: null, title: "", description: "", price: null, deliveryDays: 1, serviceMode: 1, tags: "" });
+    const pfShow = ref(false);
+    const pfForm = reactive({ categoryId: null, title: "", coverUrl: "", workUrls: "", description: "" });
+    const deliverShow = ref(false);
+    const deliverForm = reactive({ id: null, deliverableUrl: "", deliverableNote: "" });
+
+    const navTitle = computed(() => ({ hall:"悬赏大厅", myOrders:"我的接单", services:"我的服务",
+      portfolio:"我的作品", me:"技能者中心", messages:"消息中心" }[view.value] || "CampusSkill 技能者端"));
+
+    function toast(msg, ok = true) { showToast({ message: msg, type: ok ? "success" : "fail" }); }
+    async function doLogin() {
+      if (!loginCode.value) return toast("请输入登录码", false);
+      busy.value = true;
+      const r = await api("POST", "/skiller/auth/login", { code: loginCode.value });
+      busy.value = false;
+      if (r.code === 1) { localStorage.setItem("runner_token", r.data.token); token.value = r.data.token; init(); }
+      else toast(r.msg + "（可在下方提交入驻申请）", false);
+    }
+    async function applyAudit() {
+      // 入驻申请走用户端接口：先用同 code 取用户 token
+      busy.value = true;
+      const ul = await api("POST", "/user/user/login", { code: loginCode.value || ("r" + Date.now()) });
+      if (ul.code !== 1) { busy.value = false; return toast(ul.msg, false); }
+      const r = await api("POST", "/user/skiller/apply", auditForm, ul.data.token);
+      busy.value = false;
+      r.code === 1 ? toast("申请已提交，等待平台审核") : toast(r.msg, false);
+    }
+    async function init() {
+      const c = await api("GET", "/skiller/info/center", null, token.value);
+      if (c.code === 1) center.value = c.data; else { localStorage.removeItem("runner_token"); token.value = ""; return; }
+      loadCurrentTask();
+      loadHall();
+      loadHallTypes();
+      loadUnread();
+      connectWs();
+    }
+    //首页-当前进行中任务（快捷开始服务/交付/联系用户）
+    const currentTask = ref(null);
+    async function loadCurrentTask() {
+      const r = await api("GET", "/skiller/orders/page?page=1&pageSize=5&status=3", null, token.value);
+      currentTask.value = (r.data && r.data.records && r.data.records[0]) || null;
+    }
+    //人性化时间显示
+    function relTime(t) {
+      if (!t) return "";
+      const d = new Date(String(t).replace(" ", "T"));
+      const diff = Math.floor((Date.now() - d.getTime()) / 60000);
+      if (diff < 1) return "刚刚";
+      if (diff < 60) return diff + " 分钟前";
+      if (diff < 1440) return Math.floor(diff / 60) + " 小时前";
+      if (diff < 2880) return "昨天 " + String(t).slice(11, 16);
+      return String(t).slice(5, 16);
+    }
+    function goOrderOfMessage(m) {
+      if (!m.orderId) return;
+      view.value = "myOrders";
+      tab.value = "myOrders";
+      orderSub.value = 0;
+      loadMyOrders();
+    }
+    async function loadHallTypes() {
+      const r = await api("GET", "/user/hall/skillCategory/list", null, token.value);
+      hallTypes.value = r.data || [];
+    }
+    async function loadCats() {
+      const r = await api("GET", "/user/skillCategory/list", null, token.value);
+      cats.value = r.data || [];
+    }
+    async function loadTrend() {
+      const r = await api("GET", "/skiller/info/trend?days=7", null, token.value);
+      trend.value = r.data || [];
+    }
+    function barH(p) {
+      const max = Math.max(...trend.value.map(t => Number(t.amount) || 0), 1);
+      return Math.max(3, Math.round(Number(p.amount || 0) / max * 90));
+    }
+    const trendTotal = computed(() => trend.value.reduce((s, t) => s + (t.orderCount || 0), 0));
+    const trendIncome = computed(() => trend.value.reduce((s, t) => s + Number(t.amount || 0), 0));
+    async function loadUnread() {
+      const r = await api("GET", "/skiller/message/unread", null, token.value);
+      unread.value = r.data || 0;
+    }
+    // WebSocket 实时推送：新订单/订单状态变更即时弹窗提醒
+    let ws = null, wsTimer = null;
+    function connectWs() {
+      if (!token.value) return;
+      if (ws) { try { ws.onclose = null; ws.close(); } catch (e) {} }
+      clearTimeout(wsTimer);
+      const proto = location.protocol === "https:" ? "wss" : "ws";
+      try {
+        ws = new WebSocket(proto + "://" + location.host + "/ws/" + encodeURIComponent(token.value));
+      } catch (e) { return; }
+      ws.onmessage = (ev) => {
+        try {
+          const d = JSON.parse(ev.data);
+          if (d.type === "message") {
+            showToast({ message: "🔔 " + d.title });
+            unread.value += 1;
+            //消息相关页面实时刷新
+            if (view.value === "messages") loadMessages();
+            if (view.value === "me") loadWallet();
+          }
+        } catch (e) {}
+      };
+      ws.onclose = () => { wsTimer = setTimeout(connectWs, 10000); };
+      ws.onerror = () => { try { ws.close(); } catch (e) {} };
+    }
+    async function loadMessages() {
+      const r = await api("GET", "/skiller/message/list", null, token.value);
+      messages.value = r.data || [];
+    }
+    function openMessages() { view.value = "messages"; loadMessages(); }
+    async function readAll() {
+      const r = await api("PUT", "/skiller/message/readAll", null, token.value);
+      if (r.code === 1) { toast("已全部标记为已读"); loadMessages(); loadUnread(); }
+    }
+    //等级门槛：20/50/100 单晋升铜/银/金牌
+    const LEVEL_GOALS = { 1: 20, 2: 50, 3: 100 };
+    const levelPct = computed(() => {
+      const done = center.value.completedOrders || 0;
+      const goal = LEVEL_GOALS[center.value.runnerLevel] || LEVEL_GOALS[3];
+      return Math.min(100, Math.round(done / goal * 100));
+    });
+    const nextGoal = computed(() => {
+      const done = center.value.completedOrders || 0;
+      const goal = LEVEL_GOALS[center.value.runnerLevel];
+      return goal ? Math.max(goal - done, 0) : 0;
+    });
+    const nextLevelName = computed(() => levelName((center.value.runnerLevel || 1) + 1));
+    async function loadHall() {
+      const q = new URLSearchParams({ page: 1, pageSize: 20 });
+      if (hallKeyword.value) q.set("keyword", hallKeyword.value);
+      if (hallTypeId.value) q.set("typeId", hallTypeId.value);
+      const r = await api("GET", "/skiller/orders/hall?" + q, null, token.value);
+      hall.value = (r.data && r.data.records) || [];
+    }
+    async function loadMyOrders() {
+      const r = await api("GET", "/skiller/orders/page?page=1&pageSize=20", null, token.value);
+      myOrders.value = (r.data && r.data.records) || [];
+    }
+    //预约单
+    function bkText(s) { return BK[s] || s; }
+    function bkTag(s) { return BKTAG[s] || "default"; }
+    async function loadSkBookings() {
+      const r = await api("GET", "/skiller/booking/page?page=1&pageSize=20", null, token.value);
+      skBookings.value = (r.data && r.data.records) || [];
+    }
+    async function confirmBooking(b) {
+      busy.value = true;
+      const r = await api("POST", "/skiller/booking/" + b.id + "/confirm", null, token.value);
+      busy.value = false;
+      r.code === 1 ? (toast("已接受预约，等待用户支付"), loadSkBookings()) : toast(r.msg, false);
+    }
+    async function rejectBooking(b) {
+      try {
+        await vant.showConfirmDialog({ title: "拒绝预约", message: "确定拒绝该预约吗？" });
+      } catch (e) { return; }
+      const r = await api("POST", "/skiller/booking/" + b.id + "/reject", null, token.value);
+      r.code === 1 ? (toast("已拒绝预约"), loadSkBookings()) : toast(r.msg, false);
+    }
+    function loadOrderSub() { orderSub.value === 1 ? loadSkBookings() : loadMyOrders(); }
+    async function grab(o) {
+      busy.value = true;
+      const r = await api("POST", "/skiller/orders/grab", { id: o.id }, token.value);
+      busy.value = false;
+      if (r.code === 1) {
+        toast("接单成功！请尽快开始服务");
+        //联动跳转：直接进入订单办理任务
+        view.value = "myOrders";
+        tab.value = "myOrders";
+        orderSub.value = 0;
+        loadMyOrders();
+        loadCurrentTask();
+      } else toast(r.msg, false);
+    }
+    async function pickup(o) {
+      const r = await api("PUT", "/skiller/orders/pickup/" + o.id, null, token.value);
+      if (r.code === 1) { toast("已确认开始服务"); loadMyOrders(); loadCurrentTask(); } else toast(r.msg, false);
+    }
+    //交付成果
+    function openDeliver(o) {
+      deliverForm.id = o.id;
+      deliverForm.deliverableUrl = o.deliverableUrl || "";
+      deliverForm.deliverableNote = o.deliverableNote || "";
+      deliverShow.value = true;
+    }
+    async function submitDeliver() {
+      if (!deliverForm.deliverableUrl) return toast("请粘贴交付物链接", false);
+      busy.value = true;
+      const r = await api("PUT", "/skiller/orders/deliver/" + deliverForm.id,
+        { deliverableUrl: deliverForm.deliverableUrl, deliverableNote: deliverForm.deliverableNote }, token.value);
+      busy.value = false;
+      if (r.code === 1) {
+        deliverShow.value = false;
+        toast("交付成功，等待用户验收");
+        loadMyOrders();
+        loadCurrentTask();
+        //联动刷新：重新拉取个人中心今日技能服务收入
+        const c = await api("GET", "/skiller/info/center", null, token.value);
+        if (c.code === 1) center.value = c.data;
+      } else toast(r.msg, false);
+    }
+    //返修响应：回到进行中
+    async function respondRework(o) {
+      try {
+        await vant.showConfirmDialog({ title: "响应返修", message: "确认响应返修并重新开始服务吗？" });
+      } catch (e) { return; }
+      const r = await api("POST", "/skiller/orders/rework/" + o.id, null, token.value);
+      if (r.code === 1) { toast("已响应返修，请尽快重新交付"); loadMyOrders(); loadCurrentTask(); } else toast(r.msg, false);
+    }
+    //我的服务
+    function modeText(m) { return m === 1 ? "线上交付" : "线下进行"; }
+    async function loadServices() {
+      const r = await api("GET", "/skiller/service/list", null, token.value);
+      services.value = Array.isArray(r.data) ? r.data : ((r.data && r.data.records) || []);
+      loadCats();
+    }
+    function openSvcForm(s) {
+      if (s) {
+        Object.assign(svcForm, { id: s.id, categoryId: s.categoryId, title: s.title, description: s.description || "",
+          price: s.price, deliveryDays: s.deliveryDays || 1, serviceMode: s.serviceMode || 1, tags: s.tags || "" });
+      } else {
+        Object.assign(svcForm, { id: null, categoryId: null, title: "", description: "", price: null, deliveryDays: 1, serviceMode: 1, tags: "" });
+      }
+      loadCats();
+      svcShow.value = true;
+    }
+    async function submitSvc() {
+      if (!svcForm.categoryId) return toast("请选择分类", false);
+      if (!svcForm.title) return toast("请填写服务标题", false);
+      if (!svcForm.price || svcForm.price <= 0) return toast("请填写正确的价格", false);
+      busy.value = true;
+      const r = svcForm.id
+        ? await api("PUT", "/skiller/service/" + svcForm.id, { ...svcForm }, token.value)
+        : await api("POST", "/skiller/service", { ...svcForm }, token.value);
+      busy.value = false;
+      if (r.code === 1) { toast("已保存"); svcShow.value = false; loadServices(); } else toast(r.msg, false);
+    }
+    async function toggleSvc(s) {
+      const to = s.status === 1 ? 0 : 1;
+      const r = await api("PUT", "/skiller/service/" + s.id + "/status/" + to, null, token.value);
+      if (r.code === 1) { toast(to === 1 ? "已上架" : "已下架"); loadServices(); } else toast(r.msg, false);
+    }
+    //我的作品
+    function pfText(s) { return PF[s] || s; }
+    function pfTag(s) { return PFTAG[s] || "default"; }
+    async function loadPortfolio() {
+      const r = await api("GET", "/skiller/portfolio", null, token.value);
+      portfolios.value = Array.isArray(r.data) ? r.data : ((r.data && r.data.records) || []);
+      loadCats();
+    }
+    function openPfForm() {
+      Object.assign(pfForm, { categoryId: null, title: "", coverUrl: "", workUrls: "", description: "" });
+      loadCats();
+      pfShow.value = true;
+    }
+    async function submitPf() {
+      if (!pfForm.title) return toast("请填写作品标题", false);
+      busy.value = true;
+      const r = await api("POST", "/skiller/portfolio", { ...pfForm }, token.value);
+      busy.value = false;
+      if (r.code === 1) { toast("已提交审核"); pfShow.value = false; loadPortfolio(); } else toast(r.msg, false);
+    }
+    async function delPortfolio(p) {
+      try {
+        await vant.showConfirmDialog({ title: "删除作品", message: "确定删除该作品吗？" });
+      } catch (e) { return; }
+      const r = await api("DELETE", "/skiller/portfolio/" + p.id, null, token.value);
+      r.code === 1 ? (toast("已删除"), loadPortfolio()) : toast(r.msg, false);
+    }
+    async function loadWallet() {
+      wallet.value = (await api("GET", "/skiller/wallet/balance", null, token.value)).data || {};
+      const t = await api("GET", "/skiller/wallet/transactions?page=1&pageSize=10", null, token.value);
+      txs.value = (t.data && t.data.records) || [];
+      const w = await api("GET", "/skiller/wallet/withdraw/page?page=1&pageSize=10", null, token.value);
+      wdRecords.value = (w.data && w.data.records) || [];
+      loadTrend();
+    }
+    async function applyWd() {
+      busy.value = true;
+      const r = await api("POST", "/skiller/wallet/withdraw", { amount: wdAmount.value, withdrawPassword: wdPassword.value }, token.value);
+      busy.value = false;
+      r.code === 1 ? (toast("提现申请已提交"), loadWallet()) : toast(r.msg, false);
+    }
+    async function setPwd() {
+      if (!wdPassword.value || wdPassword.value.length < 6) return toast("密码至少6位", false);
+      const r = await api("POST", "/skiller/wallet/password?password=" + encodeURIComponent(wdPassword.value), null, token.value);
+      r.code === 1 ? toast("提现密码已设置") : toast(r.msg, false);
+    }
+    function txName(t) { return { 1:"技能服务收入", 2:"支付支出", 3:"充值", 4:"提现", 5:"退款", 6:"违约金" }[t] || "其他"; }
+    function levelName(l) { return ["", "普通", "铜牌", "银牌", "金牌"][l] || "普通"; }
+    function statusText(s) { return STATUS[s] || s; }
+    function tagType(s) { return TAG[s] || "primary"; }
+    const limitPct = computed(() => {
+      const used = center.value.todayOrderCount || 0, lim = center.value.dailyOrderLimit || 10;
+      return Math.min(100, Math.round(used / lim * 100));
+    });
+    //技能者中心（含收入）
+    async function loadMe() {
+      const c = await api("GET", "/skiller/info/center", null, token.value);
+      if (c.code === 1) center.value = c.data; else { localStorage.removeItem("runner_token"); token.value = ""; return; }
+      loadCurrentTask();
+      loadWallet();
+      loadUnread();
+    }
+    function switchTab(name) {
+      view.value = name;
+      if (name === "hall") loadHall();
+      if (name === "myOrders") loadOrderSub();
+      if (name === "services") loadServices();
+      if (name === "portfolio") loadPortfolio();
+      if (name === "me") loadMe();
+    }
+
+    if (token.value) init();
+
+    return { token, view, tab, busy, loginCode, center, hall, myOrders, wallet, txs, wdRecords, wdAmount,
+             wdPassword, auditForm, navTitle, doLogin, applyAudit, loadHall, loadMyOrders, grab, pickup,
+             openDeliver, submitDeliver, deliverShow, deliverForm, respondRework, applyWd, setPwd, txName,
+             levelName, statusText, tagType, switchTab, hallKeyword, limitPct, money,
+             hallTypes, hallTypeId, trend, barH, trendTotal, trendIncome, messages, unread, openMessages,
+             readAll, loadUnread, levelPct, nextGoal, nextLevelName, currentTask, loadCurrentTask,
+             relTime, goOrderOfMessage, orderSub, loadOrderSub, skBookings, bkText, bkTag,
+             confirmBooking, rejectBooking, services, cats, svcShow, svcForm, openSvcForm, submitSvc,
+             toggleSvc, modeText, portfolios, pfShow, pfForm, openPfForm, submitPf, delPortfolio, pfText, pfTag };
+  }
+}).use(vant).mount("#app");
+</script>
+</body>
+</html>
