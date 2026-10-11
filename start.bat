@@ -108,15 +108,20 @@ if errorlevel 1 (
 echo.
 echo ============================================
 echo   启动完成！
-echo   管理端:   http://localhost:8080/admin-web/   （admin / 123456）
-echo   用户端:   http://localhost:8080/user-app/    （演示账号 demo1）
-echo   技能者端: http://localhost:8080/skiller-app/ （演示账号 demo2）
+echo   Web 门户: http://localhost:8080/web-app/#/login    （用户/技能者，演示账号 demo1）
+echo   管理端:   http://localhost:8080/admin-web/#/login  （admin / 123456）
+echo   用户端H5: http://localhost:8080/user-app/          （演示账号 demo1）
+echo   技能者H5: http://localhost:8080/skiller-app/       （演示账号 demo2）
 echo   接口文档: http://localhost:8080/doc.html
 echo   停止服务: 关闭 campus-mysql / campus-redis / campus-server 窗口
 echo ============================================
 if not defined NO_OPEN (
-    start "" http://localhost:8080/admin-web/
-    start "" http://localhost:8080/doc.html
+    echo 正在打开登录页...
+    start "" "http://localhost:8080/web-app/#/login"
+    ping -n 2 127.0.0.1 >nul
+    start "" "http://localhost:8080/admin-web/#/login"
+    ping -n 2 127.0.0.1 >nul
+    start "" "http://localhost:8080/user-app/"
 )
 echo 窗口将在 8 秒后自动关闭...
 ping -n 9 127.0.0.1 >nul
