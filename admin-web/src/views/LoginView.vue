@@ -60,16 +60,13 @@ async function onSubmit() {
   display: flex;
   align-items: center;
   justify-content: center;
-  background:
-    radial-gradient(1000px 480px at 15% -10%, rgba(0, 174, 236, 0.12), transparent 60%),
-    radial-gradient(900px 460px at 105% 110%, rgba(251, 114, 153, 0.08), transparent 55%),
-    #f1f2f3;
+  background: #ffffff;
 }
 
-/* 亮色登录卡：白底半透明 + 细边框 */
+/* 亮色登录卡：白底 + 细边框 */
 .login-box {
   width: 400px;
-  background: rgba(255, 255, 255, 0.9);
+  background: #ffffff;
   border: 1px solid #e3e5e7;
   border-radius: 20px;
   padding: 40px 36px 28px;

@@ -122,6 +122,7 @@ async function onSubmit() {
   align-items: center;
   justify-content: center;
   padding: 40px 16px;
+  background: #ffffff;
 }
 
 .login-box {
