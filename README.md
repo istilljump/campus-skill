@@ -59,8 +59,8 @@ java -jar campus-server/target/campus-server-1.0-SNAPSHOT.jar
 | 🌐 Web 门户（桌面端·推荐） | http://localhost:8080/web-app/ | Vue3 + Vite + Element Plus 蓝白活力风桌面工作台：用户端与技能者端业务一体（概览/悬赏大厅/技能市场/发布悬赏/订单全流程/钱包/消息/地址/资料/入驻 + 接单台/服务/作品/技能者中心），双身份登录自动联动导航；源码见 `web-app/` |
 | 🖥️ 管理端控制台（工程版·推荐） | http://localhost:8080/admin-web/ | Vue3 + Vite + Element Plus + Pinia + ECharts 蓝白活力风桌面工作台：数据大屏、订单、预约、技能者、作品审核、仲裁工单、信用榜单、认证/提现审核、类目、系统公告；源码见 `admin-web/` |
 | 🖥️ 管理端控制台（零构建版） | http://localhost:8080/admin-app/ | 单文件版，功能同上（无数据大屏） |
-| 🙋 用户端 H5 | http://localhost:8080/user-app/ | 蓝白活力风，移动端流式布局 + 桌面端侧边导航多列（≥1024px 自动切换）：发布悬赏、技能市场/预约、交付验收、钱包、评价 |
-| 🎨 技能者端 H5 | http://localhost:8080/skiller-app/ | 同上响应式：悬赏大厅、交付/返修、服务上架、作品集、预约管理、收入提现 |
+| 🙋🛠️ 双身份 H5（用户端 + 技能者端合一） | http://localhost:8080/user-app/ | 鲜活明亮蓝白风，单文件零构建：顶栏身份徽章/侧栏身份卡一键切换用户与技能者身份，双 token 并存；涵盖发单、订单大厅、技能市场/预约、交付验收、钱包、消息、地址 + 技能者登录/入驻、抢单大厅、接单交付、服务上架、作品集、提现 |
+| 🎨 技能者端 H5（旧入口） | http://localhost:8080/skiller-app/ | 已合并进双身份 H5，访问自动跳转 `/user-app/` |
 
 ### 管理端工程版（admin-web）
 

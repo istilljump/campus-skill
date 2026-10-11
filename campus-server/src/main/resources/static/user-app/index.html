@@ -3,63 +3,139 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>CampusSkill 校园技能工坊 · 用户端</title>
+<title>CampusSkill 校园技能工坊 · 双身份工作台</title>
 <link rel="stylesheet" href="/assets/tokens.css">
 <link rel="stylesheet" href="/assets/vendor/vant.css">
 <link rel="stylesheet" href="/assets/glass.css">
 <script src="/assets/vendor/vue.global.prod.js"></script>
 <script src="/assets/vendor/vant.js"></script>
 <style>
-  /* 用户端主题色（仅变量，结构样式统一在 glass.css） */
-  .cs-app { --cs-accent: #00aeec; --cs-accent-2: #4dc3f2; --cs-accent-soft: rgba(0, 174, 236, .12); }
-  /* 移动端首屏主视觉（impeccable：核心亮点首屏可见） */
+  /* 双身份主题：B 站蓝主色 + 粉色点缀（仅变量，结构样式统一在 glass.css） */
+  .cs-app { --cs-accent: #00aeec; --cs-accent-2: #fb7299; --cs-accent-soft: rgba(0, 174, 236, .12); }
+  /* 输入控件占满所在卡片行宽（登录卡/表单统一观感） */
+  .cs-app .field { display: block; width: 100%; box-sizing: border-box; }
+  /* 鲜活明亮画布：白底 + 高饱和蓝/粉/青光斑（覆盖 glass.css 画布） */
+  body {
+    background:
+      radial-gradient(1100px 520px at 12% -8%, rgba(0, 174, 236, .16), transparent 60%),
+      radial-gradient(900px 480px at 108% 12%, rgba(251, 114, 153, .12), transparent 55%),
+      radial-gradient(760px 420px at 50% 118%, rgba(0, 208, 255, .12), transparent 60%),
+      linear-gradient(180deg, #f0faff, #f7f9ff 45%, #fff6fa);
+  }
+  /* 首页类型九宫格：上叠 hero 的悬浮卡片布局 */
   .cs-app .type-grid {
     display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--sp-2);
     margin: calc(var(--sp-10) * -1 + 10px) var(--sp-4) 0;
-    background: linear-gradient(160deg, var(--cs-surface-strong), var(--cs-surface));
+    background: #fff;
     border: 1px solid var(--cs-border);
     border-radius: var(--cs-radius); box-shadow: var(--cs-shadow); padding: var(--sp-4);
   }
-  .cs-app .type-item { text-align: center; padding: var(--sp-2) 0; border-radius: var(--radius-md); cursor: pointer; }
+  .cs-app .type-item { text-align: center; padding: var(--sp-2) 0; border-radius: var(--radius-md); cursor: pointer; transition: background .16s ease, transform .16s ease; }
+  .cs-app .type-item:hover { background: #f0faff; transform: translateY(-2px); }
   .cs-app .type-emoji { font-size: 24px; }
   .cs-app .type-name { font-size: var(--text-xs); color: var(--cs-text-2); margin-top: var(--sp-1); }
+  /* 技能者中心数据块 */
+  .cs-app .stat-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-2); margin-top: var(--sp-4); }
+  .cs-app .stat-box {
+    background: rgba(255, 255, 255, .55); border: 1px solid rgba(255, 255, 255, .7);
+    border-radius: var(--radius-md); padding: var(--sp-3); text-align: center;
+  }
+  .cs-app .stat-num { font-weight: var(--weight-bold); font-size: var(--text-lg); }
+  .cs-app .stat-lab { font-size: var(--text-xs); opacity: .82; }
+  /* 身份切换徽章：顶栏右侧常驻，双身份一键切换 */
+  .cs-app .role-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 5px 14px; border-radius: var(--radius-full); cursor: pointer;
+    font-size: var(--text-xs); font-weight: var(--weight-semibold); color: #fff;
+    background: linear-gradient(135deg, var(--cs-accent), var(--cs-accent-2));
+    box-shadow: 0 4px 12px -4px rgba(0, 174, 236, .5);
+    transition: transform .16s ease, filter .16s ease;
+  }
+  .cs-app .role-chip:hover { filter: brightness(1.06); transform: translateY(-1px); }
+  /* 侧栏身份卡 */
+  .cs-app .role-card {
+    margin-top: var(--sp-3); border: 1px solid var(--cs-border);
+    border-radius: var(--radius-md); background: #f6fbff; padding: var(--sp-3);
+  }
+  .cs-app .role-card .role-name { font-weight: var(--weight-semibold); font-size: var(--text-sm); }
+  .cs-app .role-card .role-desc { font-size: var(--text-xs); color: var(--cs-text-3); margin-top: 2px; }
+  .cs-app .role-switch {
+    width: 100%; margin-top: 8px; padding: 8px 0; border: none; border-radius: 10px; cursor: pointer;
+    font-size: var(--text-xs); font-weight: var(--weight-semibold); color: #fff;
+    background: linear-gradient(135deg, var(--cs-accent), var(--cs-accent-2));
+  }
+  .cs-app .role-switch:active { transform: scale(.98); }
 </style>
 </head>
 <body>
 <div id="app" class="cs-app">
-  <!-- 登录：账号密码（主流形态）/ 注册 / 体验码（联调降级，对应清单 A1+A7） -->
-  <div v-if="!token" style="padding:48px 20px;background:#fff;min-height:100vh">
+  <!-- 首次进入（两种身份都未登录）：整页登录卡，支持用户/技能者切换 -->
+  <div v-if="!userToken && !runnerToken" style="padding:48px 20px;background:#fff;min-height:100vh">
     <div class="glass-blur" style="max-width:420px;margin:0 auto;padding:36px 28px 32px;border-radius:20px;text-align:center">
       <div style="font-size:56px">🧰</div>
       <h2 style="margin:12px 0 4px">CampusSkill 校园技能工坊</h2>
-      <p class="text-tertiary" style="margin-bottom:24px;font-size:var(--text-sm)">登录后即可发布技能服务需求</p>
+      <p class="text-tertiary" style="margin-bottom:16px;font-size:var(--text-sm)">一个入口 · 用户与技能者双身份</p>
+      <div style="display:flex;gap:8px;margin-bottom:16px">
+        <button class="btn" style="width:auto;flex:1;padding:8px 0" :style="loginRole==='user' ? '' : 'filter:grayscale(1);opacity:.55'" @click="loginRole='user'">🙋 用户登录</button>
+        <button class="btn" style="width:auto;flex:1;padding:8px 0" :style="loginRole==='skiller' ? '' : 'filter:grayscale(1);opacity:.55'" @click="loginRole='skiller'">🛠️ 技能者登录</button>
+      </div>
 
-      <template v-if="loginMode === 'account'">
-        <input class="field" v-model="accountForm.username" placeholder="用户名" @keyup.enter="doAccountLogin"/>
-        <input class="field" type="password" v-model="accountForm.password" placeholder="密码" @keyup.enter="doAccountLogin"/>
-        <button class="btn" style="margin-top:16px" @click="doAccountLogin" :disabled="busy">登 录</button>
-        <div class="order-line" style="margin-top:14px;font-size:13px">
-          <span class="text-secondary" style="cursor:pointer" @click="loginMode='register'">没有账号？立即注册</span>
-          <span class="text-tertiary" style="cursor:pointer" @click="loginMode='guest'">体验登录 ›</span>
-        </div>
+      <!-- 用户身份：账号 / 注册 / 体验码 -->
+      <template v-if="loginRole === 'user'">
+        <template v-if="loginMode === 'account'">
+          <input class="field" v-model="accountForm.username" placeholder="用户名" @keyup.enter="doAccountLogin"/>
+          <input class="field" type="password" v-model="accountForm.password" placeholder="密码" @keyup.enter="doAccountLogin"/>
+          <button class="btn" style="margin-top:16px" @click="doAccountLogin" :disabled="busy">登 录</button>
+          <div class="order-line" style="margin-top:14px;font-size:13px">
+            <span class="text-secondary" style="cursor:pointer" @click="loginMode='register'">没有账号？立即注册</span>
+            <span class="text-tertiary" style="cursor:pointer" @click="loginMode='guest'">体验登录 ›</span>
+          </div>
+        </template>
+        <template v-else-if="loginMode === 'register'">
+          <input class="field" v-model="accountForm.username" placeholder="用户名（4-20位字母/数字/下划线）"/>
+          <input class="field" type="password" v-model="accountForm.password" placeholder="密码（6-32位）"/>
+          <input class="field" type="password" v-model="accountForm.confirmPassword" placeholder="确认密码"/>
+          <input class="field" v-model="accountForm.name" placeholder="昵称（选填）"/>
+          <button class="btn" style="margin-top:16px" @click="doRegister" :disabled="busy">注 册</button>
+          <div class="order-line" style="margin-top:14px;font-size:13px">
+            <span class="text-secondary" style="cursor:pointer" @click="loginMode='account'">‹ 返回账号登录</span>
+          </div>
+        </template>
+        <template v-else>
+          <input class="field" v-model="loginCode" placeholder="输入任意体验码即可登录（联调模式）" @keyup.enter="doGuestLogin"/>
+          <button class="btn" style="margin-top:16px" @click="doGuestLogin" :disabled="busy">体验登录</button>
+          <div class="order-line" style="margin-top:14px;font-size:13px">
+            <span class="text-secondary" style="cursor:pointer" @click="loginMode='account'">‹ 返回账号登录</span>
+          </div>
+        </template>
       </template>
 
-      <template v-else-if="loginMode === 'register'">
-        <input class="field" v-model="accountForm.username" placeholder="用户名（4-20位字母/数字/下划线）"/>
-        <input class="field" type="password" v-model="accountForm.password" placeholder="密码（6-32位）"/>
-        <input class="field" type="password" v-model="accountForm.confirmPassword" placeholder="确认密码"/>
-        <input class="field" v-model="accountForm.name" placeholder="昵称（选填）"/>
-        <button class="btn" style="margin-top:16px" @click="doRegister" :disabled="busy">注 册</button>
-        <div class="order-line" style="margin-top:14px;font-size:13px">
-          <span class="text-secondary" style="cursor:pointer" @click="loginMode='account'">‹ 返回账号登录</span>
-        </div>
-      </template>
-
+      <!-- 技能者身份：账号 / 体验码 + 入驻申请 -->
       <template v-else>
-        <input class="field" v-model="loginCode" placeholder="输入任意体验码即可登录（联调模式）" @keyup.enter="doLogin"/>
-        <button class="btn" style="margin-top:16px" @click="doLogin" :disabled="busy">体验登录</button>
-        <div class="order-line" style="margin-top:14px;font-size:13px">
-          <span class="text-secondary" style="cursor:pointer" @click="loginMode='account'">‹ 返回账号登录</span>
+        <template v-if="skLoginMode === 'account'">
+          <input class="field" v-model="skAccountForm.username" placeholder="用户名（需已通过技能者认证）" @keyup.enter="doSkAccountLogin"/>
+          <input class="field" type="password" v-model="skAccountForm.password" placeholder="密码" @keyup.enter="doSkAccountLogin"/>
+          <button class="btn" style="margin-top:16px" @click="doSkAccountLogin" :disabled="busy">登 录</button>
+          <div class="order-line" style="margin-top:14px;font-size:13px">
+            <span class="text-tertiary">还没有入驻？在下方提交申请</span>
+            <span class="text-secondary" style="cursor:pointer" @click="skLoginMode='guest'">体验登录 ›</span>
+          </div>
+        </template>
+        <template v-else>
+          <input class="field" v-model="loginCode" placeholder="输入体验码（与用户端一致，联调模式）" @keyup.enter="doSkGuestLogin"/>
+          <button class="btn" style="margin-top:16px" @click="doSkGuestLogin" :disabled="busy">体验登录</button>
+          <div class="order-line" style="margin-top:14px;font-size:13px">
+            <span class="text-secondary" style="cursor:pointer" @click="skLoginMode='account'">‹ 返回账号登录</span>
+          </div>
+        </template>
+        <div style="margin-top:24px;border-top:1px solid var(--cs-border);padding-top:20px;text-align:left">
+          <div style="font-weight:var(--weight-semibold);margin-bottom:8px">还没有入驻？提交技能者入驻申请</div>
+          <p class="text-tertiary" style="font-size:12px;margin-bottom:8px">入驻审核通过后即可用账号或体验码登录接单</p>
+          <input class="field" v-model="auditForm.realName" placeholder="真实姓名"/>
+          <input class="field" v-model="auditForm.studentNo" placeholder="学号"/>
+          <input class="field" v-model="auditForm.campus" placeholder="校区"/>
+          <input class="field" v-model="auditForm.college" placeholder="学院"/>
+          <button class="btn ghost" style="margin-top:12px" @click="applyAudit" :disabled="busy">提交入驻申请</button>
         </div>
       </template>
     </div>
@@ -67,10 +143,22 @@
 
   <!-- 响应式外壳：移动端流式 + 底部 tabbar；桌面端 侧边导航 + 多列内容 -->
   <div v-else class="page">
-    <!-- 桌面端侧边导航（≥1024px 显示；仅切换视图，复用既有加载逻辑） -->
+    <!-- 桌面端侧边导航（≥1024px 显示；按当前身份渲染对应菜单） -->
     <aside class="side-nav">
-      <div class="brand"><span class="logo">🧰</span><span>CampusSkill</span></div>
-      <div class="nav-group">
+      <div class="brand"><span class="logo">{{ role==='user' ? '🧰' : '🛠️' }}</span><span>CampusSkill</span></div>
+      <div class="role-card" v-if="role==='user'">
+        <div class="role-name">🙋 用户身份</div>
+        <div class="role-desc">{{ profile.name || '校园用户' }} · 信用 {{ profile.creditScore ?? 100 }}</div>
+        <button class="role-switch" @click="toggleRole">{{ runnerToken ? '🛠️ 切换为技能者' : '🛠️ 技能者工作台' }}</button>
+      </div>
+      <div class="role-card" v-else>
+        <div class="role-name">🛠️ 技能者身份</div>
+        <div class="role-desc">{{ center.name || '技能者' }} · {{ levelName(center.runnerLevel) }}</div>
+        <button class="role-switch" @click="toggleRole">{{ userToken ? '🙋 切换为用户' : '🙋 用户身份' }}</button>
+      </div>
+
+      <!-- 用户身份菜单 -->
+      <div class="nav-group" v-if="role==='user'" style="margin-top:var(--sp-3)">
         <div class="nav-item" :class="{active: view==='home'}" @click="go('home')"><span class="ico">🏠</span>首页</div>
         <div class="nav-item" :class="{active: view==='hall'}" @click="go('hall')"><span class="ico">🧭</span>订单大厅</div>
         <div class="nav-item" :class="{active: view==='market'}" @click="go('market')"><span class="ico">🛒</span>技能市场</div>
@@ -80,14 +168,63 @@
         <div class="nav-item" :class="{active: view==='skillerApply'}" @click="go('skillerApply')"><span class="ico">🌱</span>成为技能者</div>
         <div class="nav-item" :class="{active: view==='me'}" @click="go('me')"><span class="ico">👤</span>我的</div>
       </div>
+      <!-- 技能者身份菜单 -->
+      <div class="nav-group" v-else style="margin-top:var(--sp-3)">
+        <div class="nav-item" :class="{active: view==='grab'}" @click="go('grab')"><span class="ico">🔥</span>悬赏大厅</div>
+        <div class="nav-item" :class="{active: view==='skOrders'}" @click="go('skOrders')"><span class="ico">🧾</span>我的接单</div>
+        <div class="nav-item" :class="{active: view==='services'}" @click="go('services')"><span class="ico">🛍️</span>我的服务</div>
+        <div class="nav-item" :class="{active: view==='portfolio'}" @click="go('portfolio')"><span class="ico">🎨</span>我的作品</div>
+        <div class="nav-item" :class="{active: view==='skCenter'}" @click="go('skCenter')"><span class="ico">👤</span>技能者中心</div>
+        <div class="nav-item" :class="{active: view==='skMessages'}" @click="go('skMessages')"><span class="ico">🔔</span>消息中心</div>
+      </div>
     </aside>
 
     <div class="content">
-      <van-nav-bar class="m-nav" :title="navTitle"></van-nav-bar>
+      <van-nav-bar class="m-nav" :title="navTitle">
+        <template #right>
+          <span class="role-chip" @click="toggleRole">{{ role==='user' ? '🛠️ 技能者' : '🙋 用户' }}</span>
+        </template>
+      </van-nav-bar>
       <main class="views">
 
+    <!-- ============ 用户身份视图 ============ -->
+    <!-- 用户登录（已登录技能者但用户身份未登录时切换呈现） -->
+    <div v-if="role==='user' && view==='userLogin'" class="view">
+      <div class="glass-blur" style="max-width:420px;margin:24px auto;padding:36px 28px 32px;border-radius:20px;text-align:center;background:#fff">
+        <div style="font-size:56px">🧰</div>
+        <h2 style="margin:12px 0 4px">用户登录</h2>
+        <p class="text-tertiary" style="margin-bottom:20px;font-size:var(--text-sm)">登录后即可发布技能服务需求</p>
+        <template v-if="loginMode === 'account'">
+          <input class="field" v-model="accountForm.username" placeholder="用户名" @keyup.enter="doAccountLogin"/>
+          <input class="field" type="password" v-model="accountForm.password" placeholder="密码" @keyup.enter="doAccountLogin"/>
+          <button class="btn" style="margin-top:16px" @click="doAccountLogin" :disabled="busy">登 录</button>
+          <div class="order-line" style="margin-top:14px;font-size:13px">
+            <span class="text-secondary" style="cursor:pointer" @click="loginMode='register'">没有账号？立即注册</span>
+            <span class="text-tertiary" style="cursor:pointer" @click="loginMode='guest'">体验登录 ›</span>
+          </div>
+        </template>
+        <template v-else-if="loginMode === 'register'">
+          <input class="field" v-model="accountForm.username" placeholder="用户名（4-20位字母/数字/下划线）"/>
+          <input class="field" type="password" v-model="accountForm.password" placeholder="密码（6-32位）"/>
+          <input class="field" type="password" v-model="accountForm.confirmPassword" placeholder="确认密码"/>
+          <input class="field" v-model="accountForm.name" placeholder="昵称（选填）"/>
+          <button class="btn" style="margin-top:16px" @click="doRegister" :disabled="busy">注 册</button>
+          <div class="order-line" style="margin-top:14px;font-size:13px">
+            <span class="text-secondary" style="cursor:pointer" @click="loginMode='account'">‹ 返回账号登录</span>
+          </div>
+        </template>
+        <template v-else>
+          <input class="field" v-model="loginCode" placeholder="输入任意体验码即可登录（联调模式）" @keyup.enter="doGuestLogin"/>
+          <button class="btn" style="margin-top:16px" @click="doGuestLogin" :disabled="busy">体验登录</button>
+          <div class="order-line" style="margin-top:14px;font-size:13px">
+            <span class="text-secondary" style="cursor:pointer" @click="loginMode='account'">‹ 返回账号登录</span>
+          </div>
+        </template>
+      </div>
+    </div>
+
     <!-- 首页 -->
-    <div v-if="view==='home'" class="view">
+    <div v-if="role==='user' && view==='home'" class="view">
       <div class="hero">
         <h3>Hi，让技能帮你搞定</h3>
         <p>信用分 {{ profile.creditScore ?? 100 }} · 已发单 {{ profile.publishOrderCount ?? 0 }} 单</p>
@@ -98,7 +235,6 @@
           <div class="type-name">{{ t.name }}</div>
         </div>
       </div>
-      <!-- 骨架屏：等待进行中订单数据时的低预期加载反馈 -->
       <div class="section" v-if="skel" aria-hidden="true">
         <div class="cs-skel-card cs-skel" style="padding:16px">
           <div class="cs-skel-item cs-skel-title"></div>
@@ -123,9 +259,8 @@
             </div>
           </div>
         </div>
-        <!-- 空状态给行动指引，桌面端三入口成组多列 -->
         <div class="grid-cards" style="margin-top:12px">
-          <div class="glass-card interactive" @click="openMessages()" style="cursor:pointer">
+          <div class="glass-card interactive" @click="openMessagesU()" style="cursor:pointer">
             <div class="order-line">
               <b>🔔 消息中心</b>
               <span><van-badge v-if="unread > 0" :content="unread" max="99"></van-badge><span class="text-tertiary"> 查看消息 ›</span></span>
@@ -141,8 +276,8 @@
       </div>
     </div>
 
-    <!-- 消息中心 -->
-    <div v-if="view==='messages'" class="view">
+    <!-- 消息中心（用户） -->
+    <div v-if="role==='user' && view==='messages'" class="view">
       <div class="section glass-card" style="padding:12px">
         <div class="order-line">
           <b>🔔 消息中心</b>
@@ -172,7 +307,7 @@
     </div>
 
     <!-- 发单 -->
-    <div v-if="view==='submit'" class="view">
+    <div v-if="role==='user' && view==='submit'" class="view">
       <div class="section glass-card" style="max-width:760px">
         <div style="font-weight:var(--weight-semibold);margin-bottom:12px;font-size:var(--text-lg)">发布「{{ typeName }}」订单 <span class="tag">服务费率 {{ (curType.feeRate*100).toFixed(0) }}%</span></div>
         <input class="field" v-model="form.title" placeholder="服务标题，如：课程汇报PPT美化（20页内）"/>
@@ -216,8 +351,8 @@
       </div>
     </div>
 
-    <!-- 订单大厅 -->
-    <div v-if="view==='hall'" class="view">
+    <!-- 订单大厅（用户浏览） -->
+    <div v-if="role==='user' && view==='hall'" class="view">
       <div class="section">
         <div class="glass-card" style="padding:12px">
           <input class="field" style="margin-top:0" v-model="hallKeyword" placeholder="搜索标题 / 订单号，回车搜索" @keyup.enter="loadHall"/>
@@ -249,7 +384,7 @@
     </div>
 
     <!-- 技能市场 -->
-    <div v-if="view==='market'" class="view">
+    <div v-if="role==='user' && view==='market'" class="view">
       <van-tabs v-model:active="marketTab" @click-tab="onMarketTab">
         <van-tab title="服务市场" :name="0"></van-tab>
         <van-tab title="我的预约" :name="1"></van-tab>
@@ -322,7 +457,7 @@
     </div>
 
     <!-- 我的订单 -->
-    <div v-if="view==='orders'" class="view">
+    <div v-if="role==='user' && view==='orders'" class="view">
       <van-tabs v-model:active="orderTab" @click-tab="loadOrders">
         <van-tab title="全部" :name="null"></van-tab><van-tab title="待支付" :name="1"></van-tab>
         <van-tab title="待接单" :name="2"></van-tab><van-tab title="进行中" :name="3"></van-tab>
@@ -356,7 +491,7 @@
     </div>
 
     <!-- 订单详情/跟踪 -->
-    <div v-if="view==='orderDetail'" class="view">
+    <div v-if="role==='user' && view==='orderDetail'" class="view">
       <div class="section glass-card" v-if="detail" style="max-width:760px">
         <van-steps :active="stepActive" active-color="var(--cs-accent)">
           <van-step>发单</van-step><van-step>支付</van-step><van-step>接单</van-step>
@@ -419,7 +554,7 @@
     </div>
 
     <!-- 钱包 -->
-    <div v-if="view==='wallet'" class="view">
+    <div v-if="role==='user' && view==='wallet'" class="view">
       <div class="hero">
         <p>钱包余额（元）</p>
         <h3 style="font-size:36px">{{ money(wallet.balance) }}</h3>
@@ -439,7 +574,7 @@
     </div>
 
     <!-- 编辑资料 -->
-    <div v-if="view==='profileEdit'" class="view">
+    <div v-if="role==='user' && view==='profileEdit'" class="view">
       <div class="section glass-card" style="max-width:760px">
         <div style="font-weight:var(--weight-semibold);margin-bottom:8px">编辑个人资料</div>
         <input class="field" v-model="editForm.name" placeholder="昵称"/>
@@ -452,7 +587,7 @@
     </div>
 
     <!-- 地址管理 -->
-    <div v-if="view==='address'" class="view">
+    <div v-if="role==='user' && view==='address'" class="view">
       <div class="section">
         <div class="grid-cards">
           <div v-for="a in addresses" :key="a.id" class="glass-card">
@@ -475,11 +610,11 @@
       </div>
     </div>
 
-    <!-- 技能者入驻申请 -->
-    <div v-if="view==='skillerApply'" class="view">
+    <!-- 技能者入驻申请（用户身份内） -->
+    <div v-if="role==='user' && view==='skillerApply'" class="view">
       <div class="section glass-card" style="max-width:760px">
         <div style="font-weight:var(--weight-semibold);margin-bottom:8px">🌱 技能者入驻申请</div>
-        <p class="text-tertiary" style="font-size:13px;margin-bottom:12px">提交后由平台审核，通过后即可在技能者端登录接单。</p>
+        <p class="text-tertiary" style="font-size:13px;margin-bottom:12px">提交后由平台审核，通过后点击右上角身份徽章即可切换到技能者工作台接单。</p>
         <input class="field" v-model="auditForm.realName" placeholder="真实姓名"/>
         <input class="field" v-model="auditForm.studentNo" placeholder="学号"/>
         <input class="field" v-model="auditForm.campus" placeholder="校区"/>
@@ -488,8 +623,8 @@
       </div>
     </div>
 
-    <!-- 我的 -->
-    <div v-if="view==='me'" class="view">
+    <!-- 我的（用户） -->
+    <div v-if="role==='user' && view==='me'" class="view">
       <div class="section glass-card" style="margin-top:16px;max-width:760px">
         <div class="order-line"><b>{{ profile.name || '校园用户' }}</b><span class="text-tertiary">ID: {{ profile.id }}</span></div>
         <div style="margin-top:12px">
@@ -501,22 +636,358 @@
         </div>
         <button class="btn ghost" style="margin-top:16px" @click="openProfileEdit">编辑资料</button>
         <button class="btn ghost" style="margin-top:8px" @click="changePwd">修改密码</button>
-        <button class="btn ghost" style="margin-top:8px" @click="openMessages">消息中心</button>
+        <button class="btn ghost" style="margin-top:8px" @click="openMessagesU">消息中心</button>
         <button class="btn ghost" style="margin-top:8px" @click="view='address'">地址管理</button>
-        <button class="btn ghost" style="margin-top:8px" @click="logout">退出登录</button>
+        <button class="btn ghost" style="margin-top:8px" @click="logoutUser">退出用户登录</button>
+      </div>
+    </div>
+
+    <!-- ============ 技能者身份视图 ============ -->
+    <!-- 技能者登录（已登录用户身份但尚未登录技能者时切换呈现） -->
+    <div v-if="role==='skiller' && view==='skLogin'" class="view">
+      <div class="glass-blur" style="max-width:420px;margin:24px auto;padding:32px 24px 28px;border-radius:20px;background:#fff">
+        <div style="text-align:center">
+          <div style="font-size:56px">🛠️</div>
+          <h2 style="margin:12px 0 4px">技能者登录</h2>
+          <p class="text-tertiary" style="margin-bottom:20px;font-size:var(--text-sm)">认证技能者登录后即可接单</p>
+        </div>
+        <template v-if="skLoginMode === 'account'">
+          <input class="field" v-model="skAccountForm.username" placeholder="用户名（需已通过技能者认证）" @keyup.enter="doSkAccountLogin"/>
+          <input class="field" type="password" v-model="skAccountForm.password" placeholder="密码" @keyup.enter="doSkAccountLogin"/>
+          <button class="btn" style="margin-top:16px" @click="doSkAccountLogin" :disabled="busy">登 录</button>
+          <div class="order-line" style="margin-top:14px;font-size:13px">
+            <span class="text-tertiary">还没有入驻？在下方提交申请</span>
+            <span class="text-secondary" style="cursor:pointer" @click="skLoginMode='guest'">体验登录 ›</span>
+          </div>
+        </template>
+        <template v-else>
+          <input class="field" v-model="loginCode" placeholder="输入体验码（与用户端一致，联调模式）" @keyup.enter="doSkGuestLogin"/>
+          <button class="btn" style="margin-top:16px" @click="doSkGuestLogin" :disabled="busy">体验登录</button>
+          <div class="order-line" style="margin-top:14px;font-size:13px">
+            <span class="text-secondary" style="cursor:pointer" @click="skLoginMode='account'">‹ 返回账号登录</span>
+          </div>
+        </template>
+        <div style="margin-top:24px;border-top:1px solid var(--cs-border);padding-top:20px">
+          <div style="font-weight:var(--weight-semibold);margin-bottom:8px">还没有入驻？提交技能者入驻申请</div>
+          <p class="text-tertiary" style="font-size:12px;margin-bottom:8px">入驻审核通过后即可用账号或体验码登录接单</p>
+          <input class="field" v-model="auditForm.realName" placeholder="真实姓名"/>
+          <input class="field" v-model="auditForm.studentNo" placeholder="学号"/>
+          <input class="field" v-model="auditForm.campus" placeholder="校区"/>
+          <input class="field" v-model="auditForm.college" placeholder="学院"/>
+          <button class="btn ghost" style="margin-top:12px" @click="applyAudit" :disabled="busy">提交入驻申请</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 悬赏大厅（技能者抢单） -->
+    <div v-if="role==='skiller' && view==='grab'" class="view">
+      <div class="section">
+        <div class="glass-card" style="padding:12px">
+          <input class="field" style="margin-top:0" v-model="skHallKeyword" placeholder="搜索标题 / 订单号，回车搜索" @keyup.enter="loadSkHall"/>
+          <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+            <van-tag :type="skHallTypeId===null?'primary':'default'" size="large" style="cursor:pointer" @click="skHallTypeId=null;loadSkHall()">全部</van-tag>
+            <van-tag v-for="t in skHallTypes" :key="t.id" :type="skHallTypeId===t.id?'primary':'default'" size="large"
+              style="cursor:pointer" @click="skHallTypeId=t.id;loadSkHall()">{{ t.name }}</van-tag>
+          </div>
+        </div>
+        <template v-if="skel" aria-hidden="true">
+          <div class="cs-skel-card cs-skel" style="padding:16px" v-for="i in 4" :key="i">
+            <div class="cs-skel-item cs-skel-title"></div>
+            <div class="cs-skel-item cs-skel-text"></div>
+            <div class="cs-skel-item cs-skel-text w60"></div>
+          </div>
+        </template>
+        <div class="grid-cards" v-else>
+          <div v-for="o in skHall" :key="o.id" class="glass-card">
+            <div class="order-line">
+              <div><span class="order-title">{{ o.title }}</span><span class="tag">{{ o.typeName }}</span></div>
+              <div class="money">实得{{ money(o.runnerIncome) }}</div>
+            </div>
+            <div class="text-tertiary" style="font-size:13px;margin:6px 0">{{ o.pickupAddress }} → {{ o.deliveryAddress }}</div>
+            <div class="order-line">
+              <span class="text-tertiary" style="font-size:12px">{{ o.campus }} · {{ o.publisherName }} 发布于 {{ relTime(o.createTime) }}</span>
+              <van-button size="small" type="primary" @click="grab(o)">立即抢单</van-button>
+            </div>
+          </div>
+          <div v-if="hallNew > 0" class="glass-card interactive" style="border-left:3px solid var(--cs-accent);cursor:pointer"
+            @click="applyHallNew">🔔 有 {{ hallNew }} 个新需求 · 点击查看</div>
+          <van-empty v-if="!skHall.length" description="悬赏大厅暂无需求，稍后再来看看"></van-empty>
+        </div>
+      </div>
+    </div>
+
+    <!-- 我的接单 + 预约单 -->
+    <div v-if="role==='skiller' && view==='skOrders'" class="view">
+      <van-tabs v-model:active="orderSub" @click-tab="loadOrderSub">
+        <van-tab title="接单" :name="0"></van-tab>
+        <van-tab title="预约单" :name="1"></van-tab>
+      </van-tabs>
+      <div class="section" v-if="orderSub===0">
+        <template v-if="skel" aria-hidden="true">
+          <div class="cs-skel-card cs-skel" style="padding:16px" v-for="i in 3" :key="i">
+            <div class="cs-skel-item cs-skel-title"></div>
+            <div class="cs-skel-item cs-skel-text"></div>
+          </div>
+        </template>
+        <div class="grid-cards" v-else>
+          <div v-for="o in myOrders" :key="o.id" class="glass-card">
+            <div class="order-line">
+              <div><span class="order-title">{{ o.title }}</span></div>
+              <van-tag :type="tagType(o.status)">{{ statusText(o.status) }}</van-tag>
+            </div>
+            <div class="text-tertiary" style="font-size:13px;margin:6px 0">{{ o.pickupAddress }} → {{ o.deliveryAddress }}</div>
+            <div class="order-line">
+              <span class="money">实得{{ money(o.runnerIncome) }}</span>
+              <span>
+                <a v-if="o.publisherPhone && o.status===3" :href="'tel:' + o.publisherPhone"
+                  style="text-decoration:none;font-size:16px;margin-right:6px">📞</a>
+                <van-button v-if="o.status===3 && !o.pickupTime" size="small" type="primary" plain @click="pickup(o)">确认开始服务</van-button>
+                <van-button v-if="o.status===3" size="small" type="success" @click="openDeliver(o)">交付成果</van-button>
+                <van-button v-if="o.status===8" size="small" type="warning" @click="respondRework(o)">响应返修</van-button>
+              </span>
+            </div>
+            <div v-if="o.status===3" class="text-tertiary" style="font-size:12px;margin-top:6px">
+              💡 交付前可点击 📞 联系用户确认服务细节
+            </div>
+            <div v-if="o.status===8" style="font-size:12px;margin-top:6px;color:#e05656">
+              🔁 用户已申请返修，点击「响应返修」重新开始服务
+            </div>
+          </div>
+          <van-empty v-if="!myOrders.length" description="还没有接单记录"></van-empty>
+        </div>
+      </div>
+      <div class="section" v-else>
+        <template v-if="skel" aria-hidden="true">
+          <div class="cs-skel-card cs-skel" style="padding:16px" v-for="i in 3" :key="i">
+            <div class="cs-skel-item cs-skel-title"></div>
+            <div class="cs-skel-item cs-skel-text"></div>
+          </div>
+        </template>
+        <div class="grid-cards" v-else>
+          <div v-for="b in skBookings" :key="b.id" class="glass-card">
+            <div class="order-line">
+              <div><span class="order-title">{{ b.serviceTitle || b.serviceName }}</span></div>
+              <van-tag :type="bkTag(b.status)">{{ bkText(b.status) }}</van-tag>
+            </div>
+            <div class="text-tertiary" style="font-size:13px;margin-top:6px">客户：{{ b.userName }} · 期望时间：{{ b.expectTime }}</div>
+            <div v-if="b.remark" class="text-secondary" style="font-size:13px;margin-top:4px">备注：{{ b.remark }}</div>
+            <div v-if="b.status===0" class="order-line" style="margin-top:8px">
+              <span></span>
+              <span>
+                <van-button size="small" type="primary" @click="confirmBooking(b)" :disabled="busy">接受预约</van-button>
+                <van-button size="small" type="danger" plain style="margin-left:8px" @click="rejectBooking(b)" :disabled="busy">拒绝</van-button>
+              </span>
+            </div>
+          </div>
+          <van-empty v-if="!skBookings.length" description="暂无预约单"></van-empty>
+        </div>
+      </div>
+    </div>
+
+    <!-- 我的服务 -->
+    <div v-if="role==='skiller' && view==='services'" class="view">
+      <div class="section glass-card" style="padding:12px">
+        <div class="order-line">
+          <b>🛍️ 我的服务</b>
+          <van-button size="small" type="primary" @click="openSvcForm()" :disabled="busy">新增服务</van-button>
+        </div>
+      </div>
+      <div class="section">
+        <template v-if="skel" aria-hidden="true">
+          <div class="cs-skel-card cs-skel" style="padding:16px" v-for="i in 3" :key="i">
+            <div class="cs-skel-item cs-skel-title"></div>
+            <div class="cs-skel-item cs-skel-text"></div>
+          </div>
+        </template>
+        <div class="grid-cards" v-else>
+          <div v-for="s in services" :key="s.id" class="glass-card">
+            <div class="order-line">
+              <div><span class="order-title">{{ s.title }}</span><span class="tag" v-if="s.categoryName">{{ s.categoryName }}</span></div>
+              <div class="money">{{ money(s.price) }}</div>
+            </div>
+            <div class="text-tertiary" style="font-size:12px;margin-top:6px">
+              {{ s.deliveryDays }}天交付 · {{ modeText(s.serviceMode) }}<span v-if="s.tags"> · {{ s.tags }}</span>
+            </div>
+            <div v-if="s.description" class="text-secondary" style="font-size:13px;margin-top:4px">{{ s.description }}</div>
+            <div class="order-line" style="margin-top:8px">
+              <van-tag :type="s.status===1?'success':'default'">{{ s.status===1 ? '上架中' : '已下架' }}</van-tag>
+              <span>
+                <van-button size="small" plain @click="toggleSvc(s)" :disabled="busy">{{ s.status===1 ? '下架' : '上架' }}</van-button>
+                <van-button size="small" type="primary" plain style="margin-left:6px" @click="openSvcForm(s)">编辑</van-button>
+              </span>
+            </div>
+          </div>
+          <van-empty v-if="!services.length" description="还没有服务，点击右上角新增"></van-empty>
+        </div>
+      </div>
+    </div>
+
+    <!-- 我的作品 -->
+    <div v-if="role==='skiller' && view==='portfolio'" class="view">
+      <div class="section glass-card" style="padding:12px">
+        <div class="order-line">
+          <b>🎨 我的作品</b>
+          <van-button size="small" type="primary" @click="openPfForm" :disabled="busy">发布作品</van-button>
+        </div>
+      </div>
+      <div class="section">
+        <template v-if="skel" aria-hidden="true">
+          <div class="cs-skel-card cs-skel" style="padding:16px" v-for="i in 3" :key="i">
+            <div class="cs-skel-item cs-skel-title"></div>
+            <div class="cs-skel-item cs-skel-text"></div>
+          </div>
+        </template>
+        <div class="grid-cards" v-else>
+          <div v-for="p in portfolios" :key="p.id" class="glass-card">
+            <img v-if="p.coverUrl" :src="p.coverUrl" style="width:100%;border-radius:12px;margin-bottom:8px" onerror="this.style.display='none'"/>
+            <div class="order-line">
+              <div><span class="order-title">{{ p.title }}</span><van-tag :type="pfTag(p.status)" style="margin-left:6px">{{ pfText(p.status) }}</van-tag></div>
+              <van-button size="small" type="danger" plain @click="delPortfolio(p)" :disabled="busy">删除</van-button>
+            </div>
+            <div v-if="p.description" class="text-secondary" style="font-size:13px;margin-top:4px">{{ p.description }}</div>
+            <div v-if="p.status===2 && p.auditOpinion" style="font-size:12px;margin-top:4px;color:var(--cs-danger)">驳回意见：{{ p.auditOpinion }}</div>
+          </div>
+          <van-empty v-if="!portfolios.length" description="还没有作品，快发布第一个吧"></van-empty>
+        </div>
+      </div>
+    </div>
+
+    <!-- 技能者中心 + 收入 -->
+    <div v-if="role==='skiller' && view==='skCenter'" class="view">
+      <div class="hero">
+        <h3>{{ center.name || '技能者' }} <span class="tag" style="background:rgba(255,255,255,.6);color:#0093cf">接单等级 {{ levelName(center.runnerLevel) }}</span></h3>
+        <p>今日已接 {{ center.todayOrderCount ?? 0 }}/{{ center.dailyOrderLimit ?? 10 }} 单 · 评分 {{ center.score ?? '5.0' }} · 信用 {{ center.creditScore ?? 100 }}{{ center.skillLevel ? '（作品定级 C' + center.skillLevel + '）' : '' }}</p>
+        <van-progress :percentage="limitPct" stroke-width="6" style="margin-top:8px" color="#00aeec" track-color="rgba(255,255,255,.6)"/>
+        <div class="stat-row">
+          <div class="stat-box"><div class="stat-num">{{ money(center.todayIncome) }}</div><div class="stat-lab">今日技能服务收入</div></div>
+          <div class="stat-box"><div class="stat-num">{{ center.completedOrders ?? 0 }}</div><div class="stat-lab">完成单数</div></div>
+          <div class="stat-box"><div class="stat-num">{{ money(center.balance) }}</div><div class="stat-lab">钱包余额</div></div>
+        </div>
+      </div>
+      <div class="section" v-if="currentTask">
+        <div class="glass-card" style="border-left:3px solid var(--cs-accent)">
+          <div class="order-line"><b>🚀 当前任务</b><van-tag type="primary">{{ statusText(currentTask.status) }}</van-tag></div>
+          <div style="font-weight:var(--weight-semibold);margin:8px 0 2px">{{ currentTask.title }}</div>
+          <div class="text-tertiary" style="font-size:13px">{{ currentTask.pickupAddress }} → {{ currentTask.deliveryAddress }}</div>
+          <div class="order-line" style="margin-top:10px">
+            <span class="money">实得{{ money(currentTask.runnerIncome) }}</span>
+            <span>
+              <a v-if="currentTask.publisherPhone" :href="'tel:' + currentTask.publisherPhone"
+                style="text-decoration:none;font-size:16px;margin-right:8px">📞</a>
+              <van-button v-if="!currentTask.pickupTime" size="small" type="primary" plain @click="pickup(currentTask)">确认开始服务</van-button>
+              <van-button size="small" type="success" @click="openDeliver(currentTask)">交付成果</van-button>
+            </span>
+          </div>
+        </div>
+      </div>
+      <div class="section">
+        <div class="glass-card interactive" @click="openMessagesS()" style="cursor:pointer">
+          <div class="order-line">
+            <b>🔔 消息中心</b>
+            <span><van-badge v-if="skUnread > 0" :content="skUnread" max="99"></van-badge><span class="text-tertiary"> 查看消息 ›</span></span>
+          </div>
+        </div>
+      </div>
+      <div class="grid-cards">
+        <div class="glass-card">
+          <div style="font-weight:var(--weight-semibold);margin-bottom:8px">近7日技能服务收入趋势</div>
+          <div style="display:flex;align-items:flex-end;gap:6px;height:130px;margin-top:12px">
+            <div v-for="p in trend" :key="p.date" style="flex:1;text-align:center;height:100%;display:flex;flex-direction:column;justify-content:flex-end">
+              <div class="text-tertiary" style="font-size:10px;min-height:12px">{{ p.amount > 0 ? Number(p.amount).toFixed(0) : '' }}</div>
+              <div style="background:linear-gradient(180deg,var(--cs-accent),var(--cs-accent-2));border-radius:4px 4px 0 0;margin:2px auto 0;width:62%;min-height:3px"
+                :style="{ height: barH(p) + 'px' }"></div>
+              <div class="text-tertiary" style="font-size:10px;margin-top:4px">{{ p.date.slice(5) }}</div>
+            </div>
+          </div>
+          <div class="text-tertiary" style="font-size:12px;margin-top:6px">近7日完成 {{ trendTotal }} 单 · 技能服务收入 {{ money(trendIncome) }}</div>
+        </div>
+        <div class="glass-card">
+          <div style="font-weight:var(--weight-semibold);margin-bottom:8px">申请提现</div>
+          <input class="field" type="number" v-model.number="wdAmount" placeholder="提现金额（元）"/>
+          <input class="field" type="password" v-model="wdPassword" placeholder="提现密码（首次请先设置）"/>
+          <div class="order-line" style="margin-top:8px">
+            <button class="btn" style="width:48%" @click="applyWd" :disabled="busy">申请提现</button>
+            <button class="btn ghost" style="width:48%" @click="setPwd" :disabled="busy">设置提现密码</button>
+          </div>
+        </div>
+        <div class="glass-card">
+          <div style="font-weight:var(--weight-semibold);margin-bottom:8px">提现记录</div>
+          <van-cell-group inset>
+            <van-cell v-for="w in wdRecords" :key="w.id" :title="money(w.amount)"
+              :value="['待处理','已打款','已驳回'][w.status]" :label="w.applyTime"></van-cell>
+          </van-cell-group>
+          <van-empty v-if="!wdRecords.length" description="暂无提现记录" image-size="64"></van-empty>
+        </div>
+        <div class="glass-card">
+          <div style="font-weight:var(--weight-semibold);margin-bottom:8px">收支明细</div>
+          <van-cell-group inset>
+            <van-cell v-for="t in skTxs" :key="t.id" :title="txName(t.type)" :label="t.remark"
+              :value="(t.type===1||t.type===3||t.type===5?'+':'-')+money(t.amount)"></van-cell>
+          </van-cell-group>
+          <van-empty v-if="!skTxs.length" description="暂无流水" image-size="64"></van-empty>
+        </div>
+        <div class="glass-card">
+          <div class="order-line"><b>🏅 接单等级权益</b><span class="tag">{{ levelName(center.runnerLevel) }}</span></div>
+          <van-progress :percentage="levelPct" stroke-width="8" style="margin-top:10px"></van-progress>
+          <div class="text-tertiary" style="font-size:12px;margin-top:6px">
+            累计完成 {{ center.completedOrders ?? 0 }} 单{{ nextGoal ? '，再完成 ' + nextGoal + ' 单升级' + nextLevelName : '，已达最高等级' }}
+            · 当前每日可接 {{ center.dailyOrderLimit ?? 10 }} 单
+          </div>
+        </div>
+        <div class="glass-card">
+          <div class="order-line"><b>⚙️ 技能者设置</b></div>
+          <button class="btn ghost" style="margin-top:10px" @click="logoutSkiller">退出技能者登录</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 消息中心（技能者） -->
+    <div v-if="role==='skiller' && view==='skMessages'" class="view">
+      <div class="section glass-card" style="padding:12px">
+        <div class="order-line">
+          <b>🔔 消息中心</b>
+          <van-button size="small" plain type="primary" @click="readAllS" :disabled="busy">全部已读</van-button>
+        </div>
+      </div>
+      <div class="section">
+        <template v-if="skel" aria-hidden="true">
+          <div class="cs-skel-card cs-skel" style="padding:16px" v-for="i in 3" :key="i">
+            <div class="cs-skel-item cs-skel-title"></div>
+            <div class="cs-skel-item cs-skel-text"></div>
+          </div>
+        </template>
+        <div class="grid-cards" v-else>
+          <div v-for="m in skMessages" :key="m.id" class="glass-card interactive" @click="goOrderOfMessage(m)"
+            :style="(m.isRead===0 ? 'border-left:3px solid var(--cs-accent)' : '') + (m.orderId ? ';cursor:pointer' : '')">
+            <div class="order-line">
+              <b style="font-size:14px">{{ m.title }}</b>
+              <span class="text-tertiary" style="font-size:11px">{{ relTime(m.createTime) }}</span>
+            </div>
+            <div class="text-secondary" style="font-size:13px;margin-top:4px">{{ m.content }}</div>
+            <div v-if="m.orderId" class="text-secondary" style="font-size:12px;margin-top:4px;color:var(--cs-accent)">查看我的接单 ›</div>
+          </div>
+          <van-empty v-if="!skMessages.length" description="暂无消息"></van-empty>
+        </div>
       </div>
     </div>
 
       </main>
     </div>
 
-    <!-- 底部导航（仅移动端显示，桌面端由侧边导航替代） -->
-    <van-tabbar class="m-tabbar" v-model="tab" @change="switchTab">
+    <!-- 底部导航（仅移动端显示；按当前身份渲染） -->
+    <van-tabbar class="m-tabbar" v-if="role==='user'" v-model="tab" @change="onTab">
       <van-tabbar-item icon="wap-nav-o" name="home">首页</van-tabbar-item>
       <van-tabbar-item icon="orders-o" name="orders">订单</van-tabbar-item>
       <van-tabbar-item icon="shop-o" name="market">技能市场</van-tabbar-item>
       <van-tabbar-item icon="balance-o" name="wallet">钱包</van-tabbar-item>
       <van-tabbar-item icon="user-o" name="me">我的</van-tabbar-item>
+    </van-tabbar>
+    <van-tabbar class="m-tabbar" v-else v-model="tab" @change="onTab">
+      <van-tabbar-item icon="fire-o" name="grab">大厅</van-tabbar-item>
+      <van-tabbar-item icon="orders-o" name="skOrders">订单</van-tabbar-item>
+      <van-tabbar-item icon="shop-o" name="services">服务</van-tabbar-item>
+      <van-tabbar-item icon="photo-o" name="portfolio">作品</van-tabbar-item>
+      <van-tabbar-item icon="user-o" name="skCenter">我的</van-tabbar-item>
     </van-tabbar>
 
     <!-- 服务详情/预约弹窗 -->
@@ -544,6 +1015,51 @@
         <button class="btn" style="margin-top:16px" @click="submitBooking" :disabled="busy">提交预约</button>
       </template>
     </van-popup>
+
+    <!-- 交付成果弹窗 -->
+    <van-popup v-model:show="deliverShow" round position="bottom" style="padding:20px">
+      <div style="font-weight:var(--weight-semibold);margin-bottom:8px">📦 交付成果</div>
+      <van-cell-group inset>
+        <van-field v-model="deliverForm.deliverableUrl" label="交付物链接" placeholder="粘贴交付物链接（网盘/图片URL）"></van-field>
+        <van-field v-model="deliverForm.deliverableNote" label="交付说明" type="textarea" rows="2" autosize placeholder="补充说明（选填）"></van-field>
+      </van-cell-group>
+      <button class="btn" style="margin-top:16px" @click="submitDeliver" :disabled="busy">确认交付</button>
+    </van-popup>
+
+    <!-- 服务新增/编辑弹窗 -->
+    <van-popup v-model:show="svcShow" round position="bottom" style="padding:20px;max-height:80vh;overflow-y:auto">
+      <div style="font-weight:var(--weight-semibold);margin-bottom:8px">{{ svcForm.id ? '编辑服务' : '新增服务' }}</div>
+      <select class="field" v-model="svcForm.categoryId">
+        <option :value="null" disabled>选择分类</option>
+        <option v-for="c in cats" :key="c.id" :value="c.id">{{ c.name }}</option>
+      </select>
+      <input class="field" v-model="svcForm.title" placeholder="服务标题，如：课程汇报PPT美化（20页内）"/>
+      <textarea class="field" v-model="svcForm.description" rows="3" placeholder="服务描述"></textarea>
+      <input class="field" type="number" v-model.number="svcForm.price" placeholder="价格（元）"/>
+      <input class="field" type="number" v-model.number="svcForm.deliveryDays" placeholder="交付天数"/>
+      <div class="order-line" style="margin-top:8px;font-size:14px">
+        <span class="text-secondary">服务方式</span>
+        <van-radio-group v-model="svcForm.serviceMode" direction="horizontal">
+          <van-radio :name="1">线上交付</van-radio><van-radio :name="2">线下进行</van-radio>
+        </van-radio-group>
+      </div>
+      <input class="field" v-model="svcForm.tags" placeholder="标签，逗号分隔，如：PPT,设计"/>
+      <button class="btn" style="margin-top:12px" @click="submitSvc" :disabled="busy">保存</button>
+    </van-popup>
+
+    <!-- 作品发布弹窗 -->
+    <van-popup v-model:show="pfShow" round position="bottom" style="padding:20px;max-height:80vh;overflow-y:auto">
+      <div style="font-weight:var(--weight-semibold);margin-bottom:8px">发布作品</div>
+      <select class="field" v-model="pfForm.categoryId">
+        <option :value="null" disabled>选择分类</option>
+        <option v-for="c in cats" :key="c.id" :value="c.id">{{ c.name }}</option>
+      </select>
+      <input class="field" v-model="pfForm.title" placeholder="作品标题"/>
+      <input class="field" v-model="pfForm.coverUrl" placeholder="封面图 URL（选填）"/>
+      <input class="field" v-model="pfForm.workUrls" placeholder="作品图/链接，逗号分隔"/>
+      <textarea class="field" v-model="pfForm.description" rows="3" placeholder="作品描述（选填）"></textarea>
+      <button class="btn" style="margin-top:12px" @click="submitPf" :disabled="busy">提交审核</button>
+    </van-popup>
   </div>
 
   <van-toast ref="toastRef"></van-toast>
@@ -553,6 +1069,8 @@
 const { createApp, ref, reactive, computed } = Vue;
 const { showToast, showLoadingToast, closeToast } = vant;
 
+/* 双 token：user_token（/user/**）与 runner_token（/skiller/**）可同时存在，
+   token 失效时按 URL 前缀清除对应身份，不影响另一身份 */
 async function api(method, url, body, token) {
   const opt = { method, headers: { "Content-Type": "application/json" } };
   if (token) opt.headers["authentication"] = token;
@@ -560,73 +1078,35 @@ async function api(method, url, body, token) {
   const r = await fetch(url, opt);
   const j = await r.json();
   if (j.code === 0 && j.msg && j.msg.indexOf("token") >= 0) {
-    localStorage.removeItem("user_token");
+    localStorage.removeItem(url.indexOf("/skiller") === 0 ? "runner_token" : "user_token");
     setTimeout(() => location.reload(), 800);
   }
   return j;
 }
 const money = v => "￥" + Number(v || 0).toFixed(2);
-const STATUS = { 1:"待支付", 2:"待接单", 3:"进行中", 4:"已交付", 5:"已完成", 6:"已取消", 7:"已超时", 8:"返修中", 9:"仲裁中" };
+const STATUS = { 1:"待支付", 2:"待接单", 3:"进行中", 4:"已交付·待验收", 5:"已完成", 6:"已取消", 7:"已超时", 8:"返修中", 9:"仲裁中" };
 const TAG = { 1:"primary", 2:"warning", 3:"primary", 4:"primary", 5:"success", 6:"default", 7:"danger", 8:"warning", 9:"danger" };
 const BK = { 0:"待确认", 1:"已确认", 2:"已完成", 3:"已拒绝", 4:"已取消" };
 const BKTAG = { 0:"warning", 1:"primary", 2:"success", 3:"danger", 4:"default" };
+const PF = { 0:"待审核", 1:"已通过", 2:"已驳回" };
+const PFTAG = { 0:"warning", 1:"success", 2:"danger" };
 
 createApp({
   setup() {
-    const token = ref(localStorage.getItem("user_token") || "");
-    const view = ref("home");
-    const tab = ref("home");
+    /* ===== 身份与登录态 ===== */
+    const userToken = ref(localStorage.getItem("user_token") || "");
+    const runnerToken = ref(localStorage.getItem("runner_token") || "");
+    const role = ref(userToken.value ? "user" : (runnerToken.value ? "skiller" : "user"));
+    const view = ref(role.value === "skiller" ? "grab" : "home");
+    const tab = ref(role.value === "skiller" ? "grab" : "home");
     const busy = ref(false);
-    const profile = ref({});
-    const types = ref([]);
-    const addresses = ref([]);
-    const hall = ref([]);
-    const orders = ref([]);
-    const orderTab = ref(null);
-    const detail = ref(null);
-    const reviewed = ref(false);
-    const wallet = ref({});
-    const txs = ref([]);
+    const loginRole = ref("user");       // 整页登录卡：用户 / 技能者
+    const loginMode = ref("account");    // 用户登录卡：account | register | guest
+    const skLoginMode = ref("account");  // 技能者登录卡：account | guest
     const loginCode = ref("");
-    const hallKeyword = ref("");
-    const hallType = ref(null);
-    const reviewTags = ref([]);
-    const editForm = reactive({ name: "", phone: "", studentNo: "", campus: "" });
-    const curType = ref({});
-    const reviewScore = ref(5);
-    const reviewContent = ref("");
-    const form = reactive({ title: "", description: "", pickupAddress: "", addressBookId: null, rewardAmount: null, payMethod: 2, typeId: null, addrMode: "online", manualAddress: "", expectedTime: "" });
-    //发单草稿自动暂存：填写中途退出不丢内容，提交成功后清除
-    Vue.watch(form, () => {
-      if (view.value === "submit") localStorage.setItem("campus_draft_order", JSON.stringify(form));
-    }, { deep: true });
-    const addrForm = reactive({ consignee: "", phone: "", campus: "", building: "", room: "" });
+    const accountForm = reactive({ username: "", password: "", confirmPassword: "", name: "" });
+    const skAccountForm = reactive({ username: "", password: "" });
     const auditForm = reactive({ realName: "", studentNo: "", campus: "", college: "" });
-    const messages = ref([]);
-    const unread = ref(0);
-    const boostAmount = ref(null);
-
-    // 技能市场
-    const marketTab = ref(0);
-    const market = ref([]);
-    const marketKeyword = ref("");
-    const marketCategory = ref(null);
-    const marketSort = ref("default");
-    const svcDetail = ref(null);
-    const showSvc = ref(false);
-    const bookingMode = ref(false);
-    const bookingForm = reactive({ serviceItemId: null, expectTime: "", remark: "" });
-    const bookings = ref([]);
-
-    const navTitle = computed(() => ({ home:"首页", hall:"订单大厅", submit:"发布订单", orders:"我的订单",
-      orderDetail:"订单详情", wallet:"我的钱包", address:"地址管理", skillerApply:"技能者入驻", me:"我的",
-      messages:"消息中心", market:"技能市场" }[view.value] || "CampusSkill 校园技能工坊"));
-
-    function toast(msg, ok = true) { showToast({ message: msg, type: ok ? "success" : "fail" } ); }
-
-    /* ===== 视图层增补（仅视图状态，不改动任何业务逻辑与接口代码）=====
-       skel：骨架屏开关 —— 进入/切换视图时展示 450ms 骨架屏，
-       为接口返回争取低预期反馈窗口；纯前端展示态，不影响数据流 */
     const skel = ref(true);
     let skelTimer = null;
     function playSkel() {
@@ -635,77 +1115,9 @@ createApp({
       skelTimer = setTimeout(() => { skel.value = false; }, 450);
     }
     Vue.watch(view, playSkel);
-    if (token.value) setTimeout(() => { skel.value = false; }, 450);
-    /* 桌面端侧边导航跳转：复用既有 switchTab / load 函数切换视图，不新增接口 */
-    function go(name) {
-      view.value = name;
-      if (name === "orders") loadOrders();
-      else if (name === "wallet") loadWallet();
-      else if (name === "home") loadActiveOrders();
-      else if (name === "market") { marketTab.value === 0 ? loadMarket() : loadBookings(); }
-      else if (name === "hall") loadHall();
-      else if (name === "messages") loadMessages();
-    }
+    if (userToken.value || runnerToken.value) setTimeout(() => { skel.value = false; }, 450);
 
-    async function doLogin() {
-      if (!loginCode.value) return toast("请输入登录码", false);
-      busy.value = true;
-      const r = await api("POST", "/user/user/login", { code: loginCode.value });
-      busy.value = false;
-      if (r.code === 1) { localStorage.setItem("user_token", r.data.token); token.value = r.data.token; init(); }
-      else toast(r.msg || "登录失败", false);
-    }
-    // ===== 账号密码登录（A7）：注册 / 登录 / 改密，与体验码登录并存 =====
-    const loginMode = ref("account");   // account 账号登录 | register 注册 | guest 体验码
-    const accountForm = reactive({ username: "", password: "", confirmPassword: "", name: "" });
-    async function doAccountLogin() {
-      if (!accountForm.username || !accountForm.password) return toast("请输入账号和密码", false);
-      busy.value = true;
-      const r = await api("POST", "/user/user/accountLogin", { username: accountForm.username, password: accountForm.password });
-      busy.value = false;
-      if (r.code === 1) { localStorage.setItem("user_token", r.data.token); token.value = r.data.token; init(); }
-      else toast(r.msg || "登录失败", false);
-    }
-    async function doRegister() {
-      if (!accountForm.username || !accountForm.password) return toast("请填写账号和密码", false);
-      if (accountForm.password !== accountForm.confirmPassword) return toast("两次输入的密码不一致", false);
-      busy.value = true;
-      const r = await api("POST", "/user/user/register", { username: accountForm.username, password: accountForm.password, name: accountForm.name });
-      busy.value = false;
-      if (r.code === 1) {
-        toast("注册成功，已自动登录");
-        localStorage.setItem("user_token", r.data.token); token.value = r.data.token; init();
-      } else toast(r.msg || "注册失败", false);
-    }
-    async function changePwd() {
-      const oldPassword = prompt("请输入原密码（首次设置密码可不填，直接确定）");
-      if (oldPassword === null) return;
-      const newPassword = prompt("请输入新密码（6-32位）");
-      if (!newPassword) return;
-      busy.value = true;
-      const r = await api("PUT", "/user/user/password", { oldPassword, newPassword }, token.value);
-      busy.value = false;
-      r.code === 1 ? toast("密码已更新") : toast(r.msg, false);
-    }
-    function logout() { localStorage.removeItem("user_token"); location.reload(); }
-
-    async function init() {
-      profile.value = (await api("GET", "/user/user/profile", null, token.value)).data || {};
-      types.value = (await api("GET", "/user/skillCategory/list", null, token.value)).data || [];
-      await loadAddresses();
-      await loadWallet();
-      loadActiveOrders();
-      loadUnread();
-      connectWs();
-    }
-
-    //首页-进行中订单直通卡片
-    const activeOrders = ref([]);
-    async function loadActiveOrders() {
-      const r = await api("GET", "/user/order/page?page=1&pageSize=10", null, token.value);
-      activeOrders.value = ((r.data && r.data.records) || []).filter(o => [2, 3, 4].includes(o.status)).slice(0, 3);
-    }
-    //人性化时间显示
+    function toast(msg, ok = true) { showToast({ message: msg, type: ok ? "success" : "fail" }); }
     function relTime(t) {
       if (!t) return "";
       const d = new Date(String(t).replace(" ", "T"));
@@ -716,151 +1128,94 @@ createApp({
       if (diff < 2880) return "昨天 " + String(t).slice(11, 16);
       return String(t).slice(5, 16);
     }
-    const feeRateNum = computed(() => Number(curType.value.feeRate) || 0.1);
-    const typeName = computed(() => curType.value.name || "");
-
-    async function loadUnread() {
-      const r = await api("GET", "/user/message/unread", null, token.value);
-      unread.value = r.data || 0;
+    async function copyText(t) {
+      if (!t) return;
+      try { await navigator.clipboard.writeText(t); }
+      catch (e) {
+        const ta = document.createElement("textarea");
+        ta.value = t; document.body.appendChild(ta); ta.select();
+        document.execCommand("copy"); document.body.removeChild(ta);
+      }
+      toast("已复制");
     }
-    // WebSocket 实时推送：订单状态变更即时弹窗提醒
+    function statusText(s) { return STATUS[s] || s; }
+    function tagType(s) { return TAG[s] || "primary"; }
+    function modeText(m) { return m === 1 ? "线上交付" : "线下进行"; }
+    function bkText(s) { return BK[s] || s; }
+    function bkTag(s) { return BKTAG[s] || "default"; }
+    function pfText(s) { return PF[s] || s; }
+    function pfTag(s) { return PFTAG[s] || "default"; }
+    function txName(t) { return { 1:"技能服务收入", 2:"支付支出", 3:"充值", 4:"提现", 5:"退款", 6:"违约金" }[t] || "其他"; }
+
+    /* ===== WebSocket（按当前身份 token 连接，切身份时重连） ===== */
     let ws = null, wsTimer = null;
     function connectWs() {
-      if (!token.value) return;
+      const tk = role.value === "skiller" ? runnerToken.value : userToken.value;
+      if (!tk) return;
       if (ws) { try { ws.onclose = null; ws.close(); } catch (e) {} }
       clearTimeout(wsTimer);
       const proto = location.protocol === "https:" ? "wss" : "ws";
       try {
-        ws = new WebSocket(proto + "://" + location.host + "/ws/" + encodeURIComponent(token.value));
+        ws = new WebSocket(proto + "://" + location.host + "/ws/" + encodeURIComponent(tk));
       } catch (e) { return; }
       ws.onmessage = (ev) => {
         try {
           const d = JSON.parse(ev.data);
           if (d.type === "message") {
             showToast({ message: "🔔 " + d.title });
-            unread.value += 1;
+            if (role.value === "skiller") { skUnread.value += 1; if (view.value === "skMessages") loadSkMessages(); }
+            else { unread.value += 1; if (view.value === "messages") loadMessages(); }
           }
         } catch (e) {}
       };
       ws.onclose = () => { wsTimer = setTimeout(connectWs, 10000); };
       ws.onerror = () => { try { ws.close(); } catch (e) {} };
     }
-    async function loadMessages() {
-      const r = await api("GET", "/user/message/list", null, token.value);
-      messages.value = r.data || [];
-    }
-    function openMessages() { view.value = "messages"; loadMessages(); }
-    async function readAll() {
-      const r = await api("PUT", "/user/message/readAll", null, token.value);
-      if (r.code === 1) { toast("已全部标记为已读"); loadMessages(); loadUnread(); }
-    }
-    async function boostOrder() {
-      if (!boostAmount.value || boostAmount.value <= 0) return toast("请输入追加金额", false);
-      busy.value = true;
-      const r = await api("PUT", "/user/order/boost", { id: detail.value.id, amount: boostAmount.value }, token.value);
-      busy.value = false;
-      if (r.code === 1) { toast("悬赏追加成功"); boostAmount.value = null; openOrder(detail.value.id); }
-      else toast(r.msg, false);
-    }
 
-    async function loadAddresses() {
-      const r = await api("GET", "/user/addressBook/list", null, token.value);
-      addresses.value = r.data || [];
-      if (addresses.value.length && form.addressBookId === null) form.addressBookId = addresses.value[0].id;
-    }
-    async function saveAddress() {
-      const r = await api("POST", "/user/addressBook", { ...addrForm, sex: "1", isDefault: addresses.value.length ? 0 : 1 }, token.value);
-      r.code === 1 ? (toast("已保存"), loadAddresses()) : toast(r.msg, false);
-    }
-    async function delAddress(id) {
-      const r = await api("DELETE", "/user/addressBook?id=" + id, null, token.value);
-      r.code === 1 ? loadAddresses() : toast(r.msg, false);
-    }
-
-    function startOrder(t) {
-      curType.value = t || {}; form.typeId = t.id; view.value = "submit";
-      //恢复上次未提交完的草稿
-      try {
-        const draft = JSON.parse(localStorage.getItem("campus_draft_order") || "null");
-        if (draft && (draft.title || draft.rewardAmount)) {
-          Object.assign(form, draft, { typeId: t.id });
-          toast("已恢复上次草稿");
-        }
-      } catch (e) { /* 忽略草稿解析失败 */ }
-    }
-
-    async function submitOrder() {
-      if (!form.title) return toast("请填写订单标题", false);
-      if (form.addrMode === "book" && !form.addressBookId) return toast("请先选择或新增交付地址", false);
-      if (form.addrMode === "manual" && !(form.manualAddress || "").trim()) return toast("请填写交付地点", false);
-      if (!form.rewardAmount || form.rewardAmount <= 0) return toast("请填写正确的悬赏金额", false);
-      busy.value = true;
-      const payload = { ...form };
-      if (payload.addrMode === "online") { payload.deliveryAddress = "线上交付"; delete payload.addressBookId; }
-      if (payload.addrMode === "book") { delete payload.deliveryAddress; delete payload.manualAddress; }
-      if (payload.addrMode === "manual") { payload.deliveryAddress = payload.manualAddress; delete payload.addressBookId; }
-      delete payload.addrMode; delete payload.manualAddress;
-      if (payload.expectedTime) payload.expectedTime = payload.expectedTime.replace("T", " ") + ":00";
-      else delete payload.expectedTime;
-      const r = await api("POST", "/user/order/submit", payload, token.value);
-      busy.value = false;
-      if (r.code !== 1) return toast(r.msg || "发单失败", false);
-      localStorage.removeItem("campus_draft_order");
-      toast("发单成功");
-      if (form.payMethod === 2) await api("POST", "/user/order/pay/" + r.data.orderNumber, null, token.value);
-      view.value = "orders"; orderTab.value = null; loadOrders();
-    }
-
-    async function loadHall() {
-      const q = new URLSearchParams({ page: 1, pageSize: 20 });
-      if (hallType.value) q.set("typeId", hallType.value);
-      if (hallKeyword.value) q.set("keyword", hallKeyword.value);
-      const r = await api("GET", "/user/hall/list?" + q, null, token.value);
-      hall.value = (r.data && r.data.records) || [];
-    }
-    function toggleTag(tg) {
-      const i = reviewTags.value.indexOf(tg);
-      i >= 0 ? reviewTags.value.splice(i, 1) : reviewTags.value.push(tg);
-    }
-    function openProfileEdit() {
-      Object.assign(editForm, { name: profile.value.name, phone: profile.value.phone,
-        studentNo: profile.value.studentNo, campus: profile.value.campus });
-      view.value = "profileEdit";
-    }
-    async function saveProfile() {
-      busy.value = true;
-      const r = await api("PUT", "/user/user/profile", editForm, token.value);
-      busy.value = false;
-      r.code === 1 ? (toast("资料已更新"), profile.value = await (async () =>
-        (await api("GET", "/user/user/profile", null, token.value)).data)(), view.value = "me") : toast(r.msg, false);
-    }
-    async function loadOrders() {
-      const q = new URLSearchParams({ page: 1, pageSize: 20 });
-      if (orderTab.value) q.set("status", orderTab.value);
-      const r = await api("GET", "/user/order/page?" + q, null, token.value);
-      orders.value = (r.data && r.data.records) || [];
-    }
-    async function openOrder(id) {
-      const r = await api("GET", "/user/order/detail/" + id, null, token.value);
-      detail.value = r.data; view.value = "orderDetail";
-      const rv = await api("GET", "/user/review/order/" + id, null, token.value);
-      reviewed.value = !!(rv.data && rv.data.id);
-    }
-    async function payOrder() {
-      busy.value = true;
-      const r = await api("POST", "/user/order/pay/" + detail.value.number, null, token.value);
-      busy.value = false;
-      if (r.code === 1) { toast("支付成功"), openOrder(detail.value.id); }
-      else if ((r.msg || "").indexOf("余额") >= 0) { toast(r.msg + "，可先到「钱包」充值", false); }
-      else toast(r.msg, false);
-    }
+    /* ================= 用户身份 ================= */
+    const profile = ref({});
+    const types = ref([]);
+    const addresses = ref([]);
+    const hall = ref([]);
+    const hallKeyword = ref("");
+    const hallType = ref(null);
+    const orders = ref([]);
+    const orderTab = ref(null);
+    const detail = ref(null);
+    const reviewed = ref(false);
+    const reviewTags = ref([]);
+    const reviewScore = ref(5);
+    const reviewContent = ref("");
+    const wallet = ref({});
+    const txs = ref([]);
+    const editForm = reactive({ name: "", phone: "", studentNo: "", campus: "" });
+    const curType = ref({});
+    const form = reactive({ title: "", description: "", pickupAddress: "", addressBookId: null, rewardAmount: null, payMethod: 2, typeId: null, addrMode: "online", manualAddress: "", expectedTime: "" });
+    Vue.watch(form, () => {
+      if (view.value === "submit") localStorage.setItem("campus_draft_order", JSON.stringify(form));
+    }, { deep: true });
+    const addrForm = reactive({ consignee: "", phone: "", campus: "", building: "", room: "" });
+    const messages = ref([]);
+    const unread = ref(0);
+    const boostAmount = ref(null);
+    const activeOrders = ref([]);
+    const marketTab = ref(0);
+    const market = ref([]);
+    const marketKeyword = ref("");
+    const marketCategory = ref(null);
+    const marketSort = ref("default");
+    const svcDetail = ref(null);
+    const showSvc = ref(false);
+    const bookingMode = ref(false);
+    const bookingForm = reactive({ serviceItemId: null, expectTime: "", remark: "" });
+    const bookings = ref([]);
+    const feeRateNum = computed(() => Number(curType.value.feeRate) || 0.1);
+    const typeName = computed(() => curType.value.name || "");
     const stepActive = computed(() => {
       const s = detail.value ? detail.value.status : 0;
       const m = { 1:0, 2:1, 3:2, 4:3, 5:4, 8:3, 9:3 };
       return m[s] === undefined ? 0 : m[s];
     });
-
-    // ===== 关键节点倒计时（每秒刷新）=====
     const nowTick = ref(Date.now());
     setInterval(() => { nowTick.value = Date.now(); }, 1000);
     function parseTime(s) { return s ? new Date(String(s).replace(" ", "T")).getTime() : 0; }
@@ -885,42 +1240,185 @@ createApp({
       return "";
     });
 
-    // ===== 一键复制 =====
-    async function copyText(t) {
-      if (!t) return;
-      try { await navigator.clipboard.writeText(t); }
-      catch (e) {
-        const ta = document.createElement("textarea");
-        ta.value = t; document.body.appendChild(ta); ta.select();
-        document.execCommand("copy"); document.body.removeChild(ta);
-      }
-      toast("已复制");
+    async function doAccountLogin() {
+      if (!accountForm.username || !accountForm.password) return toast("请输入账号和密码", false);
+      busy.value = true;
+      const r = await api("POST", "/user/user/accountLogin", { username: accountForm.username, password: accountForm.password });
+      busy.value = false;
+      if (r.code === 1) { localStorage.setItem("user_token", r.data.token); userToken.value = r.data.token; role.value = "user"; view.value = "home"; tab.value = "home"; initUser(); }
+      else toast(r.msg || "登录失败", false);
+    }
+    async function doRegister() {
+      if (!accountForm.username || !accountForm.password) return toast("请填写账号和密码", false);
+      if (accountForm.password !== accountForm.confirmPassword) return toast("两次输入的密码不一致", false);
+      busy.value = true;
+      const r = await api("POST", "/user/user/register", { username: accountForm.username, password: accountForm.password, name: accountForm.name });
+      busy.value = false;
+      if (r.code === 1) {
+        toast("注册成功，已自动登录");
+        localStorage.setItem("user_token", r.data.token); userToken.value = r.data.token; role.value = "user"; view.value = "home"; tab.value = "home"; initUser();
+      } else toast(r.msg || "注册失败", false);
+    }
+    async function doGuestLogin() {
+      if (!loginCode.value) return toast("请输入登录码", false);
+      busy.value = true;
+      const r = await api("POST", "/user/user/login", { code: loginCode.value });
+      busy.value = false;
+      if (r.code === 1) { localStorage.setItem("user_token", r.data.token); userToken.value = r.data.token; role.value = "user"; view.value = "home"; tab.value = "home"; initUser(); }
+      else toast(r.msg || "登录失败", false);
+    }
+    async function changePwd() {
+      const oldPassword = prompt("请输入原密码（首次设置密码可不填，直接确定）");
+      if (oldPassword === null) return;
+      const newPassword = prompt("请输入新密码（6-32位）");
+      if (!newPassword) return;
+      busy.value = true;
+      const r = await api("PUT", "/user/user/password", { oldPassword, newPassword }, userToken.value);
+      busy.value = false;
+      r.code === 1 ? toast("密码已更新") : toast(r.msg, false);
+    }
+    function logoutUser() {
+      localStorage.removeItem("user_token");
+      userToken.value = "";
+      if (runnerToken.value) { role.value = "skiller"; view.value = "grab"; tab.value = "grab"; toast("已退出用户身份"); }
+      else location.reload();
     }
 
-    // ===== 下拉刷新 =====
-    const refreshing = ref(false);
-    async function onRefresh(target) {
-      try {
-        if (target === "orders") { await loadOrders(); await loadActiveOrders(); }
-        else if (target === "market") { await loadMarket(); }
-      } finally { refreshing.value = false; }
+    async function initUser() {
+      profile.value = (await api("GET", "/user/user/profile", null, userToken.value)).data || {};
+      types.value = (await api("GET", "/user/skillCategory/list", null, userToken.value)).data || [];
+      await loadAddresses();
+      await loadWalletU();
+      loadActiveOrders();
+      loadUnreadU();
+      connectWs();
     }
-    // 已交付：验收 / 返修 / 仲裁
+    async function loadActiveOrders() {
+      const r = await api("GET", "/user/order/page?page=1&pageSize=10", null, userToken.value);
+      activeOrders.value = ((r.data && r.data.records) || []).filter(o => [2, 3, 4].includes(o.status)).slice(0, 3);
+    }
+    async function loadUnreadU() {
+      const r = await api("GET", "/user/message/unread", null, userToken.value);
+      unread.value = r.data || 0;
+    }
+    async function loadMessages() {
+      const r = await api("GET", "/user/message/list", null, userToken.value);
+      messages.value = r.data || [];
+    }
+    function openMessagesU() { view.value = "messages"; loadMessages(); }
+    async function readAll() {
+      const r = await api("PUT", "/user/message/readAll", null, userToken.value);
+      if (r.code === 1) { toast("已全部标记为已读"); loadMessages(); loadUnreadU(); }
+    }
+    async function loadAddresses() {
+      const r = await api("GET", "/user/addressBook/list", null, userToken.value);
+      addresses.value = r.data || [];
+      if (addresses.value.length && form.addressBookId === null) form.addressBookId = addresses.value[0].id;
+    }
+    async function saveAddress() {
+      const r = await api("POST", "/user/addressBook", { ...addrForm, sex: "1", isDefault: addresses.value.length ? 0 : 1 }, userToken.value);
+      r.code === 1 ? (toast("已保存"), loadAddresses()) : toast(r.msg, false);
+    }
+    async function delAddress(id) {
+      const r = await api("DELETE", "/user/addressBook?id=" + id, null, userToken.value);
+      r.code === 1 ? loadAddresses() : toast(r.msg, false);
+    }
+    function startOrder(t) {
+      curType.value = t || {}; form.typeId = t.id; view.value = "submit";
+      try {
+        const draft = JSON.parse(localStorage.getItem("campus_draft_order") || "null");
+        if (draft && (draft.title || draft.rewardAmount)) {
+          Object.assign(form, draft, { typeId: t.id });
+          toast("已恢复上次草稿");
+        }
+      } catch (e) { /* 忽略草稿解析失败 */ }
+    }
+    async function submitOrder() {
+      if (!form.title) return toast("请填写订单标题", false);
+      if (form.addrMode === "book" && !form.addressBookId) return toast("请先选择或新增交付地址", false);
+      if (form.addrMode === "manual" && !(form.manualAddress || "").trim()) return toast("请填写交付地点", false);
+      if (!form.rewardAmount || form.rewardAmount <= 0) return toast("请填写正确的悬赏金额", false);
+      busy.value = true;
+      const payload = { ...form };
+      if (payload.addrMode === "online") { payload.deliveryAddress = "线上交付"; delete payload.addressBookId; }
+      if (payload.addrMode === "book") { delete payload.deliveryAddress; delete payload.manualAddress; }
+      if (payload.addrMode === "manual") { payload.deliveryAddress = payload.manualAddress; delete payload.addressBookId; }
+      delete payload.addrMode; delete payload.manualAddress;
+      if (payload.expectedTime) payload.expectedTime = payload.expectedTime.replace("T", " ") + ":00";
+      else delete payload.expectedTime;
+      const r = await api("POST", "/user/order/submit", payload, userToken.value);
+      busy.value = false;
+      if (r.code !== 1) return toast(r.msg || "发单失败", false);
+      localStorage.removeItem("campus_draft_order");
+      toast("发单成功");
+      if (form.payMethod === 2) await api("POST", "/user/order/pay/" + r.data.orderNumber, null, userToken.value);
+      view.value = "orders"; orderTab.value = null; loadOrders();
+    }
+    async function loadHall() {
+      const q = new URLSearchParams({ page: 1, pageSize: 20 });
+      if (hallType.value) q.set("typeId", hallType.value);
+      if (hallKeyword.value) q.set("keyword", hallKeyword.value);
+      const r = await api("GET", "/user/hall/list?" + q, null, userToken.value);
+      hall.value = (r.data && r.data.records) || [];
+    }
+    function toggleTag(tg) {
+      const i = reviewTags.value.indexOf(tg);
+      i >= 0 ? reviewTags.value.splice(i, 1) : reviewTags.value.push(tg);
+    }
+    function openProfileEdit() {
+      Object.assign(editForm, { name: profile.value.name, phone: profile.value.phone,
+        studentNo: profile.value.studentNo, campus: profile.value.campus });
+      view.value = "profileEdit";
+    }
+    async function saveProfile() {
+      busy.value = true;
+      const r = await api("PUT", "/user/user/profile", editForm, userToken.value);
+      busy.value = false;
+      r.code === 1 ? (toast("资料已更新"), profile.value = await (async () =>
+        (await api("GET", "/user/user/profile", null, userToken.value)).data)(), view.value = "me") : toast(r.msg, false);
+    }
+    async function loadOrders() {
+      const q = new URLSearchParams({ page: 1, pageSize: 20 });
+      if (orderTab.value) q.set("status", orderTab.value);
+      const r = await api("GET", "/user/order/page?" + q, null, userToken.value);
+      orders.value = (r.data && r.data.records) || [];
+    }
+    async function openOrder(id) {
+      const r = await api("GET", "/user/order/detail/" + id, null, userToken.value);
+      detail.value = r.data; view.value = "orderDetail";
+      const rv = await api("GET", "/user/review/order/" + id, null, userToken.value);
+      reviewed.value = !!(rv.data && rv.data.id);
+    }
+    async function payOrder() {
+      busy.value = true;
+      const r = await api("POST", "/user/order/pay/" + detail.value.number, null, userToken.value);
+      busy.value = false;
+      if (r.code === 1) { toast("支付成功"), openOrder(detail.value.id); }
+      else if ((r.msg || "").indexOf("余额") >= 0) { toast(r.msg + "，可先到「钱包」充值", false); }
+      else toast(r.msg, false);
+    }
+    async function boostOrder() {
+      if (!boostAmount.value || boostAmount.value <= 0) return toast("请输入追加金额", false);
+      busy.value = true;
+      const r = await api("PUT", "/user/order/boost", { id: detail.value.id, amount: boostAmount.value }, userToken.value);
+      busy.value = false;
+      if (r.code === 1) { toast("悬赏追加成功"); boostAmount.value = null; openOrder(detail.value.id); }
+      else toast(r.msg, false);
+    }
     async function acceptOrder() {
       try {
         await vant.showConfirmDialog({ title: "验收完成", message: "确认验收该交付成果？确认后订单将完成并结算报酬" });
       } catch (e) { return; }
-      const r = await api("PUT", "/user/order/accept/" + detail.value.id, null, token.value);
+      const r = await api("PUT", "/user/order/accept/" + detail.value.id, null, userToken.value);
       r.code === 1 ? (toast("已验收，订单完成"), openOrder(detail.value.id)) : toast(r.msg, false);
     }
     async function applyRework() {
       const reason = prompt("请输入返修原因");
       if (!reason) return;
       busy.value = true;
-      const r = await api("PUT", "/user/order/rework/" + detail.value.id, { reason }, token.value);
+      const r = await api("PUT", "/user/order/rework/" + detail.value.id, { reason }, userToken.value);
       busy.value = false;
       if (r.code === 1) { toast("返修申请已提交"); openOrder(detail.value.id); }
-      else if ((r.msg || "").indexOf("返修次数") >= 0) toast(r.msg, false);
       else toast(r.msg, false);
     }
     async function applyDispute() {
@@ -931,7 +1429,7 @@ createApp({
       } catch (e) { return; }
       busy.value = true;
       const r = await api("POST", "/user/order/dispute/" + detail.value.id,
-        { reasonType: 1, description: description, evidenceUrls: "" }, token.value);
+        { reasonType: 1, description: description, evidenceUrls: "" }, userToken.value);
       busy.value = false;
       r.code === 1 ? (toast("仲裁申请已提交"), openOrder(detail.value.id)) : toast(r.msg, false);
     }
@@ -939,25 +1437,20 @@ createApp({
       try {
         await vant.showConfirmDialog({ title: "取消订单", message: "确定取消该订单吗？已支付金额将原路退回钱包" });
       } catch (e) { return; }
-      const r = await api("PUT", "/user/order/cancel", { id: detail.value.id, cancelReason: "用户主动取消" }, token.value);
+      const r = await api("PUT", "/user/order/cancel", { id: detail.value.id, cancelReason: "用户主动取消" }, userToken.value);
       r.code === 1 ? (toast("已取消并退款"), loadOrders(), view.value = "orders") : toast(r.msg, false);
     }
     async function submitReview() {
       const r = await api("POST", "/user/review/submit",
         { orderId: detail.value.id, score: reviewScore.value, content: reviewContent.value,
-          tags: reviewTags.value.join(","), isAnonymous: 0 }, token.value);
+          tags: reviewTags.value.join(","), isAnonymous: 0 }, userToken.value);
       r.code === 1 ? (toast("评价成功"), reviewed.value = true) : toast(r.msg, false);
     }
-
-    // 技能市场
-    function modeText(m) { return m === 1 ? "线上交付" : "线下进行"; }
-    function bkText(s) { return BK[s] || s; }
-    function bkTag(s) { return BKTAG[s] || "default"; }
     async function loadMarket() {
       const q = new URLSearchParams({ page: 1, pageSize: 10, sort: marketSort.value || "default" });
       if (marketCategory.value) q.set("categoryId", marketCategory.value);
       if (marketKeyword.value) q.set("keyword", marketKeyword.value);
-      const r = await api("GET", "/user/market?" + q, null, token.value);
+      const r = await api("GET", "/user/market?" + q, null, userToken.value);
       market.value = (r.data && r.data.records) || [];
     }
     function openSvc(s) {
@@ -971,7 +1464,7 @@ createApp({
     async function submitBooking() {
       if (!bookingForm.expectTime) return toast("请填写期望服务时间，如 2026-10-10 14:00", false);
       busy.value = true;
-      const r = await api("POST", "/user/booking", bookingForm, token.value);
+      const r = await api("POST", "/user/booking", bookingForm, userToken.value);
       busy.value = false;
       if (r.code === 1) {
         toast("预约成功，等待技能者确认");
@@ -981,16 +1474,16 @@ createApp({
       } else toast(r.msg, false);
     }
     async function loadBookings() {
-      const r = await api("GET", "/user/booking/page?page=1&pageSize=20", null, token.value);
+      const r = await api("GET", "/user/booking/page?page=1&pageSize=20", null, userToken.value);
       bookings.value = (r.data && r.data.records) || [];
     }
     function onMarketTab() { marketTab.value === 0 ? loadMarket() : loadBookings(); }
     async function payBooking(b) {
       busy.value = true;
-      const pr = await api("POST", "/user/booking/" + b.id + "/pay", null, token.value);
+      const pr = await api("POST", "/user/booking/" + b.id + "/pay", null, userToken.value);
       if (pr.code !== 1) { busy.value = false; return toast(pr.msg || "下单失败", false); }
       const orderNumber = pr.data && pr.data.orderNumber;
-      const r = await api("POST", "/user/order/pay/" + orderNumber, null, token.value);
+      const r = await api("POST", "/user/order/pay/" + orderNumber, null, userToken.value);
       busy.value = false;
       if (r.code === 1) { toast("已下单并支付成功"); loadBookings(); loadActiveOrders(); }
       else toast(r.msg || "支付失败", false);
@@ -999,60 +1492,414 @@ createApp({
       try {
         await vant.showConfirmDialog({ title: "取消预约", message: "确定取消该预约吗？" });
       } catch (e) { return; }
-      const r = await api("PUT", "/user/booking/" + b.id + "/cancel", null, token.value);
+      const r = await api("PUT", "/user/booking/" + b.id + "/cancel", null, userToken.value);
       r.code === 1 ? (toast("预约已取消"), loadBookings()) : toast(r.msg, false);
     }
-
-    async function loadWallet() {
-      wallet.value = (await api("GET", "/user/wallet/balance", null, token.value)).data || {};
-      const r = await api("GET", "/user/wallet/transactions?page=1&pageSize=20", null, token.value);
+    async function loadWalletU() {
+      wallet.value = (await api("GET", "/user/wallet/balance", null, userToken.value)).data || {};
+      const r = await api("GET", "/user/wallet/transactions?page=1&pageSize=20", null, userToken.value);
       txs.value = (r.data && r.data.records) || [];
     }
     async function recharge() {
       busy.value = true;
-      const r = await api("POST", "/user/wallet/recharge", { amount: 50 }, token.value);
+      const r = await api("POST", "/user/wallet/recharge", { amount: 50 }, userToken.value);
       busy.value = false;
-      r.code === 1 ? (toast("充值成功"), loadWallet()) : toast(r.msg, false);
+      r.code === 1 ? (toast("充值成功"), loadWalletU()) : toast(r.msg, false);
     }
-    function txName(t) { return { 1:"技能服务收入", 2:"支付支出", 3:"充值", 4:"提现", 5:"退款", 6:"违约金" }[t] || "其他"; }
-
     async function applySkiller() {
       busy.value = true;
-      const r = await api("POST", "/user/skiller/apply", auditForm, token.value);
+      const r = await api("POST", "/user/skiller/apply", auditForm, userToken.value);
       busy.value = false;
       r.code === 1 ? toast("申请已提交，等待平台审核") : toast(r.msg, false);
     }
-
-    function switchTab(name) {
+    const refreshing = ref(false);
+    async function onRefresh(target) {
+      try {
+        if (target === "orders") { await loadOrders(); await loadActiveOrders(); }
+        else if (target === "market") { await loadMarket(); }
+      } finally { refreshing.value = false; }
+    }
+    function goUser(name) {
       view.value = name;
       if (name === "orders") loadOrders();
-      if (name === "wallet") loadWallet();
-      if (name === "home") loadActiveOrders();
-      if (name === "market") { marketTab.value === 0 ? loadMarket() : loadBookings(); }
+      else if (name === "wallet") loadWalletU();
+      else if (name === "home") loadActiveOrders();
+      else if (name === "market") { marketTab.value === 0 ? loadMarket() : loadBookings(); }
+      else if (name === "hall") loadHall();
+      else if (name === "messages") loadMessages();
     }
-    function statusText(s) { return STATUS[s] || s; }
-    function tagType(s) { return TAG[s] || "primary"; }
 
-    if (token.value) init();
+    /* ================= 技能者身份 ================= */
+    const center = ref({});
+    const skHall = ref([]);
+    const skHallKeyword = ref("");
+    const skHallTypes = ref([]);
+    const skHallTypeId = ref(null);
+    const hallNew = ref(0);
+    const hallSeenMax = ref(0);
+    const myOrders = ref([]);
+    const skTxs = ref([]);
+    const wdRecords = ref([]);
+    const wdAmount = ref(null);
+    const wdPassword = ref("");
+    const trend = ref([]);
+    const skMessages = ref([]);
+    const skUnread = ref(0);
+    const orderSub = ref(0);
+    const skBookings = ref([]);
+    const services = ref([]);
+    const portfolios = ref([]);
+    const cats = ref([]);
+    const svcShow = ref(false);
+    const svcForm = reactive({ id: null, categoryId: null, title: "", description: "", price: null, deliveryDays: 1, serviceMode: 1, tags: "" });
+    const pfShow = ref(false);
+    const pfForm = reactive({ categoryId: null, title: "", coverUrl: "", workUrls: "", description: "" });
+    const deliverShow = ref(false);
+    const deliverForm = reactive({ id: null, deliverableUrl: "", deliverableNote: "" });
+    const currentTask = ref(null);
+    const LEVEL_GOALS = { 1: 20, 2: 50, 3: 100 };
+    const levelPct = computed(() => {
+      const done = center.value.completedOrders || 0;
+      const goal = LEVEL_GOALS[center.value.runnerLevel] || LEVEL_GOALS[3];
+      return Math.min(100, Math.round(done / goal * 100));
+    });
+    const nextGoal = computed(() => {
+      const done = center.value.completedOrders || 0;
+      const goal = LEVEL_GOALS[center.value.runnerLevel];
+      return goal ? Math.max(goal - done, 0) : 0;
+    });
+    const nextLevelName = computed(() => levelName((center.value.runnerLevel || 1) + 1));
+    const limitPct = computed(() => {
+      const used = center.value.todayOrderCount || 0, lim = center.value.dailyOrderLimit || 10;
+      return Math.min(100, Math.round(used / lim * 100));
+    });
+    const trendTotal = computed(() => trend.value.reduce((s, t) => s + (t.orderCount || 0), 0));
+    const trendIncome = computed(() => trend.value.reduce((s, t) => s + Number(t.amount || 0), 0));
 
-    return { token, view, tab, busy, profile, types, addresses, hall, orders, orderTab, detail, reviewed,
-             wallet, txs, loginCode, curType, reviewScore, reviewContent, form, addrForm, auditForm,
-             hallKeyword, hallType, reviewTags, editForm, toggleTag, openProfileEdit, saveProfile, money,
-             navTitle, doLogin, logout, startOrder, submitOrder, loadHall, loadOrders, openOrder, payOrder,
-             acceptOrder, applyRework, applyDispute, cancelOrder, submitReview, recharge, txName, applySkiller,
-             saveAddress, delAddress, switchTab, statusText, tagType, messages, unread, openMessages, readAll,
-             loadUnread, boostAmount, boostOrder, activeOrders, loadActiveOrders, relTime, feeRateNum,
-             stepActive, marketTab, market, marketKeyword, marketCategory, svcDetail, showSvc, bookingMode,
-             marketSort, countdown, copyText, refreshing, onRefresh,
-             bookingForm, bookings, loadMarket, loadBookings, onMarketTab, openSvc, modeText, submitBooking,
-             payBooking, cancelBooking, bkText, bkTag, typeName,
-             skel, playSkel, go,
-             loginMode, accountForm, doAccountLogin, doRegister, changePwd };
+    function levelName(l) { return ["", "普通", "铜牌", "银牌", "金牌"][l] || "普通"; }
+    function barH(p) {
+      const max = Math.max(...trend.value.map(t => Number(t.amount) || 0), 1);
+      return Math.max(3, Math.round(Number(p.amount || 0) / max * 90));
+    }
+    async function doSkAccountLogin() {
+      if (!skAccountForm.username || !skAccountForm.password) return toast("请输入账号和密码", false);
+      busy.value = true;
+      const r = await api("POST", "/skiller/auth/accountLogin", { username: skAccountForm.username, password: skAccountForm.password });
+      busy.value = false;
+      if (r.code === 1) { localStorage.setItem("runner_token", r.data.token); runnerToken.value = r.data.token; afterSkLogin(); }
+      else toast(r.msg || "登录失败", false);
+    }
+    async function doSkGuestLogin() {
+      if (!loginCode.value) return toast("请输入登录码", false);
+      busy.value = true;
+      const r = await api("POST", "/skiller/auth/login", { code: loginCode.value });
+      busy.value = false;
+      if (r.code === 1) { localStorage.setItem("runner_token", r.data.token); runnerToken.value = r.data.token; afterSkLogin(); }
+      else toast((r.msg || "登录失败") + "（可提交入驻申请）", false);
+    }
+    async function applyAudit() {
+      busy.value = true;
+      const ul = await api("POST", "/user/user/login", { code: loginCode.value || ("r" + Date.now()) });
+      if (ul.code !== 1) { busy.value = false; return toast(ul.msg, false); }
+      const r = await api("POST", "/user/skiller/apply", auditForm, ul.data.token);
+      busy.value = false;
+      r.code === 1 ? toast("申请已提交，等待平台审核") : toast(r.msg, false);
+    }
+    function afterSkLogin() {
+      role.value = "skiller";
+      view.value = "grab"; tab.value = "grab";
+      initSkiller();
+    }
+    function logoutSkiller() {
+      localStorage.removeItem("runner_token");
+      runnerToken.value = "";
+      if (userToken.value) { role.value = "user"; view.value = "home"; tab.value = "home"; toast("已退出技能者身份"); }
+      else location.reload();
+    }
+    async function initSkiller() {
+      const c = await api("GET", "/skiller/info/center", null, runnerToken.value);
+      if (c.code === 1) center.value = c.data;
+      else {
+        localStorage.removeItem("runner_token"); runnerToken.value = "";
+        if (userToken.value) { role.value = "user"; view.value = "home"; tab.value = "home"; }
+        return;
+      }
+      loadCurrentTask();
+      loadSkHall();
+      loadSkHallTypes();
+      loadUnreadS();
+      connectWs();
+    }
+    async function loadCurrentTask() {
+      const r = await api("GET", "/skiller/orders/page?page=1&pageSize=5&status=3", null, runnerToken.value);
+      currentTask.value = (r.data && r.data.records && r.data.records[0]) || null;
+    }
+    function goOrderOfMessage(m) {
+      if (!m.orderId) return;
+      view.value = "skOrders";
+      tab.value = "skOrders";
+      orderSub.value = 0;
+      loadMyOrders();
+    }
+    async function loadSkHallTypes() {
+      const r = await api("GET", "/user/hall/skillCategory/list", null, runnerToken.value);
+      skHallTypes.value = r.data || [];
+    }
+    async function loadCats() {
+      const r = await api("GET", "/user/skillCategory/list", null, runnerToken.value);
+      cats.value = r.data || [];
+    }
+    async function loadTrend() {
+      const r = await api("GET", "/skiller/info/trend?days=7", null, runnerToken.value);
+      trend.value = r.data || [];
+    }
+    async function loadUnreadS() {
+      const r = await api("GET", "/skiller/message/unread", null, runnerToken.value);
+      skUnread.value = r.data || 0;
+    }
+    async function loadSkMessages() {
+      const r = await api("GET", "/skiller/message/list", null, runnerToken.value);
+      skMessages.value = r.data || [];
+    }
+    function openMessagesS() { view.value = "skMessages"; loadSkMessages(); }
+    async function readAllS() {
+      const r = await api("PUT", "/skiller/message/readAll", null, runnerToken.value);
+      if (r.code === 1) { toast("已全部标记为已读"); loadSkMessages(); loadUnreadS(); }
+    }
+    async function loadSkHall() {
+      const q = new URLSearchParams({ page: 1, pageSize: 20 });
+      if (skHallKeyword.value) q.set("keyword", skHallKeyword.value);
+      if (skHallTypeId.value) q.set("typeId", skHallTypeId.value);
+      const r = await api("GET", "/skiller/orders/hall?" + q, null, runnerToken.value);
+      skHall.value = (r.data && r.data.records) || [];
+      if (skHall.value.length) trackHallMax(Math.max(...skHall.value.map(o => o.id)));
+      else if (!hallSeenMax.value) hallSeenMax.value = -1;
+    }
+    async function pollHall() {
+      if (!runnerToken.value || role.value !== "skiller" || view.value !== "grab") return;
+      const r = await api("GET", "/skiller/orders/hall?page=1&pageSize=1", null, runnerToken.value);
+      const list = (r.data && r.data.records) || [];
+      if (list.length) trackHallMax(Math.max(...list.map(o => o.id)));
+      else if (!hallSeenMax.value) hallSeenMax.value = -1;
+    }
+    setInterval(() => pollHall(), 15000);
+    function trackHallMax(maxId) {
+      if (hallSeenMax.value === 0) { hallSeenMax.value = maxId; return; }
+      if (maxId > hallSeenMax.value) {
+        hallNew.value += maxId - hallSeenMax.value;
+        hallSeenMax.value = maxId;
+      }
+    }
+    function applyHallNew() { hallNew.value = 0; loadSkHall(); }
+    async function loadMyOrders() {
+      const r = await api("GET", "/skiller/orders/page?page=1&pageSize=20", null, runnerToken.value);
+      myOrders.value = (r.data && r.data.records) || [];
+    }
+    async function loadSkBookings() {
+      const r = await api("GET", "/skiller/booking/page?page=1&pageSize=20", null, runnerToken.value);
+      skBookings.value = (r.data && r.data.records) || [];
+    }
+    async function confirmBooking(b) {
+      busy.value = true;
+      const r = await api("POST", "/skiller/booking/" + b.id + "/confirm", null, runnerToken.value);
+      busy.value = false;
+      r.code === 1 ? (toast("已接受预约，等待用户支付"), loadSkBookings()) : toast(r.msg, false);
+    }
+    async function rejectBooking(b) {
+      try {
+        await vant.showConfirmDialog({ title: "拒绝预约", message: "确定拒绝该预约吗？" });
+      } catch (e) { return; }
+      const r = await api("POST", "/skiller/booking/" + b.id + "/reject", null, runnerToken.value);
+      r.code === 1 ? (toast("已拒绝预约"), loadSkBookings()) : toast(r.msg, false);
+    }
+    function loadOrderSub() { orderSub.value === 1 ? loadSkBookings() : loadMyOrders(); }
+    async function grab(o) {
+      busy.value = true;
+      const r = await api("POST", "/skiller/orders/grab", { id: o.id }, runnerToken.value);
+      busy.value = false;
+      if (r.code === 1) {
+        toast("接单成功！请尽快开始服务");
+        if (navigator.vibrate) navigator.vibrate([80, 40, 80]);
+        view.value = "skOrders";
+        tab.value = "skOrders";
+        orderSub.value = 0;
+        loadMyOrders();
+        loadCurrentTask();
+      } else toast(r.msg, false);
+    }
+    async function pickup(o) {
+      const r = await api("PUT", "/skiller/orders/pickup/" + o.id, null, runnerToken.value);
+      if (r.code === 1) { toast("已确认开始服务"); loadMyOrders(); loadCurrentTask(); } else toast(r.msg, false);
+    }
+    function openDeliver(o) {
+      deliverForm.id = o.id;
+      deliverForm.deliverableUrl = o.deliverableUrl || "";
+      deliverForm.deliverableNote = o.deliverableNote || "";
+      deliverShow.value = true;
+    }
+    async function submitDeliver() {
+      if (!deliverForm.deliverableUrl) return toast("请粘贴交付物链接", false);
+      busy.value = true;
+      const r = await api("PUT", "/skiller/orders/deliver/" + deliverForm.id,
+        { deliverableUrl: deliverForm.deliverableUrl, deliverableNote: deliverForm.deliverableNote }, runnerToken.value);
+      busy.value = false;
+      if (r.code === 1) {
+        deliverShow.value = false;
+        toast("交付成功，等待用户验收");
+        loadMyOrders();
+        loadCurrentTask();
+        const c = await api("GET", "/skiller/info/center", null, runnerToken.value);
+        if (c.code === 1) center.value = c.data;
+      } else toast(r.msg, false);
+    }
+    async function respondRework(o) {
+      try {
+        await vant.showConfirmDialog({ title: "响应返修", message: "确认响应返修并重新开始服务吗？" });
+      } catch (e) { return; }
+      const r = await api("POST", "/skiller/orders/rework/" + o.id, null, runnerToken.value);
+      if (r.code === 1) { toast("已响应返修，请尽快重新交付"); loadMyOrders(); loadCurrentTask(); } else toast(r.msg, false);
+    }
+    async function loadServices() {
+      const r = await api("GET", "/skiller/service/list", null, runnerToken.value);
+      services.value = Array.isArray(r.data) ? r.data : ((r.data && r.data.records) || []);
+      loadCats();
+    }
+    function openSvcForm(s) {
+      if (s) {
+        Object.assign(svcForm, { id: s.id, categoryId: s.categoryId, title: s.title, description: s.description || "",
+          price: s.price, deliveryDays: s.deliveryDays || 1, serviceMode: s.serviceMode || 1, tags: s.tags || "" });
+      } else {
+        Object.assign(svcForm, { id: null, categoryId: null, title: "", description: "", price: null, deliveryDays: 1, serviceMode: 1, tags: "" });
+      }
+      loadCats();
+      svcShow.value = true;
+    }
+    async function submitSvc() {
+      if (!svcForm.categoryId) return toast("请选择分类", false);
+      if (!svcForm.title) return toast("请填写服务标题", false);
+      if (!svcForm.price || svcForm.price <= 0) return toast("请填写正确的价格", false);
+      busy.value = true;
+      const r = svcForm.id
+        ? await api("PUT", "/skiller/service/" + svcForm.id, { ...svcForm }, runnerToken.value)
+        : await api("POST", "/skiller/service", { ...svcForm }, runnerToken.value);
+      busy.value = false;
+      if (r.code === 1) { toast("已保存"); svcShow.value = false; loadServices(); } else toast(r.msg, false);
+    }
+    async function toggleSvc(s) {
+      const to = s.status === 1 ? 0 : 1;
+      const r = await api("PUT", "/skiller/service/" + s.id + "/status/" + to, null, runnerToken.value);
+      if (r.code === 1) { toast(to === 1 ? "已上架" : "已下架"); loadServices(); } else toast(r.msg, false);
+    }
+    async function loadPortfolio() {
+      const r = await api("GET", "/skiller/portfolio", null, runnerToken.value);
+      portfolios.value = Array.isArray(r.data) ? r.data : ((r.data && r.data.records) || []);
+      loadCats();
+    }
+    function openPfForm() {
+      Object.assign(pfForm, { categoryId: null, title: "", coverUrl: "", workUrls: "", description: "" });
+      loadCats();
+      pfShow.value = true;
+    }
+    async function submitPf() {
+      if (!pfForm.title) return toast("请填写作品标题", false);
+      busy.value = true;
+      const r = await api("POST", "/skiller/portfolio", { ...pfForm }, runnerToken.value);
+      busy.value = false;
+      if (r.code === 1) { toast("已提交审核"); pfShow.value = false; loadPortfolio(); } else toast(r.msg, false);
+    }
+    async function delPortfolio(p) {
+      try {
+        await vant.showConfirmDialog({ title: "删除作品", message: "确定删除该作品吗？" });
+      } catch (e) { return; }
+      const r = await api("DELETE", "/skiller/portfolio/" + p.id, null, runnerToken.value);
+      r.code === 1 ? (toast("已删除"), loadPortfolio()) : toast(r.msg, false);
+    }
+    async function loadWalletS() {
+      const w = await api("GET", "/skiller/wallet/balance", null, runnerToken.value);
+      if (w.code === 1) center.value = { ...center.value, balance: (w.data && w.data.balance) ?? center.value.balance };
+      const t = await api("GET", "/skiller/wallet/transactions?page=1&pageSize=10", null, runnerToken.value);
+      skTxs.value = (t.data && t.data.records) || [];
+      const wd = await api("GET", "/skiller/wallet/withdraw/page?page=1&pageSize=10", null, runnerToken.value);
+      wdRecords.value = (wd.data && wd.data.records) || [];
+      loadTrend();
+    }
+    async function applyWd() {
+      busy.value = true;
+      const r = await api("POST", "/skiller/wallet/withdraw", { amount: wdAmount.value, withdrawPassword: wdPassword.value }, runnerToken.value);
+      busy.value = false;
+      r.code === 1 ? (toast("提现申请已提交"), loadWalletS()) : toast(r.msg, false);
+    }
+    async function setPwd() {
+      if (!wdPassword.value || wdPassword.value.length < 6) return toast("密码至少6位", false);
+      const r = await api("POST", "/skiller/wallet/password?password=" + encodeURIComponent(wdPassword.value), null, runnerToken.value);
+      r.code === 1 ? toast("提现密码已设置") : toast(r.msg, false);
+    }
+    async function loadMe() {
+      const c = await api("GET", "/skiller/info/center", null, runnerToken.value);
+      if (c.code === 1) center.value = c.data; else { localStorage.removeItem("runner_token"); runnerToken.value = ""; if (userToken.value) { role.value = "user"; view.value = "home"; } return; }
+      loadCurrentTask();
+      loadWalletS();
+      loadUnreadS();
+    }
+    function goSk(name) {
+      view.value = name;
+      if (name === "grab") loadSkHall();
+      else if (name === "skOrders") loadOrderSub();
+      else if (name === "services") loadServices();
+      else if (name === "portfolio") loadPortfolio();
+      else if (name === "skCenter") loadMe();
+      else if (name === "skMessages") loadSkMessages();
+    }
+
+    /* ================= 身份切换与统一导航 ================= */
+    function toggleRole() {
+      if (role.value === "user") {
+        if (runnerToken.value) { role.value = "skiller"; view.value = "grab"; tab.value = "grab"; initSkiller(); }
+        else { role.value = "skiller"; view.value = "skLogin"; }
+      } else {
+        if (userToken.value) { role.value = "user"; view.value = "home"; tab.value = "home"; loadActiveOrders(); loadUnreadU(); }
+        else { role.value = "user"; view.value = "userLogin"; }
+      }
+    }
+    function go(name) { role.value === "user" ? goUser(name) : goSk(name); }
+    function onTab(name) { go(name); }
+
+    const navTitle = computed(() => {
+      const m = role.value === "user"
+        ? { home:"首页", hall:"订单大厅", submit:"发布订单", orders:"我的订单", orderDetail:"订单详情",
+            wallet:"我的钱包", address:"地址管理", skillerApply:"技能者入驻", me:"我的",
+            messages:"消息中心", market:"技能市场", profileEdit:"编辑资料", userLogin:"用户登录" }
+        : { skLogin:"技能者登录", grab:"悬赏大厅", skOrders:"我的接单", services:"我的服务",
+            portfolio:"我的作品", skCenter:"技能者中心", skMessages:"消息中心" };
+      return m[view.value] || "CampusSkill 校园技能工坊";
+    });
+
+    if (userToken.value) initUser();
+    else if (runnerToken.value) initSkiller();
+
+    return { userToken, runnerToken, role, view, tab, busy,
+             loginRole, loginMode, skLoginMode, loginCode, accountForm, skAccountForm, auditForm,
+             doAccountLogin, doRegister, doGuestLogin, doSkAccountLogin, doSkGuestLogin, applyAudit,
+             changePwd, logoutUser, logoutSkiller, toggleRole, go, onTab, navTitle,
+             skel, playSkel, money, relTime, copyText, statusText, tagType, modeText, bkText, bkTag, pfText, pfTag, txName,
+             /* user */ profile, types, addresses, hall, hallKeyword, hallType, orders, orderTab, detail, reviewed,
+             reviewTags, toggleTag, reviewScore, reviewContent, wallet, txs, editForm, curType, form, addrForm,
+             messages, unread, boostAmount, activeOrders, marketTab, market, marketKeyword, marketCategory,
+             marketSort, svcDetail, showSvc, bookingMode, bookingForm, bookings, feeRateNum, typeName,
+             stepActive, countdown, refreshing, onRefresh,
+             startOrder, submitOrder, loadHall, loadOrders, openOrder, payOrder, boostOrder,
+             acceptOrder, applyRework, applyDispute, cancelOrder, submitReview, loadMarket, openSvc,
+             submitBooking, loadBookings, onMarketTab, payBooking, cancelBooking, recharge,
+             saveAddress, delAddress, openProfileEdit, saveProfile, applySkiller, openMessagesU, readAll, changePwd,
+             /* skiller */ center, skHall, skHallKeyword, skHallTypes, skHallTypeId, hallNew, applyHallNew,
+             myOrders, skTxs, wdRecords, wdAmount, wdPassword, trend, barH, trendTotal, trendIncome,
+             skMessages, skUnread, orderSub, skBookings, services, cats, svcShow, svcForm, pfShow, pfForm,
+             deliverShow, deliverForm, currentTask, levelPct, nextGoal, nextLevelName, limitPct, levelName,
+             loadSkHall, loadOrderSub, grab, pickup, openDeliver, submitDeliver, respondRework,
+             applyWd, setPwd, openSvcForm, submitSvc, toggleSvc, openPfForm, submitPf, delPortfolio,
+             confirmBooking, rejectBooking, goOrderOfMessage, openMessagesS, readAllS };
   }
 }).use(vant).mount("#app");
-
-/* 首页大厅入口 */
-document.addEventListener("click", () => {});
 </script>
 </body>
 </html>
