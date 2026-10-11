@@ -10,8 +10,102 @@
 <script src="/assets/vendor/vue.global.prod.js"></script>
 <script src="/assets/vendor/vant.js"></script>
 <style>
-  /* 双身份主题：B 站蓝主色 + 粉色点缀（仅变量，结构样式统一在 glass.css） */
-  .cs-app { --cs-accent: #00aeec; --cs-accent-2: #fb7299; --cs-accent-soft: rgba(0, 174, 236, .12); }
+  /* 双身份主题：用户端 B 站蓝主色，技能者端粉色暖色主色（结构不变，仅换主色变量） */
+  .cs-app { --cs-accent: #00aeec; --cs-accent-2: #fb7299; --cs-accent-soft: rgba(0, 174, 236, .12);
+    --van-primary-color: var(--cs-accent); --van-progress-color: var(--cs-accent); }
+  .cs-app.sk-mode {
+    --cs-accent: #fb7299; --cs-accent-2: #ff9db9; --cs-accent-soft: rgba(251, 114, 153, .12);
+    --van-button-primary-background: #fb7299; --van-button-primary-border-color: #fb7299;
+    --van-tabs-bottom-bar-color: #fb7299; --van-tabbar-item-active-color: #fb7299;
+    --van-radio-checked-icon-color: #fb7299; --van-badge-background: #00aeec;
+  }
+  /* 技能者端主题下逐项覆盖写死的品牌色（按钮/标签/金额/导航/进度条） */
+  .cs-app.sk-mode .btn { background: linear-gradient(135deg, #fb7299, #ff9db9); box-shadow: 0 6px 18px -6px rgba(251, 114, 153, .45); }
+  .cs-app.sk-mode .btn.ghost { background: rgba(251, 114, 153, .10); color: #e05685; border-color: rgba(251, 114, 153, .35); }
+  .cs-app.sk-mode .money, .cs-app.sk-mode .nav-item.active { color: #e05685; }
+  .cs-app.sk-mode .tag { background: rgba(251, 114, 153, .10); color: #e05685; }
+  .cs-app.sk-mode .nav-item.active { background: rgba(251, 114, 153, .10); box-shadow: inset 2px 0 0 #fb7299; }
+  .cs-app.sk-mode .role-chip { background: linear-gradient(135deg, #fb7299, #ffa7c4); box-shadow: 0 4px 12px -4px rgba(251, 114, 153, .5); }
+  .cs-app.sk-mode .hero { background: linear-gradient(135deg, rgba(251, 114, 153, .16), rgba(255, 176, 39, .10) 55%, rgba(251, 114, 153, .08)); border-color: rgba(251, 114, 153, .28); }
+  .cs-app.sk-mode .van-tag--primary { background: rgba(251, 114, 153, .12); color: #e05685; }
+  .cs-app.sk-mode .sk-accent { color: #fb7299; }
+  /* 侧栏身份卡：用户蓝调 / 技能者粉调，一眼区分当前身份 */
+  .cs-app .role-card { background: #f0faff; }
+  .cs-app.sk-mode .role-card { background: #fff5f8; }
+  /* 登录卡身份切换：分段控件式，选中态走各自主色 */
+  .cs-app .seg { display: flex; gap: 8px; margin-bottom: 16px; }
+  .cs-app .seg .seg-btn {
+    flex: 1; padding: 9px 0; border: 1px solid var(--cs-border); border-radius: 12px;
+    background: #f6f7f8; color: var(--cs-text-2); font-size: var(--text-sm);
+    font-weight: var(--weight-semibold); cursor: pointer; transition: all .16s ease;
+  }
+  .cs-app .seg .seg-btn.on-user { background: rgba(0, 174, 236, .12); border-color: rgba(0, 174, 236, .45); color: #0093cf; }
+  .cs-app .seg .seg-btn.on-sk { background: rgba(251, 114, 153, .12); border-color: rgba(251, 114, 153, .45); color: #e05685; }
+  /* 统一页面头：标题居左 + 主操作居右，各视图一致 */
+  .cs-app .page-head {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    background: var(--cs-surface); border: 1px solid var(--cs-border);
+    border-radius: var(--cs-radius); box-shadow: var(--cs-shadow);
+    padding: 13px 16px; margin-top: var(--sp-3);
+  }
+  .cs-app .page-head .ph-title { font-weight: var(--weight-semibold); font-size: var(--text-base); }
+  .cs-app .page-head .ph-sub { font-size: var(--text-xs); color: var(--cs-text-3); margin-top: 2px; }
+  /* 首页快捷入口宫格 */
+  .cs-app .quick-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--sp-2); margin-top: var(--sp-2); }
+  .cs-app .quick-item {
+    position: relative; display: flex; align-items: center; gap: 8px;
+    padding: 12px 14px; border: 1px solid var(--cs-border); border-radius: 12px;
+    background: var(--cs-surface); cursor: pointer; color: var(--cs-text-2); font-size: var(--text-sm);
+    transition: background .16s ease, border-color .16s ease, transform .16s ease;
+  }
+  .cs-app .quick-item:hover { background: #f6f7f8; border-color: var(--cs-accent); transform: translateY(-2px); }
+  .cs-app .quick-badge {
+    position: absolute; top: -7px; right: -7px; min-width: 18px; height: 18px; padding: 0 5px;
+    display: grid; place-items: center; border-radius: var(--radius-full);
+    background: var(--cs-danger); color: #fff; font-size: 11px; font-weight: var(--weight-semibold);
+  }
+  /* 侧栏/底部导航未读角标 */
+  .cs-app .nav-badge {
+    margin-left: auto; min-width: 17px; height: 17px; padding: 0 5px;
+    display: grid; place-items: center; border-radius: var(--radius-full);
+    background: var(--cs-danger); color: #fff; font-size: 11px; font-weight: var(--weight-semibold);
+  }
+  /* 移动端发布悬赏悬浮按钮（高频操作常驻可达） */
+  .cs-app .fab {
+    position: fixed; right: 16px; bottom: calc(72px + env(safe-area-inset-bottom));
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 12px 18px; border: none; border-radius: var(--radius-full); cursor: pointer;
+    font-size: var(--text-sm); font-weight: var(--weight-semibold); color: #fff;
+    background: linear-gradient(135deg, var(--cs-accent), var(--cs-accent-2));
+    box-shadow: 0 10px 24px -6px rgba(0, 174, 236, .5); z-index: 10;
+    transition: transform .12s ease, filter .16s ease;
+  }
+  .cs-app .fab:active { transform: scale(.96); }
+  .cs-app.sk-mode .fab { box-shadow: 0 10px 24px -6px rgba(251, 114, 153, .5); }
+  /* 移动端内容侧边距：hero 全出血，卡片留边；底部避开 tabbar + 安全区 */
+  .cs-app .views { padding: 0 var(--sp-4) calc(66px + env(safe-area-inset-bottom)); }
+  .cs-app .hero { margin: 0 calc(var(--sp-4) * -1); border-radius: 0 0 var(--cs-radius-lg) var(--cs-radius-lg); }
+  .cs-app .type-grid { margin: var(--sp-3) 0 0; }
+  @media (min-width: 1024px) {
+    .cs-app .views { padding: 0; }
+    .cs-app .hero { margin: 0; border-radius: var(--cs-radius-lg); }
+    .cs-app .type-grid { margin: var(--sp-3) 0 0; }
+    .cs-app .quick-grid { grid-template-columns: repeat(4, 1fr); }
+    .cs-app .fab { display: none; }
+  }
+  /* hero 内 CTA 行 */
+  .cs-app .hero-cta { display: flex; gap: 10px; margin-top: var(--sp-3); flex-wrap: wrap; }
+  /* 侧栏分组标题：双端菜单结构对齐 */
+  .cs-app .nav-group-title { font-size: 12px; color: var(--cs-text-3); padding: 2px 12px 4px; letter-spacing: .05em; }
+  /* 订单地址行：线上交付无地址时的兜底展示 */
+  .cs-app .addr-line { color: var(--cs-text-3); font-size: 13px; margin: 6px 0; }
+  /* 首页类型九宫格：上叠 hero 的悬浮卡片布局 */
+  .cs-app .type-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--sp-2);
+    background: #fff;
+    border: 1px solid var(--cs-border);
+    border-radius: var(--cs-radius); box-shadow: var(--cs-shadow); padding: var(--sp-4);
+  }
   /* 输入控件占满所在卡片行宽（登录卡/表单统一观感） */
   .cs-app .field { display: block; width: 100%; box-sizing: border-box; }
   /* 鲜活明亮画布：白底 + 高饱和蓝/粉/青光斑（覆盖 glass.css 画布） */
@@ -22,14 +116,7 @@
       radial-gradient(760px 420px at 50% 118%, rgba(0, 208, 255, .12), transparent 60%),
       linear-gradient(180deg, #f0faff, #f7f9ff 45%, #fff6fa);
   }
-  /* 首页类型九宫格：上叠 hero 的悬浮卡片布局 */
-  .cs-app .type-grid {
-    display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--sp-2);
-    margin: calc(var(--sp-10) * -1 + 10px) var(--sp-4) 0;
-    background: #fff;
-    border: 1px solid var(--cs-border);
-    border-radius: var(--cs-radius); box-shadow: var(--cs-shadow); padding: var(--sp-4);
-  }
+  /* 首页类型九宫格：上叠 hero 的悬浮卡片布局（外层 .views 已统一侧边距） */
   .cs-app .type-item { text-align: center; padding: var(--sp-2) 0; border-radius: var(--radius-md); cursor: pointer; transition: background .16s ease, transform .16s ease; }
   .cs-app .type-item:hover { background: #f0faff; transform: translateY(-2px); }
   .cs-app .type-emoji { font-size: 24px; }
@@ -75,9 +162,9 @@
       <div style="font-size:56px">🧰</div>
       <h2 style="margin:12px 0 4px">CampusSkill 校园技能工坊</h2>
       <p class="text-tertiary" style="margin-bottom:16px;font-size:var(--text-sm)">一个入口 · 用户与技能者双身份</p>
-      <div style="display:flex;gap:8px;margin-bottom:16px">
-        <button class="btn" style="width:auto;flex:1;padding:8px 0" :style="loginRole==='user' ? '' : 'filter:grayscale(1);opacity:.55'" @click="loginRole='user'">🙋 用户登录</button>
-        <button class="btn" style="width:auto;flex:1;padding:8px 0" :style="loginRole==='skiller' ? '' : 'filter:grayscale(1);opacity:.55'" @click="loginRole='skiller'">🛠️ 技能者登录</button>
+      <div class="seg" role="tablist" aria-label="选择登录身份">
+        <button class="seg-btn" :class="{ 'on-user': loginRole==='user' }" @click="loginRole='user'">🙋 用户登录</button>
+        <button class="seg-btn" :class="{ 'on-sk': loginRole==='skiller' }" @click="loginRole='skiller'">🛠️ 技能者登录</button>
       </div>
 
       <!-- 用户身份：账号 / 注册 / 体验码 -->
@@ -159,23 +246,25 @@
 
       <!-- 用户身份菜单 -->
       <div class="nav-group" v-if="role==='user'" style="margin-top:var(--sp-3)">
+        <div class="nav-group-title">用户端</div>
         <div class="nav-item" :class="{active: view==='home'}" @click="go('home')"><span class="ico">🏠</span>首页</div>
         <div class="nav-item" :class="{active: view==='hall'}" @click="go('hall')"><span class="ico">🧭</span>订单大厅</div>
         <div class="nav-item" :class="{active: view==='market'}" @click="go('market')"><span class="ico">🛒</span>技能市场</div>
         <div class="nav-item" :class="{active: view==='orders'}" @click="go('orders')"><span class="ico">🧾</span>我的订单</div>
         <div class="nav-item" :class="{active: view==='wallet'}" @click="go('wallet')"><span class="ico">💰</span>我的钱包</div>
-        <div class="nav-item" :class="{active: view==='messages'}" @click="go('messages')"><span class="ico">🔔</span>消息中心</div>
+        <div class="nav-item" :class="{active: view==='messages'}" @click="go('messages')"><span class="ico">🔔</span>消息中心<span class="nav-badge" v-if="unread > 0">{{ unread > 99 ? '99+' : unread }}</span></div>
         <div class="nav-item" :class="{active: view==='skillerApply'}" @click="go('skillerApply')"><span class="ico">🌱</span>成为技能者</div>
         <div class="nav-item" :class="{active: view==='me'}" @click="go('me')"><span class="ico">👤</span>我的</div>
       </div>
       <!-- 技能者身份菜单 -->
       <div class="nav-group" v-else style="margin-top:var(--sp-3)">
+        <div class="nav-group-title">技能者工作台</div>
         <div class="nav-item" :class="{active: view==='grab'}" @click="go('grab')"><span class="ico">🔥</span>悬赏大厅</div>
         <div class="nav-item" :class="{active: view==='skOrders'}" @click="go('skOrders')"><span class="ico">🧾</span>我的接单</div>
         <div class="nav-item" :class="{active: view==='services'}" @click="go('services')"><span class="ico">🛍️</span>我的服务</div>
         <div class="nav-item" :class="{active: view==='portfolio'}" @click="go('portfolio')"><span class="ico">🎨</span>我的作品</div>
         <div class="nav-item" :class="{active: view==='skCenter'}" @click="go('skCenter')"><span class="ico">👤</span>技能者中心</div>
-        <div class="nav-item" :class="{active: view==='skMessages'}" @click="go('skMessages')"><span class="ico">🔔</span>消息中心</div>
+        <div class="nav-item" :class="{active: view==='skMessages'}" @click="go('skMessages')"><span class="ico">🔔</span>消息中心<span class="nav-badge" v-if="skUnread > 0">{{ skUnread > 99 ? '99+' : skUnread }}</span></div>
       </div>
     </aside>
 
@@ -227,7 +316,11 @@
     <div v-if="role==='user' && view==='home'" class="view">
       <div class="hero">
         <h3>Hi，让技能帮你搞定</h3>
-        <p>信用分 {{ profile.creditScore ?? 100 }} · 已发单 {{ profile.publishOrderCount ?? 0 }} 单</p>
+        <p>信用分 {{ profile.creditScore ?? 100 }} · 已发单 {{ profile.publishOrderCount ?? 0 }} 单 · 余额 {{ money(wallet.balance) }}</p>
+        <div class="hero-cta">
+          <button class="btn" style="width:auto;padding:10px 22px" @click="quickPublish">✏️ 发布悬赏</button>
+          <button class="btn ghost" style="width:auto;padding:10px 18px" @click="go('market')">逛技能市场</button>
+        </div>
       </div>
       <div class="type-grid">
         <div v-for="t in types" :key="t.id" class="type-item" @click="startOrder(t)">
@@ -259,30 +352,22 @@
             </div>
           </div>
         </div>
-        <div class="grid-cards" style="margin-top:12px">
-          <div class="glass-card interactive" @click="openMessagesU()" style="cursor:pointer">
-            <div class="order-line">
-              <b>🔔 消息中心</b>
-              <span><van-badge v-if="unread > 0" :content="unread" max="99"></van-badge><span class="text-tertiary"> 查看消息 ›</span></span>
-            </div>
-          </div>
-          <div class="glass-card interactive" @click="go('hall')" style="cursor:pointer">
-            <div class="order-line"><b>🧭 订单大厅</b><span class="text-tertiary">看看大家在发什么 ›</span></div>
-          </div>
-          <div class="glass-card interactive" @click="go('skillerApply')" style="cursor:pointer">
-            <div class="order-line"><b>🌱 成为技能者</b><span class="text-tertiary">认证后可入驻接单 ›</span></div>
-          </div>
+        <div class="sec-title">🧩 快捷入口</div>
+        <div class="quick-grid">
+          <div class="quick-item" @click="go('hall')"><span>🧭</span>订单大厅</div>
+          <div class="quick-item" @click="openMessagesU()"><span>🔔</span>消息中心<span class="quick-badge" v-if="unread > 0">{{ unread > 99 ? '99+' : unread }}</span></div>
+          <div class="quick-item" @click="go('wallet')"><span>💰</span>我的钱包</div>
+          <div class="quick-item" v-if="runnerToken" @click="toggleRole"><span>🛠️</span>技能者工作台</div>
+          <div class="quick-item" v-else @click="go('skillerApply')"><span>🌱</span>成为技能者</div>
         </div>
       </div>
     </div>
 
     <!-- 消息中心（用户） -->
     <div v-if="role==='user' && view==='messages'" class="view">
-      <div class="section glass-card" style="padding:12px">
-        <div class="order-line">
-          <b>🔔 消息中心</b>
-          <van-button size="small" plain type="primary" @click="readAll" :disabled="busy">全部已读</van-button>
-        </div>
+      <div class="page-head">
+        <div><div class="ph-title">🔔 消息中心</div><div class="ph-sub">订单动态与平台通知，点击卡片可查看订单</div></div>
+        <van-button size="small" plain type="primary" @click="readAll" :disabled="busy">全部已读</van-button>
       </div>
       <div class="section">
         <template v-if="skel" aria-hidden="true">
@@ -375,7 +460,7 @@
               <div><span class="order-title">{{ o.title }}</span><span class="tag">{{ o.typeName }}</span></div>
               <div class="money">{{ money(o.rewardAmount) }}</div>
             </div>
-            <div class="text-tertiary" style="font-size:13px;margin:6px 0">{{ o.pickupAddress }} → {{ o.deliveryAddress }}</div>
+            <div class="addr-line">{{ [o.pickupAddress, o.deliveryAddress].filter(Boolean).join(' → ') || '线上交付' }}</div>
             <div class="order-line"><span class="text-tertiary" style="font-size:12px">{{ o.publisherName }} 发布于 {{ (o.createTime||'').slice(5,16) }}</span></div>
           </div>
           <van-empty v-if="!hall.length" description="大厅暂无待接单订单"></van-empty>
@@ -530,9 +615,12 @@
             <div v-if="detail.deliverableNote" class="text-secondary" style="font-size:13px">交付说明：{{ detail.deliverableNote }}</div>
           </div>
           <div class="text-tertiary" style="font-size:12px;margin-top:6px">剩余返修次数：{{ 2 - (detail.reworkCount || 0) }} 次（最多 2 次）</div>
-          <button class="btn" style="margin-top:8px" @click="acceptOrder" :disabled="busy">✅ 验收完成</button>
-          <button class="btn ghost" style="margin-top:8px" @click="applyRework" :disabled="busy">申请返修</button>
-          <button class="btn ghost" style="margin-top:8px" @click="applyDispute" :disabled="busy">发起仲裁</button>
+          <button class="btn" style="margin-top:12px" @click="acceptOrder" :disabled="busy">✅ 验收完成</button>
+          <div class="order-line" style="margin-top:8px;gap:8px">
+            <button class="btn ghost" style="width:calc(50% - 4px);margin-top:0" @click="applyRework" :disabled="busy">申请返修</button>
+            <button class="btn ghost" style="width:calc(50% - 4px);margin-top:0" @click="applyDispute" :disabled="busy">发起仲裁</button>
+          </div>
+          <div class="text-tertiary" style="font-size:12px;margin-top:6px">对交付不满意可先与技能者沟通，返修最多 2 次，仲裁由平台裁定</div>
         </div>
         <div v-if="detail.status===1" style="margin-top:12px"><button class="btn" @click="payOrder" :disabled="busy">立即支付</button></div>
         <div v-if="detail.status===2 && detail.payStatus===1" style="margin-top:12px">
@@ -559,7 +647,11 @@
         <p>钱包余额（元）</p>
         <h3 style="font-size:36px">{{ money(wallet.balance) }}</h3>
         <p style="margin-top:8px">累计收入 {{ money(wallet.totalIncome) }} · 支出 {{ money(wallet.totalExpense) }}</p>
-        <button class="btn" style="width:auto;padding:8px 24px;margin-top:12px" @click="recharge" :disabled="busy">充值 50 元</button>
+        <div class="order-line" style="margin-top:12px;justify-content:flex-start;gap:8px;flex-wrap:wrap">
+          <van-tag v-for="amt in [50, 100, 200]" :key="amt" size="large" style="cursor:pointer"
+            :type="rechargeAmount===amt ? 'primary' : 'default'" @click="rechargeAmount=amt">充 {{ amt }} 元</van-tag>
+        </div>
+        <button class="btn" style="width:auto;padding:9px 28px;margin-top:10px" @click="recharge" :disabled="busy">立即充值</button>
       </div>
       <div class="section">
         <div class="glass-card">
@@ -703,7 +795,7 @@
               <div><span class="order-title">{{ o.title }}</span><span class="tag">{{ o.typeName }}</span></div>
               <div class="money">实得{{ money(o.runnerIncome) }}</div>
             </div>
-            <div class="text-tertiary" style="font-size:13px;margin:6px 0">{{ o.pickupAddress }} → {{ o.deliveryAddress }}</div>
+            <div class="addr-line">{{ [o.pickupAddress, o.deliveryAddress].filter(Boolean).join(' → ') || '线上交付' }}</div>
             <div class="order-line">
               <span class="text-tertiary" style="font-size:12px">{{ o.campus }} · {{ o.publisherName }} 发布于 {{ relTime(o.createTime) }}</span>
               <van-button size="small" type="primary" @click="grab(o)">立即抢单</van-button>
@@ -735,7 +827,7 @@
               <div><span class="order-title">{{ o.title }}</span></div>
               <van-tag :type="tagType(o.status)">{{ statusText(o.status) }}</van-tag>
             </div>
-            <div class="text-tertiary" style="font-size:13px;margin:6px 0">{{ o.pickupAddress }} → {{ o.deliveryAddress }}</div>
+            <div class="addr-line">{{ [o.pickupAddress, o.deliveryAddress].filter(Boolean).join(' → ') || '线上交付' }}</div>
             <div class="order-line">
               <span class="money">实得{{ money(o.runnerIncome) }}</span>
               <span>
@@ -786,11 +878,9 @@
 
     <!-- 我的服务 -->
     <div v-if="role==='skiller' && view==='services'" class="view">
-      <div class="section glass-card" style="padding:12px">
-        <div class="order-line">
-          <b>🛍️ 我的服务</b>
-          <van-button size="small" type="primary" @click="openSvcForm()" :disabled="busy">新增服务</van-button>
-        </div>
+      <div class="page-head">
+        <div><div class="ph-title">🛍️ 我的服务</div><div class="ph-sub">挂牌服务上下架与定价管理</div></div>
+        <van-button size="small" type="primary" @click="openSvcForm()" :disabled="busy">新增服务</van-button>
       </div>
       <div class="section">
         <template v-if="skel" aria-hidden="true">
@@ -824,11 +914,9 @@
 
     <!-- 我的作品 -->
     <div v-if="role==='skiller' && view==='portfolio'" class="view">
-      <div class="section glass-card" style="padding:12px">
-        <div class="order-line">
-          <b>🎨 我的作品</b>
-          <van-button size="small" type="primary" @click="openPfForm" :disabled="busy">发布作品</van-button>
-        </div>
+      <div class="page-head">
+        <div><div class="ph-title">🎨 我的作品</div><div class="ph-sub">作品集对外展示，审核通过后可见</div></div>
+        <van-button size="small" type="primary" @click="openPfForm" :disabled="busy">发布作品</van-button>
       </div>
       <div class="section">
         <template v-if="skel" aria-hidden="true">
@@ -857,7 +945,7 @@
       <div class="hero">
         <h3>{{ center.name || '技能者' }} <span class="tag" style="background:rgba(255,255,255,.6);color:#0093cf">接单等级 {{ levelName(center.runnerLevel) }}</span></h3>
         <p>今日已接 {{ center.todayOrderCount ?? 0 }}/{{ center.dailyOrderLimit ?? 10 }} 单 · 评分 {{ center.score ?? '5.0' }} · 信用 {{ center.creditScore ?? 100 }}{{ center.skillLevel ? '（作品定级 C' + center.skillLevel + '）' : '' }}</p>
-        <van-progress :percentage="limitPct" stroke-width="6" style="margin-top:8px" color="#00aeec" track-color="rgba(255,255,255,.6)"/>
+        <van-progress :percentage="limitPct" stroke-width="6" style="margin-top:8px" color="#fb7299" track-color="rgba(255,255,255,.6)"/>
         <div class="stat-row">
           <div class="stat-box"><div class="stat-num">{{ money(center.todayIncome) }}</div><div class="stat-lab">今日技能服务收入</div></div>
           <div class="stat-box"><div class="stat-num">{{ center.completedOrders ?? 0 }}</div><div class="stat-lab">完成单数</div></div>
@@ -868,7 +956,7 @@
         <div class="glass-card" style="border-left:3px solid var(--cs-accent)">
           <div class="order-line"><b>🚀 当前任务</b><van-tag type="primary">{{ statusText(currentTask.status) }}</van-tag></div>
           <div style="font-weight:var(--weight-semibold);margin:8px 0 2px">{{ currentTask.title }}</div>
-          <div class="text-tertiary" style="font-size:13px">{{ currentTask.pickupAddress }} → {{ currentTask.deliveryAddress }}</div>
+          <div class="addr-line">{{ [currentTask.pickupAddress, currentTask.deliveryAddress].filter(Boolean).join(' → ') || '线上交付' }}</div>
           <div class="order-line" style="margin-top:10px">
             <span class="money">实得{{ money(currentTask.runnerIncome) }}</span>
             <span>
@@ -943,11 +1031,9 @@
 
     <!-- 消息中心（技能者） -->
     <div v-if="role==='skiller' && view==='skMessages'" class="view">
-      <div class="section glass-card" style="padding:12px">
-        <div class="order-line">
-          <b>🔔 消息中心</b>
-          <van-button size="small" plain type="primary" @click="readAllS" :disabled="busy">全部已读</van-button>
-        </div>
+      <div class="page-head">
+        <div><div class="ph-title">🔔 消息中心</div><div class="ph-sub">接单动态与平台通知，点击卡片可跳转接单</div></div>
+        <van-button size="small" plain type="primary" @click="readAllS" :disabled="busy">全部已读</van-button>
       </div>
       <div class="section">
         <template v-if="skel" aria-hidden="true">
@@ -974,21 +1060,24 @@
       </main>
     </div>
 
-    <!-- 底部导航（仅移动端显示；按当前身份渲染） -->
-    <van-tabbar class="m-tabbar" v-if="role==='user'" v-model="tab" @change="onTab">
+    <!-- 底部导航（仅移动端显示；登录卡视图隐藏；按当前身份渲染） -->
+    <van-tabbar class="m-tabbar" v-if="role==='user' && view!=='userLogin'" v-model="tab" @change="onTab">
       <van-tabbar-item icon="wap-nav-o" name="home">首页</van-tabbar-item>
       <van-tabbar-item icon="orders-o" name="orders">订单</van-tabbar-item>
       <van-tabbar-item icon="shop-o" name="market">技能市场</van-tabbar-item>
       <van-tabbar-item icon="balance-o" name="wallet">钱包</van-tabbar-item>
-      <van-tabbar-item icon="user-o" name="me">我的</van-tabbar-item>
+      <van-tabbar-item icon="user-o" name="me" :dot="unread > 0">我的</van-tabbar-item>
     </van-tabbar>
-    <van-tabbar class="m-tabbar" v-else v-model="tab" @change="onTab">
+    <van-tabbar class="m-tabbar" v-else-if="role==='skiller' && view!=='skLogin'" v-model="tab" @change="onTab">
       <van-tabbar-item icon="fire-o" name="grab">大厅</van-tabbar-item>
       <van-tabbar-item icon="orders-o" name="skOrders">订单</van-tabbar-item>
       <van-tabbar-item icon="shop-o" name="services">服务</van-tabbar-item>
       <van-tabbar-item icon="photo-o" name="portfolio">作品</van-tabbar-item>
-      <van-tabbar-item icon="user-o" name="skCenter">我的</van-tabbar-item>
+      <van-tabbar-item icon="user-o" name="skCenter" :dot="skUnread > 0">我的</van-tabbar-item>
     </van-tabbar>
+
+    <!-- 发布悬赏悬浮按钮：仅用户身份移动端显示，高频操作一步直达 -->
+    <button v-if="role==='user' && !['submit','userLogin'].includes(view)" class="fab" @click="quickPublish">✏️ 发布悬赏</button>
 
     <!-- 服务详情/预约弹窗 -->
     <van-popup v-model:show="showSvc" round position="bottom" style="padding:20px;max-height:72vh;overflow-y:auto">
@@ -1114,7 +1203,23 @@ createApp({
       clearTimeout(skelTimer);
       skelTimer = setTimeout(() => { skel.value = false; }, 450);
     }
-    Vue.watch(view, playSkel);
+    /* 双身份主题：技能者端挂 sk-mode 粉色主色（挂载容器属性不被 Vue 编译，直接操作 DOM 类名） */
+    Vue.watchEffect(() => {
+      const el = document.getElementById("app");
+      if (!el) return;
+      const sk = (userToken.value || runnerToken.value)
+        ? role.value === "skiller"
+        : loginRole.value === "skiller";
+      el.classList.toggle("sk-mode", sk);
+    });
+    Vue.watch(view, (v) => {
+      playSkel();
+      /* 底部 tabbar 高亮跟随视图；非 tab 视图（发单/详情/登录卡等）不高亮 */
+      const tabs = role.value === "user"
+        ? ["home", "orders", "market", "wallet", "me"]
+        : ["grab", "skOrders", "services", "portfolio", "skCenter"];
+      tab.value = tabs.includes(v) ? v : "";
+    });
     if (userToken.value || runnerToken.value) setTimeout(() => { skel.value = false; }, 450);
 
     function toast(msg, ok = true) { showToast({ message: msg, type: ok ? "success" : "fail" }); }
@@ -1187,6 +1292,7 @@ createApp({
     const reviewScore = ref(5);
     const reviewContent = ref("");
     const wallet = ref({});
+    const rechargeAmount = ref(50);
     const txs = ref([]);
     const editForm = reactive({ name: "", phone: "", studentNo: "", campus: "" });
     const curType = ref({});
@@ -1332,6 +1438,11 @@ createApp({
           toast("已恢复上次草稿");
         }
       } catch (e) { /* 忽略草稿解析失败 */ }
+    }
+    /* FAB / 首页 CTA 一步发单：默认带入第一个服务类型，分类可在九宫格中另选 */
+    function quickPublish() {
+      if (types.value.length) startOrder(types.value[0]);
+      else { curType.value = {}; form.typeId = null; view.value = "submit"; }
     }
     async function submitOrder() {
       if (!form.title) return toast("请填写订单标题", false);
@@ -1502,7 +1613,7 @@ createApp({
     }
     async function recharge() {
       busy.value = true;
-      const r = await api("POST", "/user/wallet/recharge", { amount: 50 }, userToken.value);
+      const r = await api("POST", "/user/wallet/recharge", { amount: rechargeAmount.value || 50 }, userToken.value);
       busy.value = false;
       r.code === 1 ? (toast("充值成功"), loadWalletU()) : toast(r.msg, false);
     }
@@ -1886,7 +1997,7 @@ createApp({
              reviewTags, toggleTag, reviewScore, reviewContent, wallet, txs, editForm, curType, form, addrForm,
              messages, unread, boostAmount, activeOrders, marketTab, market, marketKeyword, marketCategory,
              marketSort, svcDetail, showSvc, bookingMode, bookingForm, bookings, feeRateNum, typeName,
-             stepActive, countdown, refreshing, onRefresh,
+             stepActive, countdown, refreshing, onRefresh, rechargeAmount, quickPublish,
              startOrder, submitOrder, loadHall, loadOrders, openOrder, payOrder, boostOrder,
              acceptOrder, applyRework, applyDispute, cancelOrder, submitReview, loadMarket, openSvc,
              submitBooking, loadBookings, onMarketTab, payBooking, cancelBooking, recharge,
