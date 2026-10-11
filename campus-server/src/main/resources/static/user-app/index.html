@@ -11,7 +11,7 @@
 <script src="/assets/vendor/vant.js"></script>
 <style>
   /* 用户端主题色（仅变量，结构样式统一在 glass.css） */
-  .cs-app { --cs-accent: #4f8cff; --cs-accent-2: #7c5cff; --cs-accent-soft: rgba(79, 140, 255, .16); }
+  .cs-app { --cs-accent: #00aeec; --cs-accent-2: #4dc3f2; --cs-accent-soft: rgba(0, 174, 236, .12); }
   /* 移动端首屏主视觉（impeccable：核心亮点首屏可见） */
   .cs-app .type-grid {
     display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--sp-2);
@@ -363,7 +363,7 @@
           <van-step>交付</van-step><van-step>完成</van-step>
         </van-steps>
         <h3 style="margin:16px 0 4px;font-size:var(--text-lg)">{{ detail.title }} <van-tag :type="tagType(detail.status)">{{ statusText(detail.status) }}</van-tag>
-          <span v-if="countdown" class="tag" style="background:rgba(255,255,255,.08);color:#8fb8ff">⏱ {{ countdown }}</span></h3>
+          <span v-if="countdown" class="tag" style="background:rgba(0,174,236,.1);color:#0093cf">⏱ {{ countdown }}</span></h3>
         <p class="text-secondary" style="font-size:14px">{{ detail.description }}</p>
         <van-cell-group inset style="margin-top:12px">
           <van-cell title="订单号" :value="detail.number">
@@ -386,7 +386,7 @@
         <div v-if="detail.status===8" class="text-secondary" style="font-size:13px;margin-top:12px">🔁 返修中：技能者正在重新交付，请耐心等待</div>
         <div v-if="detail.status===9" class="text-secondary" style="font-size:13px;margin-top:12px">⚖️ 仲裁中：平台将尽快裁定</div>
         <div v-if="detail.status===4" style="margin-top:12px">
-          <div style="background:rgba(255,255,255,.05);border:1px solid var(--cs-border);border-radius:12px;padding:12px">
+          <div style="background:#f6f7f8;border:1px solid var(--cs-border);border-radius:12px;padding:12px">
             <div style="font-weight:var(--weight-semibold);margin-bottom:6px">📦 交付成果</div>
             <div v-if="detail.deliverableUrl" style="font-size:13px;margin-bottom:4px;word-break:break-all">
               交付物链接：<a :href="detail.deliverableUrl" target="_blank" rel="noopener" style="color:var(--cs-accent)">{{ detail.deliverableUrl }}</a>

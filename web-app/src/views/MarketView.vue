@@ -195,18 +195,18 @@ onMounted(async () => {
 }
 
 .svc-card {
-  border: 1px solid rgba(255, 255, 255, .1);
-  background: linear-gradient(160deg, rgba(255,255,255,.07), rgba(255,255,255,.04) 55%);
+  border: 1px solid #e3e5e7;
+  background: #ffffff;
   border-radius: 14px;
   padding: 16px;
   cursor: pointer;
   transition: transform .16s ease, border-color .16s ease;
 }
 
-.svc-card:hover { transform: translateY(-2px); border-color: rgba(255, 255, 255, .22); }
+.svc-card:hover { transform: translateY(-2px); border-color: rgba(0, 174, 236, .45); }
 .hall-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
-.title { font-weight: 600; color: #e6edf7; }
+.title { font-weight: 600; color: #18191c; }
 .meta { margin: 8px 0; font-size: 13px; }
 .hall-foot { display: flex; justify-content: space-between; font-size: 12px; }
-.desc { white-space: pre-wrap; color: #c3cede; font-size: 14px; margin: 10px 0; }
+.desc { white-space: pre-wrap; color: #61666d; font-size: 14px; margin: 10px 0; }
 </style>

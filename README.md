@@ -56,10 +56,10 @@ java -jar campus-server/target/campus-server-1.0-SNAPSHOT.jar
 
 | 入口 | 地址 | 说明 |
 |---|---|---|
-| 🌐 Web 门户（桌面端·推荐） | http://localhost:8080/web-app/ | Vue3 + Vite + Element Plus 暗色玻璃桌面工作台：用户端与技能者端业务一体（概览/悬赏大厅/技能市场/发布悬赏/订单全流程/钱包/消息/地址/资料/入驻 + 接单台/服务/作品/技能者中心），双身份登录自动联动导航；源码见 `web-app/` |
-| 🖥️ 管理端控制台（工程版·推荐） | http://localhost:8080/admin-web/ | Vue3 + Vite + Element Plus + Pinia + ECharts 暗色玻璃桌面工作台：数据大屏、订单、预约、技能者、作品审核、仲裁工单、信用榜单、认证/提现审核、类目、系统公告；源码见 `admin-web/` |
+| 🌐 Web 门户（桌面端·推荐） | http://localhost:8080/web-app/ | Vue3 + Vite + Element Plus 蓝白活力风桌面工作台：用户端与技能者端业务一体（概览/悬赏大厅/技能市场/发布悬赏/订单全流程/钱包/消息/地址/资料/入驻 + 接单台/服务/作品/技能者中心），双身份登录自动联动导航；源码见 `web-app/` |
+| 🖥️ 管理端控制台（工程版·推荐） | http://localhost:8080/admin-web/ | Vue3 + Vite + Element Plus + Pinia + ECharts 蓝白活力风桌面工作台：数据大屏、订单、预约、技能者、作品审核、仲裁工单、信用榜单、认证/提现审核、类目、系统公告；源码见 `admin-web/` |
 | 🖥️ 管理端控制台（零构建版） | http://localhost:8080/admin-app/ | 单文件版，功能同上（无数据大屏） |
-| 🙋 用户端 H5 | http://localhost:8080/user-app/ | 暗色玻璃风格，移动端流式布局 + 桌面端侧边导航多列（≥1024px 自动切换）：发布悬赏、技能市场/预约、交付验收、钱包、评价 |
+| 🙋 用户端 H5 | http://localhost:8080/user-app/ | 蓝白活力风，移动端流式布局 + 桌面端侧边导航多列（≥1024px 自动切换）：发布悬赏、技能市场/预约、交付验收、钱包、评价 |
 | 🎨 技能者端 H5 | http://localhost:8080/skiller-app/ | 同上响应式：悬赏大厅、交付/返修、服务上架、作品集、预约管理、收入提现 |
 
 ### 管理端工程版（admin-web）
@@ -67,7 +67,7 @@ java -jar campus-server/target/campus-server-1.0-SNAPSHOT.jar
 - 源码位置：仓库根目录 `admin-web/`（Vue 3.5 + Vite 6 + Element Plus + Pinia + Vue Router + ECharts + Axios）
 - 开发模式：`npm install && npm run dev`，Vite 已配置 `/admin → http://localhost:8080` 代理
 - 部署模式：`npm run build` 后将 `dist/` 拷贝到 `campus-server/src/main/resources/static/admin-web/`，随 jar 一起发布（hash 路由）
-- **暗色玻璃桌面主题**：与用户端/技能者端 H5 同一设计语言（Element Plus 官方 dark 变量 + 品牌色覆盖，无新增依赖）
+- **蓝白活力主题**：与用户端/技能者端 H5 同一设计语言（浅灰白底 + B 站蓝 #00AEEC 主色 + 粉色 #FB7299 点缀，Element Plus 品牌色覆盖，无新增依赖）
 - **数据大屏**：核心指标、成交趋势、热门技能类目 TOP5、各校区订单占比、订单状态分布，30 秒自动刷新 + 全屏演示模式
 - **系统公告**（v5 新增）：`系统配置 → 公告管理` 发布公告，实时推送全体用户与技能者收件箱（在线用户 WebSocket 弹窗提醒），历史记录含送达人数；接口 `POST /admin/message/broadcast`、`GET /admin/message/page`
 - **预约管理**（v5 新增）：`业务管理 → 预约管理` 查看全平台预约单（状态筛选/联查用户与技能者），支持管理员取消异常预约（仅待确认，双端站内通知）；接口 `GET /admin/booking/page`、`PUT /admin/booking/{id}/cancel`

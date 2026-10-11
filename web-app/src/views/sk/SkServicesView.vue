@@ -133,5 +133,5 @@ onMounted(async () => {
 
 <style scoped>
 .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-.card-title { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 600; color: #e6edf7; }
+.card-title { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 600; color: #18191c; }
 </style>

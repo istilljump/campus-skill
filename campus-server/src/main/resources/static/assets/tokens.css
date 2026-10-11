@@ -3,10 +3,10 @@
    颜色: 蓝色 primitive + 语义色 | 字体: Inter | 间距: 4px 标尺
    ============================================================ */
 :root {
-  /* ---- color primitives: blue scale ---- */
-  --blue-50: #eff6ff;  --blue-100: #dbeafe; --blue-200: #bfdbfe;
-  --blue-300: #93c5fd; --blue-400: #60a5fa; --blue-500: #3b82f6;
-  --blue-600: #2563eb; --blue-700: #1d4ed8;
+  /* ---- color primitives: blue scale（B 站蓝） ---- */
+  --blue-50: #e5f7fd;  --blue-100: #cceefb; --blue-200: #b3e7f9;
+  --blue-300: #80d6f6; --blue-400: #4dc3f2; --blue-500: #00aeec;
+  --blue-600: #0093cf; --blue-700: #007fb5;
 
   /* ---- semantic: brand ---- */
   --brand-primary: var(--blue-600);

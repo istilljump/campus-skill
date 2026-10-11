@@ -150,7 +150,7 @@ onMounted(async () => {
 
 <style scoped>
 .submit-card { max-width: 860px; }
-.card-title { display: flex; align-items: center; gap: 8px; font-size: 16px; font-weight: 600; margin-bottom: 16px; color: #e6edf7; }
+.card-title { display: flex; align-items: center; gap: 8px; font-size: 16px; font-weight: 600; margin-bottom: 16px; color: #18191c; }
 .amount-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .amount-tag { cursor: pointer; }
 .fee-alert { margin-bottom: 16px; }

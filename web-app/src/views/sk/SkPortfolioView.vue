@@ -95,7 +95,7 @@ onMounted(async () => {
 
 <style scoped>
 .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-.card-title { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 600; color: #e6edf7; }
+.card-title { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 600; color: #18191c; }
 .pf-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -103,14 +103,14 @@ onMounted(async () => {
   min-height: 120px;
 }
 .mini-card {
-  border: 1px solid rgba(255, 255, 255, .1);
-  background: linear-gradient(160deg, rgba(255,255,255,.07), rgba(255,255,255,.04) 55%);
+  border: 1px solid #e3e5e7;
+  background: #ffffff;
   border-radius: 14px;
   padding: 14px;
 }
 .cover { width: 100%; border-radius: 10px; margin-bottom: 10px; max-height: 180px; object-fit: cover; }
 .card-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-.title { font-weight: 600; color: #e6edf7; }
+.title { font-weight: 600; color: #18191c; }
 .meta { margin: 8px 0; font-size: 13px; }
 .reject { color: var(--el-color-danger); font-size: 12px; margin-top: 6px; }
 .card-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }

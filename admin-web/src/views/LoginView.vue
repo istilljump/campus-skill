@@ -61,21 +61,19 @@ async function onSubmit() {
   align-items: center;
   justify-content: center;
   background:
-    radial-gradient(1000px 480px at 15% -10%, rgba(59, 130, 246, 0.22), transparent 60%),
-    radial-gradient(900px 460px at 105% 110%, rgba(124, 92, 255, 0.18), transparent 55%),
-    #070b15;
+    radial-gradient(1000px 480px at 15% -10%, rgba(0, 174, 236, 0.12), transparent 60%),
+    radial-gradient(900px 460px at 105% 110%, rgba(251, 114, 153, 0.08), transparent 55%),
+    #f1f2f3;
 }
 
-/* 毛玻璃登录卡：与 H5 端登录页同构 */
+/* 亮色登录卡：白底半透明 + 细边框 */
 .login-box {
   width: 400px;
-  background: rgba(13, 20, 36, 0.72);
-  -webkit-backdrop-filter: blur(16px) saturate(1.4);
-  backdrop-filter: blur(16px) saturate(1.4);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid #e3e5e7;
   border-radius: 20px;
   padding: 40px 36px 28px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08);
 }
 
 .login-brand {
@@ -90,19 +88,19 @@ async function onSubmit() {
   display: inline-grid;
   place-items: center;
   color: #fff;
-  background: linear-gradient(135deg, #4f8cff, #7c5cff);
-  box-shadow: 0 8px 24px -6px rgba(79, 140, 255, 0.6);
+  background: linear-gradient(135deg, #00aeec, #fb7299);
+  box-shadow: 0 8px 24px -6px rgba(0, 174, 236, 0.35);
 }
 
 .login-brand h1 {
   margin: 12px 0 4px;
   font-size: 22px;
-  color: #eef3fb;
+  color: #18191c;
 }
 
 .login-brand p {
   margin: 0;
-  color: #a7b4c9;
+  color: #61666d;
   font-size: 14px;
 }
 
@@ -114,7 +112,7 @@ async function onSubmit() {
 .tip {
   margin: 14px 0 0;
   text-align: center;
-  color: #64748b;
+  color: #9499a0;
   font-size: 12px;
 }
 </style>

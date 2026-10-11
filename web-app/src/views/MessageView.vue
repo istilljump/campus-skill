@@ -72,9 +72,9 @@ onMounted(load)
 </script>
 
 <style scoped>
-.card-title { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 600; margin-bottom: 12px; color: #e6edf7; }
+.card-title { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 600; margin-bottom: 12px; color: #18191c; }
 .card-title .el-button { margin-left: auto; }
-:deep(.unread-row) { background: rgba(79, 140, 255, .08) !important; }
+:deep(.unread-row) { background: rgba(0, 174, 236, .08) !important; }
 .msg-dot :deep(.el-badge__content) { display: none; }
 .msg-dot { display: inline-block; }
 .msg-dot.is-dot::after { content: ''; }

@@ -83,5 +83,5 @@ onMounted(async () => {
 }
 @media (max-width: 1000px) { .profile-layout { grid-template-columns: 1fr; } }
 .side-col { display: grid; gap: 16px; }
-.card-title { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 600; margin-bottom: 12px; color: #e6edf7; }
+.card-title { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 600; margin-bottom: 12px; color: #18191c; }
 </style>

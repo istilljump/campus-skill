@@ -215,10 +215,10 @@ onBeforeUnmount(() => clearInterval(timer))
 <style scoped>
 .detail-card { max-width: 1200px; }
 .steps { margin-bottom: 20px; }
-.title { margin: 0 0 6px; color: #eef3fb; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.desc { color: #a7b4c9; font-size: 14px; margin: 0 0 14px; }
+.title { margin: 0 0 6px; color: #18191c; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.desc { color: #61666d; font-size: 14px; margin: 0 0 14px; }
 .desc-box { margin-top: 4px; }
 .action-card { padding: 16px; }
-.card-title { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 600; margin-bottom: 10px; color: #e6edf7; }
+.card-title { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 600; margin-bottom: 10px; color: #18191c; }
 .deliver-line { word-break: break-all; margin-bottom: 6px; }
 </style>

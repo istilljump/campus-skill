@@ -119,12 +119,10 @@ async function onCommand(cmd) {
   height: 100%;
 }
 
-/* 玻璃侧边栏：半透明 + 背景模糊，与 H5 端 glass.css 同语言 */
+/* 亮色侧边栏：白底 + 细边框 */
 .aside {
-  background: rgba(10, 16, 32, 0.78);
-  -webkit-backdrop-filter: blur(16px) saturate(1.4);
-  backdrop-filter: blur(16px) saturate(1.4);
-  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  background: #ffffff;
+  border-right: 1px solid #e3e5e7;
   display: flex;
   flex-direction: column;
 }
@@ -135,10 +133,10 @@ async function onCommand(cmd) {
   align-items: center;
   justify-content: center;
   gap: 10px;
-  color: #eef3fb;
+  color: #18191c;
   font-weight: 600;
   font-size: 15px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid #f1f2f3;
 }
 
 .logo-badge {
@@ -148,8 +146,8 @@ async function onCommand(cmd) {
   display: grid;
   place-items: center;
   color: #fff;
-  background: linear-gradient(135deg, #4f8cff, #7c5cff);
-  box-shadow: 0 4px 14px -4px rgba(79, 140, 255, 0.6);
+  background: linear-gradient(135deg, #00aeec, #fb7299);
+  box-shadow: 0 4px 14px -4px rgba(0, 174, 236, 0.4);
 }
 
 .menu {
@@ -159,7 +157,7 @@ async function onCommand(cmd) {
 }
 
 .menu :deep(.el-menu-item) {
-  color: #94a3b8;
+  color: #61666d;
   margin: 2px 10px;
   border-radius: 10px;
   height: 44px;
@@ -167,19 +165,19 @@ async function onCommand(cmd) {
 }
 
 .menu :deep(.el-menu-item:hover) {
-  background: rgba(255, 255, 255, 0.06);
-  color: #e6edf7;
+  background: #f6f7f8;
+  color: #18191c;
 }
 
 .menu :deep(.el-menu-item.is-active) {
-  background: rgba(79, 140, 255, 0.18);
-  color: #cfe1ff;
-  box-shadow: inset 2px 0 0 #4f8cff;
+  background: rgba(0, 174, 236, 0.1);
+  color: #00aeec;
+  box-shadow: inset 2px 0 0 #00aeec;
 }
 
 .menu :deep(.el-menu-item-group__title) {
   padding: 12px 20px 4px;
-  color: #5c6b84;
+  color: #9499a0;
   font-size: 12px;
 }
 
@@ -193,30 +191,28 @@ async function onCommand(cmd) {
   align-items: center;
   gap: 8px;
   padding: 14px 20px;
-  color: #5c6b84;
+  color: #9499a0;
   font-size: 12px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid #f1f2f3;
 }
 
 .status-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #34d399;
-  box-shadow: 0 0 8px #34d399;
+  background: #2ac864;
+  box-shadow: 0 0 8px rgba(42, 200, 100, 0.5);
 }
 
-/* 毛玻璃顶栏 */
+/* 亮色顶栏：半透明白 + 细边框 */
 .header {
   height: 60px;
-  background: rgba(10, 16, 32, 0.6);
-  -webkit-backdrop-filter: blur(16px) saturate(1.4);
-  backdrop-filter: blur(16px) saturate(1.4);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.85);
+  border-bottom: 1px solid #e3e5e7;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  color: #e6edf7;
+  color: #18191c;
 }
 
 .header-title {
@@ -236,11 +232,11 @@ async function onCommand(cmd) {
   gap: 8px;
   cursor: pointer;
   font-size: 14px;
-  color: #e6edf7;
+  color: #18191c;
 }
 
 .user-avatar {
-  background: linear-gradient(135deg, #4f8cff, #7c5cff);
+  background: linear-gradient(135deg, #00aeec, #fb7299);
 }
 
 .main {

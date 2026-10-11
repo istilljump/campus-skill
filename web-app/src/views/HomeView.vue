@@ -105,15 +105,15 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: linear-gradient(135deg, rgba(79, 140, 255, .28), rgba(124, 92, 255, .20) 55%, rgba(14, 165, 233, .14));
-  border: 1px solid rgba(255, 255, 255, .18);
+  background: linear-gradient(135deg, rgba(0, 174, 236, .28), rgba(251, 114, 153, .20) 55%, rgba(14, 165, 233, .14));
+  border: 1px solid rgba(0, 174, 236, .25);
   border-radius: 16px;
   padding: 24px 28px;
   margin-bottom: 16px;
 }
 
-.hero h2 { margin: 0 0 6px; color: #eef3fb; }
-.hero p { margin: 0; color: rgba(230, 239, 247, .82); font-size: 14px; }
+.hero h2 { margin: 0 0 6px; color: #18191c; }
+.hero p { margin: 0; color: rgba(24, 25, 28, .72); font-size: 14px; }
 .hero-actions { display: flex; gap: 4px; }
 
 .home-grid {
@@ -134,10 +134,10 @@ onMounted(async () => {
   font-size: 15px;
   font-weight: 600;
   margin-bottom: 12px;
-  color: #e6edf7;
+  color: #18191c;
 }
 
-.refresh-btn { margin-left: auto; color: #8fb8ff; }
+.refresh-btn { margin-left: auto; color: #00aeec; }
 
 .quick-grid {
   display: grid;
@@ -151,15 +151,15 @@ onMounted(async () => {
   align-items: center;
   gap: 8px;
   padding: 12px 14px;
-  border: 1px solid rgba(255, 255, 255, .1);
+  border: 1px solid #e3e5e7;
   border-radius: 12px;
   cursor: pointer;
-  color: #c3cede;
+  color: #61666d;
   font-size: 14px;
   transition: transform .16s ease, border-color .16s ease, background .16s ease;
 }
 
-.quick-item:hover { background: rgba(255, 255, 255, .06); border-color: rgba(255, 255, 255, .2); transform: translateY(-2px); }
+.quick-item:hover { background: #f6f7f8; border-color: rgba(0, 174, 236, .45); transform: translateY(-2px); }
 .quick-badge { position: absolute; top: -6px; right: -6px; }
 
 @media (max-width: 1100px) {

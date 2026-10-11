@@ -10,8 +10,8 @@
           <el-radio-button :value="7">近7天</el-radio-button>
           <el-radio-button :value="30">近30天</el-radio-button>
         </el-radio-group>
-        <el-button size="small" text :icon="Refresh" style="color: #93c5fd" @click="loadAll">刷新</el-button>
-        <el-button size="small" text :icon="FullScreen" style="color: #93c5fd" @click="toggleFullscreen">全屏</el-button>
+        <el-button size="small" text :icon="Refresh" style="color: #00aeec" @click="loadAll">刷新</el-button>
+        <el-button size="small" text :icon="FullScreen" style="color: #00aeec" @click="toggleFullscreen">全屏</el-button>
       </div>
     </div>
 
@@ -70,17 +70,17 @@ let charts = []
 let timer = null
 
 const metrics = computed(() => [
-  { label: '累计订单量', value: overview.value.totalOrders ?? '-', icon: 'Tickets', color: '#3b82f6' },
+  { label: '累计订单量', value: overview.value.totalOrders ?? '-', icon: 'Tickets', color: '#00aeec' },
   { label: '今日订单', value: overview.value.todayOrders ?? '-', icon: 'AlarmClock', color: '#06b6d4' },
-  { label: '待接单', value: overview.value.pendingCount ?? '-', icon: 'Bell', color: '#f59e0b' },
-  { label: '进行中', value: overview.value.inProgressCount ?? '-', icon: 'Van', color: '#8b5cf6' },
-  { label: '已完成', value: overview.value.completedCount ?? '-', icon: 'CircleCheckFilled', color: '#22c55e' },
-  { label: '已取消', value: overview.value.cancelledCount ?? '-', icon: 'CircleCloseFilled', color: '#ef4444' },
+  { label: '待接单', value: overview.value.pendingCount ?? '-', icon: 'Bell', color: '#ffb027' },
+  { label: '进行中', value: overview.value.inProgressCount ?? '-', icon: 'Van', color: '#fb7299' },
+  { label: '已完成', value: overview.value.completedCount ?? '-', icon: 'CircleCheckFilled', color: '#2ac864' },
+  { label: '已取消', value: overview.value.cancelledCount ?? '-', icon: 'CircleCloseFilled', color: '#f25d5d' },
   { label: '累计交易额', value: `¥${Number(overview.value.totalReward ?? 0).toFixed(2)}`, icon: 'Coin', color: '#d97706' },
-  { label: '平台服务费', value: `¥${Number(overview.value.totalPlatformFee ?? 0).toFixed(2)}`, icon: 'Wallet', color: '#ec4899' },
+  { label: '平台服务费', value: `¥${Number(overview.value.totalPlatformFee ?? 0).toFixed(2)}`, icon: 'Wallet', color: '#fb7299' },
 ])
 
-const DARK_TEXT = '#93a3bd'
+const DARK_TEXT = '#61666d'
 
 function initChart(el) {
   const chart = echarts.init(el)
@@ -94,15 +94,15 @@ function renderTrend() {
     tooltip: { trigger: 'axis' },
     legend: { data: ['新增订单', '完成订单', '交易额'], textStyle: { color: DARK_TEXT }, top: 0 },
     grid: { left: 50, right: 55, top: 36, bottom: 28 },
-    xAxis: { type: 'category', data: dates, axisLine: { lineStyle: { color: '#334766' } }, axisLabel: { color: DARK_TEXT } },
+    xAxis: { type: 'category', data: dates, axisLine: { lineStyle: { color: '#c9cdd4' } }, axisLabel: { color: DARK_TEXT } },
     yAxis: [
-      { type: 'value', name: '单量', splitLine: { lineStyle: { color: '#1e2c47' } }, axisLabel: { color: DARK_TEXT }, nameTextStyle: { color: DARK_TEXT } },
+      { type: 'value', name: '单量', splitLine: { lineStyle: { color: '#e3e5e7' } }, axisLabel: { color: DARK_TEXT }, nameTextStyle: { color: DARK_TEXT } },
       { type: 'value', name: '金额(元)', splitLine: { show: false }, axisLabel: { color: DARK_TEXT }, nameTextStyle: { color: DARK_TEXT } },
     ],
     series: [
-      { name: '新增订单', type: 'line', smooth: true, data: trend.value.map((t) => t.orderCount), itemStyle: { color: '#3b82f6' }, areaStyle: { color: 'rgba(59,130,246,0.18)' } },
-      { name: '完成订单', type: 'line', smooth: true, data: trend.value.map((t) => t.completedCount), itemStyle: { color: '#22c55e' } },
-      { name: '交易额', type: 'line', smooth: true, yAxisIndex: 1, data: trend.value.map((t) => Number(t.amount)), itemStyle: { color: '#f59e0b' }, lineStyle: { type: 'dashed' } },
+      { name: '新增订单', type: 'line', smooth: true, data: trend.value.map((t) => t.orderCount), itemStyle: { color: '#00aeec' }, areaStyle: { color: 'rgba(0,174,236,0.15)' } },
+      { name: '完成订单', type: 'line', smooth: true, data: trend.value.map((t) => t.completedCount), itemStyle: { color: '#2ac864' } },
+      { name: '交易额', type: 'line', smooth: true, yAxisIndex: 1, data: trend.value.map((t) => Number(t.amount)), itemStyle: { color: '#ffb027' }, lineStyle: { type: 'dashed' } },
     ],
   })
 }
@@ -112,11 +112,11 @@ function renderTypeRank() {
   initOrResize(typeRef.value, {
     tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
     grid: { left: 90, right: 30, top: 16, bottom: 28 },
-    xAxis: { type: 'value', splitLine: { lineStyle: { color: '#1e2c47' } }, axisLabel: { color: DARK_TEXT } },
+    xAxis: { type: 'value', splitLine: { lineStyle: { color: '#e3e5e7' } }, axisLabel: { color: DARK_TEXT } },
     yAxis: { type: 'category', data: data.map((d) => d.name), axisLabel: { color: DARK_TEXT, width: 80, overflow: 'truncate' } },
     series: [{
       type: 'bar', barWidth: 16, data: data.map((d) => d.count),
-      itemStyle: { borderRadius: [0, 8, 8, 0], color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [{ offset: 0, color: '#3b82f6' }, { offset: 1, color: '#22d3ee' }]) },
+      itemStyle: { borderRadius: [0, 8, 8, 0], color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [{ offset: 0, color: '#00aeec' }, { offset: 1, color: '#4dc3f2' }]) },
       label: { show: true, position: 'right', color: DARK_TEXT },
     }],
   })
@@ -132,10 +132,10 @@ function renderCampus() {
       data: campusRank.value.map((d, i) => ({
         name: d.name,
         value: d.count,
-        itemStyle: { color: ['#3b82f6', '#22d3ee', '#8b5cf6', '#f59e0b', '#22c55e', '#ec4899', '#ef4444'][i % 7] },
+        itemStyle: { color: ['#00aeec', '#2ac864', '#fb7299', '#ffb027', '#4dc3f2', '#9499a0', '#f25d5d'][i % 7] },
       })),
       label: { color: DARK_TEXT, formatter: '{d}%' },
-      itemStyle: { borderColor: '#0b1526', borderWidth: 2 },
+      itemStyle: { borderColor: '#ffffff', borderWidth: 2 },
     }],
   })
 }
@@ -145,12 +145,12 @@ function renderStatus() {
   const known = (o.pendingCount ?? 0) + (o.inProgressCount ?? 0) + (o.completedCount ?? 0) + (o.cancelledCount ?? 0)
   const other = Math.max((o.totalOrders ?? 0) - known, 0)
   const data = [
-    { name: '待接单', value: o.pendingCount ?? 0, itemStyle: { color: '#f59e0b' } },
-    { name: '进行中', value: o.inProgressCount ?? 0, itemStyle: { color: '#3b82f6' } },
-    { name: '已完成', value: o.completedCount ?? 0, itemStyle: { color: '#22c55e' } },
-    { name: '已取消', value: o.cancelledCount ?? 0, itemStyle: { color: '#ef4444' } },
+    { name: '待接单', value: o.pendingCount ?? 0, itemStyle: { color: '#ffb027' } },
+    { name: '进行中', value: o.inProgressCount ?? 0, itemStyle: { color: '#00aeec' } },
+    { name: '已完成', value: o.completedCount ?? 0, itemStyle: { color: '#2ac864' } },
+    { name: '已取消', value: o.cancelledCount ?? 0, itemStyle: { color: '#f25d5d' } },
   ]
-  if (other > 0) data.push({ name: '其他', value: other, itemStyle: { color: '#64748b' } })
+  if (other > 0) data.push({ name: '其他', value: other, itemStyle: { color: '#9499a0' } })
   initOrResize(statusRef.value, {
     animation: false,
     tooltip: { trigger: 'item', formatter: '{b}: {c} 单 ({d}%)' },
@@ -159,7 +159,7 @@ function renderStatus() {
       type: 'pie', radius: '55%', center: ['50%', '42%'],
       data: data.filter((d) => d.value > 0),
       label: { color: DARK_TEXT, formatter: '{d}%' },
-      itemStyle: { borderColor: '#0b1526', borderWidth: 2 },
+      itemStyle: { borderColor: '#ffffff', borderWidth: 2 },
     }],
   })
 }
@@ -225,7 +225,7 @@ onBeforeUnmount(() => {
 <style scoped>
 .dashboard {
   min-height: calc(100vh - 92px);
-  background: linear-gradient(160deg, #0b1526 0%, #101f38 100%);
+  background: linear-gradient(160deg, #ffffff 0%, #f6f7f8 100%);
   border-radius: 8px;
   padding: 16px 20px 20px;
 }
@@ -238,7 +238,7 @@ onBeforeUnmount(() => {
 }
 
 .dash-title {
-  color: #e2e8f0;
+  color: #18191c;
   font-size: 18px;
   font-weight: 700;
   display: flex;
@@ -251,8 +251,8 @@ onBeforeUnmount(() => {
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: #22d3ee;
-  box-shadow: 0 0 12px #22d3ee;
+  background: #4dc3f2;
+  box-shadow: 0 0 12px rgba(0, 174, 236, 0.5);
   animation: pulse 1.6s infinite;
 }
 
@@ -274,8 +274,8 @@ onBeforeUnmount(() => {
 }
 
 .metric-card {
-  background: rgba(148, 163, 184, 0.08);
-  border: 1px solid rgba(148, 163, 184, 0.15);
+  background: #f6f7f8;
+  border: 1px solid #e3e5e7;
   border-radius: 10px;
   padding: 14px;
   display: flex;
@@ -295,7 +295,7 @@ onBeforeUnmount(() => {
 }
 
 .metric-value {
-  color: #f1f5f9;
+  color: #18191c;
   font-size: 20px;
   font-weight: 700;
   line-height: 1.2;
@@ -303,7 +303,7 @@ onBeforeUnmount(() => {
 }
 
 .metric-label {
-  color: #7e8ca6;
+  color: #9499a0;
   font-size: 12px;
   margin-top: 2px;
   white-space: nowrap;
@@ -316,8 +316,8 @@ onBeforeUnmount(() => {
 }
 
 .chart-panel {
-  background: rgba(148, 163, 184, 0.06);
-  border: 1px solid rgba(148, 163, 184, 0.12);
+  background: #ffffff;
+  border: 1px solid #e3e5e7;
   border-radius: 10px;
   padding: 12px 14px;
 }
@@ -327,7 +327,7 @@ onBeforeUnmount(() => {
 }
 
 .panel-title {
-  color: #cbd5e1;
+  color: #61666d;
   font-size: 14px;
   font-weight: 600;
   margin-bottom: 8px;

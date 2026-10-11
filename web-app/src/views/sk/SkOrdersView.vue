@@ -226,13 +226,13 @@ onMounted(async () => {
   min-height: 120px;
 }
 .mini-card {
-  border: 1px solid rgba(255, 255, 255, .1);
-  background: linear-gradient(160deg, rgba(255,255,255,.07), rgba(255,255,255,.04) 55%);
+  border: 1px solid #e3e5e7;
+  background: #ffffff;
   border-radius: 14px;
   padding: 16px;
 }
 .card-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
-.title { font-weight: 600; color: #e6edf7; }
+.title { font-weight: 600; color: #18191c; }
 .meta { margin: 8px 0; font-size: 13px; }
 .card-foot { display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
 </style>

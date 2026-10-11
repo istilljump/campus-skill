@@ -128,12 +128,12 @@ onMounted(load)
   font-size: 15px;
   font-weight: 600;
   margin-bottom: 10px;
-  color: #e6edf7;
+  color: #18191c;
 }
 
 .refresh-btn {
   margin-left: auto;
-  color: #8fb8ff;
+  color: #00aeec;
 }
 
 .publish-btn {

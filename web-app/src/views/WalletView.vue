@@ -67,15 +67,15 @@ onMounted(load)
 <style scoped>
 .hero {
   text-align: center;
-  background: linear-gradient(135deg, rgba(79, 140, 255, .28), rgba(124, 92, 255, .20) 55%, rgba(14, 165, 233, .14));
-  border: 1px solid rgba(255, 255, 255, .18);
+  background: linear-gradient(135deg, rgba(0, 174, 236, .28), rgba(251, 114, 153, .20) 55%, rgba(14, 165, 233, .14));
+  border: 1px solid rgba(0, 174, 236, .25);
   border-radius: 16px;
   padding: 28px;
   margin-bottom: 16px;
 }
-.lab { margin: 0; color: rgba(230, 239, 247, .8); }
-.num { margin: 8px 0; font-size: 40px; color: #fff; }
-.sub { margin: 0; color: rgba(230, 239, 247, .75); font-size: 13px; }
-.card-title { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 600; margin-bottom: 12px; color: #e6edf7; }
-.neg { color: #f87171; font-weight: 600; }
+.lab { margin: 0; color: rgba(24, 25, 28, .7); }
+.num { margin: 8px 0; font-size: 40px; color: #00aeec; }
+.sub { margin: 0; color: rgba(24, 25, 28, .6); font-size: 13px; }
+.card-title { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 600; margin-bottom: 12px; color: #18191c; }
+.neg { color: #f25d5d; font-weight: 600; }
 </style>

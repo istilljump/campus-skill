@@ -10,14 +10,14 @@
 <script src="/assets/vendor/vue.global.prod.js"></script>
 <script src="/assets/vendor/vant.js"></script>
 <style>
-  /* 技能者端主题色（紫罗兰，与用户端蓝色区分，仅变量替换） */
-  .cs-app { --cs-accent: #8b7bff; --cs-accent-2: #6366f1; --cs-accent-soft: rgba(139, 123, 255, .16); }
+  /* 技能者端主题色（B 站蓝粉，与用户端同一蓝白设计语言，仅变量替换） */
+  .cs-app { --cs-accent: #00aeec; --cs-accent-2: #fb7299; --cs-accent-soft: rgba(0, 174, 236, .12); }
   .cs-app .hero {
-    background: linear-gradient(135deg, rgba(139, 123, 255, .30), rgba(99, 102, 241, .22) 55%, rgba(14, 165, 233, .14));
+    background: linear-gradient(135deg, rgba(0, 174, 236, .18), rgba(251, 114, 153, .12) 55%, rgba(0, 174, 236, .08));
   }
   .cs-app .stat-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-2); margin-top: var(--sp-4); }
   .cs-app .stat-box {
-    background: rgba(255, 255, 255, .12); border: 1px solid rgba(255, 255, 255, .16);
+    background: rgba(255, 255, 255, .55); border: 1px solid rgba(255, 255, 255, .7);
     border-radius: var(--radius-md); padding: var(--sp-3); text-align: center;
   }
   .cs-app .stat-num { font-weight: var(--weight-bold); font-size: var(--text-lg); }
@@ -261,9 +261,9 @@
     <!-- 技能者中心 + 收入 -->
     <div v-if="view==='me'" class="view">
       <div class="hero">
-        <h3>{{ center.name || '技能者' }} <span class="tag" style="background:rgba(255,255,255,.2);color:#fff">接单等级 {{ levelName(center.runnerLevel) }}</span></h3>
+        <h3>{{ center.name || '技能者' }} <span class="tag" style="background:rgba(255,255,255,.6);color:#0093cf">接单等级 {{ levelName(center.runnerLevel) }}</span></h3>
         <p>今日已接 {{ center.todayOrderCount ?? 0 }}/{{ center.dailyOrderLimit ?? 10 }} 单 · 评分 {{ center.score ?? '5.0' }} · 信用 {{ center.creditScore ?? 100 }}{{ center.skillLevel ? '（作品定级 C' + center.skillLevel + '）' : '' }}</p>
-        <van-progress :percentage="limitPct" stroke-width="6" style="margin-top:8px" color="#ffffff" track-color="rgba(255,255,255,.25)"/>
+        <van-progress :percentage="limitPct" stroke-width="6" style="margin-top:8px" color="#00aeec" track-color="rgba(255,255,255,.6)"/>
         <div class="stat-row">
           <div class="stat-box"><div class="stat-num">{{ money(center.todayIncome) }}</div><div class="stat-lab">今日技能服务收入</div></div>
           <div class="stat-box"><div class="stat-num">{{ center.completedOrders ?? 0 }}</div><div class="stat-lab">完成单数</div></div>

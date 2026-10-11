@@ -126,13 +126,11 @@ async function onSubmit() {
 
 .login-box {
   width: 430px;
-  background: rgba(13, 20, 36, 0.72);
-  -webkit-backdrop-filter: blur(16px) saturate(1.4);
-  backdrop-filter: blur(16px) saturate(1.4);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: #ffffff;
+  border: 1px solid #e3e5e7;
   border-radius: 20px;
   padding: 36px 36px 28px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08);
 }
 
 .login-brand {
@@ -147,19 +145,19 @@ async function onSubmit() {
   display: inline-grid;
   place-items: center;
   color: #fff;
-  background: linear-gradient(135deg, #4f8cff, #7c5cff);
-  box-shadow: 0 8px 24px -6px rgba(79, 140, 255, 0.6);
+  background: linear-gradient(135deg, #00aeec, #fb7299);
+  box-shadow: 0 8px 24px -6px rgba(0, 174, 236, 0.35);
 }
 
 .login-brand h1 {
   margin: 12px 0 4px;
   font-size: 22px;
-  color: #eef3fb;
+  color: #18191c;
 }
 
 .login-brand p {
   margin: 0;
-  color: #a7b4c9;
+  color: #61666d;
   font-size: 13px;
 }
 
@@ -179,7 +177,7 @@ async function onSubmit() {
 
 .tip {
   margin: 12px 0 0;
-  color: #64748b;
+  color: #9499a0;
   font-size: 12px;
   text-align: center;
 }

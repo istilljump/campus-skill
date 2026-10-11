@@ -1,8 +1,8 @@
 /* ============================================================
-   CampusSkill 暗色科技玻璃拟态设计层（glass.css）
+   CampusSkill 活力蓝白设计层（glass.css）
    ------------------------------------------------------------
    · 设计原则：pbakaus/impeccable —— 排版层级 / 留白节奏 / 可读性
-   · 玻璃卡片：gladvn 深色玻璃拟态 CSS 片段（半透明 + blur + 细描边）
+   · 卡片：白底 + 细描边 + 轻阴影（B 站风格亮色卡片）
    · 骨架屏：参考 element-plus Skeleton 零散源码片段自实现，零依赖
    · antd：仅参考其 Design Token 分层思路（token → 组件变量），未引入代码
    · 零依赖：纯 CSS，不引入任何 npm 包 / 组件库
@@ -14,15 +14,15 @@
    ============================================================ */
 
 /* ---------- 1. 画布 ---------- */
-html { background: #070b15; }
+html { background: #f1f2f3; }
 body {
   background:
-    radial-gradient(1100px 520px at 12% -8%, rgba(59, 130, 246, .16), transparent 60%),
-    radial-gradient(900px 480px at 108% 12%, rgba(124, 92, 255, .12), transparent 55%),
-    radial-gradient(760px 420px at 50% 118%, rgba(14, 165, 233, .08), transparent 60%),
-    #070b15;
+    radial-gradient(1100px 520px at 12% -8%, rgba(0, 174, 236, .08), transparent 60%),
+    radial-gradient(900px 480px at 108% 12%, rgba(251, 114, 153, .06), transparent 55%),
+    radial-gradient(760px 420px at 50% 118%, rgba(0, 174, 236, .05), transparent 60%),
+    #f1f2f3;
   background-attachment: fixed;
-  color: #e6edf7;
+  color: #18191c;
   min-height: 100vh;
 }
 /* 移动端：保留原 H5 居中流式版心 */
@@ -31,57 +31,57 @@ body { max-width: 520px; margin: 0 auto; }
 /* ---------- 2. 命名空间令牌（antd token 分层思路：全局 token → 别名） ---------- */
 .cs-app {
   /* 表面与描边 */
-  --cs-surface: rgba(255, 255, 255, .055);
-  --cs-surface-strong: rgba(255, 255, 255, .09);
-  --cs-border: rgba(255, 255, 255, .10);
-  --cs-border-strong: rgba(255, 255, 255, .18);
+  --cs-surface: #ffffff;
+  --cs-surface-strong: #ffffff;
+  --cs-border: #e3e5e7;
+  --cs-border-strong: #c9cdd4;
   --cs-glass-blur: 16px;
-  /* 文本（深色底对比度按 impeccable 可读性校准，均 ≥ WCAG AA） */
-  --cs-text-1: #eef3fb;
-  --cs-text-2: #a7b4c9;
-  --cs-text-3: #7c8aa1;
-  --cs-text-inverse: #0b1220;
-  /* 品牌色（深色底提亮，保持蓝色科技感） */
-  --cs-accent: #4f8cff;
-  --cs-accent-2: #7c5cff;
-  --cs-accent-soft: rgba(79, 140, 255, .16);
+  /* 文本（浅色底对比度按 impeccable 可读性校准，均 ≥ WCAG AA） */
+  --cs-text-1: #18191c;
+  --cs-text-2: #61666d;
+  --cs-text-3: #9499a0;
+  --cs-text-inverse: #ffffff;
+  /* 品牌色（B 站蓝 + 浅蓝渐变辅助） */
+  --cs-accent: #00aeec;
+  --cs-accent-2: #4dc3f2;
+  --cs-accent-soft: rgba(0, 174, 236, .12);
   /* 状态色 */
-  --cs-success: #34d399;
-  --cs-warning: #fbbf24;
-  --cs-danger: #f87171;
+  --cs-success: #2ac864;
+  --cs-warning: #ffb027;
+  --cs-danger: #f25d5d;
   /* 布局外壳 */
   --shell-max: 1480px;
   --shell-gap: 24px;
   /* 圆角与阴影 */
   --cs-radius: 16px;
   --cs-radius-lg: 20px;
-  --cs-shadow: 0 8px 28px -8px rgba(2, 6, 17, .55);
-  --cs-shadow-hover: 0 14px 36px -10px rgba(2, 6, 17, .7);
+  --cs-shadow: 0 2px 12px rgba(0, 0, 0, .06);
+  --cs-shadow-hover: 0 10px 28px -10px rgba(0, 0, 0, .14);
 
   color: var(--cs-text-1);
   font-size: var(--text-base);
   line-height: 1.6; /* impeccable：正文行高 ≥1.5 */
 }
 
-/* ---------- 3. 玻璃卡片（gladvn 片段） ---------- */
-/* 列表卡片：低成本半透明渐变（不用 backdrop-filter，长列表不掉帧） */
+/* ---------- 3. 卡片（亮色白卡 + 细描边） ---------- */
+/* 列表卡片：白底 + 细描边 + 轻阴影（不用 backdrop-filter，长列表不掉帧） */
 .cs-app .glass-card {
-  background: linear-gradient(160deg, var(--cs-surface-strong), var(--cs-surface) 55%);
+  background: var(--cs-surface);
   border: 1px solid var(--cs-border);
   border-radius: var(--cs-radius);
   box-shadow: var(--cs-shadow);
   padding: var(--sp-4);
   margin-top: var(--sp-3);
 }
-/* 高亮浮层：真正的毛玻璃（只给侧栏/导航/弹层等少量元素用） */
+/* 高亮浮层：半透明白（只给侧栏/导航/弹层等少量元素用） */
 .cs-app .glass-blur {
-  background: rgba(13, 20, 36, .72);
+  background: rgba(255, 255, 255, .92);
   -webkit-backdrop-filter: blur(var(--cs-glass-blur)) saturate(1.4);
   backdrop-filter: blur(var(--cs-glass-blur)) saturate(1.4);
   border: 1px solid var(--cs-border);
 }
 
-/* ---------- 4. Vant 暗色主题变量覆盖（零源码修改，仅变量） ---------- */
+/* ---------- 4. Vant 亮色主题变量覆盖（零源码修改，仅变量） ---------- */
 .cs-app {
   --van-background: transparent;
   --van-background-2: transparent;
@@ -93,13 +93,13 @@ body { max-width: 520px; margin: 0 auto; }
   --van-cell-text-color: var(--cs-text-1);
   --van-cell-value-color: var(--cs-text-1);
   --van-cell-label-color: var(--cs-text-3);
-  --van-cell-border-color: rgba(255, 255, 255, .07);
+  --van-cell-border-color: #ebeef0;
   --van-cell-group-background: transparent;
   --van-cell-group-inset-padding: 0;
   --van-nav-bar-background: transparent;
   --van-nav-bar-title-text-color: var(--cs-text-1);
   --van-nav-bar-height: 52px;
-  --van-tabbar-background: rgba(11, 18, 34, .82);
+  --van-tabbar-background: rgba(255, 255, 255, .94);
   --van-tabbar-item-text-color: var(--cs-text-3);
   --van-tabbar-item-active-color: var(--cs-accent);
   --van-tabbar-item-active-background-color: transparent;
@@ -107,41 +107,41 @@ body { max-width: 520px; margin: 0 auto; }
   --van-tab-text-color: var(--cs-text-3);
   --van-tab-active-text-color: var(--cs-text-1);
   --van-tabs-line-height: 44px;
-  --van-tag-text-color: #cdd9ea;
-  --van-popup-background: rgba(17, 26, 46, .96);
+  --van-tag-text-color: #61666d;
+  --van-popup-background: #ffffff;
   --van-field-label-color: var(--cs-text-2);
   --van-field-input-text-color: var(--cs-text-1);
   --van-radio-checked-icon-color: var(--cs-accent);
   --van-radio-label-color: var(--cs-text-1);
   --van-checkbox-checked-icon-color: var(--cs-accent);
-  --van-badge-background: #ef4444;
+  --van-badge-background: #f25d5d;
   --van-empty-description-color: var(--cs-text-3);
   --van-step-text-color: var(--cs-text-3);
   --van-step-active-color: var(--cs-accent);
   --van-step-finish-text-color: var(--cs-text-2);
   --van-button-primary-background: var(--cs-accent);
   --van-button-primary-border-color: var(--cs-accent);
-  --van-button-plain-background: rgba(255, 255, 255, .04);
-  --van-button-default-background: rgba(255, 255, 255, .06);
+  --van-button-plain-background: #ffffff;
+  --van-button-default-background: #f6f7f8;
   --van-button-default-border-color: var(--cs-border-strong);
   --van-button-default-text-color: var(--cs-text-1);
-  --van-progress-background: rgba(255, 255, 255, .14);
-  --van-rate-icon-color: #f5c518;
+  --van-progress-background: #e3e5e7;
+  --van-rate-icon-color: #ffb027;
 }
-/* 状态标签玻璃化（彩色底 12% 透明度 + 提亮文字，保证深色底可读） */
-.cs-app .van-tag--primary { background: rgba(79, 140, 255, .18); color: #8fb8ff; }
-.cs-app .van-tag--success { background: rgba(52, 211, 153, .16); color: #6ee7b7; }
-.cs-app .van-tag--warning { background: rgba(251, 191, 36, .16); color: #fcd34d; }
-.cs-app .van-tag--danger  { background: rgba(248, 113, 113, .16); color: #fca5a5; }
-.cs-app .van-tag--default { background: rgba(148, 163, 184, .16); color: #b7c3d6; }
-/* 输入框（.field 旧类继续兼容，统一玻璃质感） */
+/* 状态标签（彩色底浅色调 + 深色文字，保证浅色底可读） */
+.cs-app .van-tag--primary { background: rgba(0, 174, 236, .12); color: #0093cf; }
+.cs-app .van-tag--success { background: rgba(42, 200, 100, .14); color: #1f9e50; }
+.cs-app .van-tag--warning { background: rgba(255, 176, 39, .16); color: #d98200; }
+.cs-app .van-tag--danger  { background: rgba(242, 93, 93, .12); color: #d94646; }
+.cs-app .van-tag--default { background: rgba(24, 25, 28, .06); color: #61666d; }
+/* 输入框（.field 旧类继续兼容，统一亮色质感） */
 .cs-app .field,
 .cs-app .van-field__control {
   color: var(--cs-text-1);
   caret-color: var(--cs-accent);
 }
 .cs-app .field {
-  background: rgba(255, 255, 255, .05);
+  background: #f6f7f8;
   border: 1px solid var(--cs-border);
   border-radius: 12px;
   transition: border-color .16s ease, box-shadow .16s ease;
@@ -154,26 +154,26 @@ body { max-width: 520px; margin: 0 auto; }
 }
 /* 函数式弹层（toast / dialog 由 vant 挂在 body 下，需全局覆盖，无命名空间） */
 .van-toast {
-  background: rgba(17, 26, 46, .92);
+  background: rgba(255, 255, 255, .96);
   -webkit-backdrop-filter: blur(12px);
   backdrop-filter: blur(12px);
-  border: 1px solid var(--cs-border, rgba(255,255,255,.1));
-  color: #eef3fb;
-  box-shadow: 0 10px 30px -8px rgba(2, 6, 17, .6);
+  border: 1px solid var(--cs-border, #e3e5e7);
+  color: #18191c;
+  box-shadow: 0 10px 30px -8px rgba(0, 0, 0, .12);
 }
 .van-dialog {
-  background: rgba(17, 26, 46, .96);
-  border: 1px solid var(--cs-border, rgba(255,255,255,.1));
+  background: rgba(255, 255, 255, .98);
+  border: 1px solid var(--cs-border, #e3e5e7);
 }
-.van-dialog__header { color: #eef3fb; }
-.van-dialog__message { color: #a7b4c9; }
+.van-dialog__header { color: #18191c; }
+.van-dialog__message { color: #61666d; }
 /* 导航栏 / 底部导航浮层化（移动端） */
 .cs-app .m-nav,
 .cs-app .van-tabbar {
   -webkit-backdrop-filter: blur(16px) saturate(1.4);
   backdrop-filter: blur(16px) saturate(1.4);
 }
-.cs-app .m-nav { background: rgba(11, 18, 34, .72); }
+.cs-app .m-nav { background: rgba(255, 255, 255, .92); }
 .cs-app .m-nav::after { border-bottom-color: var(--cs-border); }
 .cs-app .van-tabbar { border-top: 1px solid var(--cs-border); }
 /* 下拉刷新指示色 */
@@ -197,46 +197,46 @@ body { max-width: 520px; margin: 0 auto; }
 .cs-app .tag {
   display: inline-block; font-size: var(--text-xs); padding: 1px 8px;
   border-radius: var(--radius-full);
-  background: var(--cs-accent-soft); color: #8fb8ff; margin-left: var(--sp-2);
+  background: var(--cs-accent-soft); color: #0093cf; margin-left: var(--sp-2);
 }
-/* 首屏主视觉：玻璃渐变 + 光斑，突出品牌与核心数据（LCP 快速呈现亮点） */
+/* 首屏主视觉：蓝粉渐变 + 光斑，突出品牌与核心数据（LCP 快速呈现亮点） */
 .cs-app .hero {
   position: relative;
   overflow: hidden;
-  background: linear-gradient(135deg, rgba(79, 140, 255, .28), rgba(124, 92, 255, .20) 55%, rgba(14, 165, 233, .14));
-  border: 1px solid var(--cs-border-strong);
+  background: linear-gradient(135deg, rgba(0, 174, 236, .18), rgba(251, 114, 153, .12) 55%, rgba(0, 174, 236, .08));
+  border: 1px solid rgba(0, 174, 236, .25);
   color: var(--cs-text-1);
   padding: var(--sp-6) var(--sp-4) var(--sp-8);
   border-radius: 0 0 var(--cs-radius-lg) var(--cs-radius-lg);
 }
 .cs-app .hero::before {
   content: ""; position: absolute; inset: -40% -20% auto auto; width: 260px; height: 260px;
-  background: radial-gradient(circle, rgba(255, 255, 255, .16), transparent 65%);
+  background: radial-gradient(circle, rgba(255, 255, 255, .5), transparent 65%);
   pointer-events: none;
 }
 .cs-app .hero h3 { font-size: var(--text-xl); font-weight: var(--weight-bold); }
-.cs-app .hero p { color: rgba(230, 239, 247, .82); font-size: var(--text-sm); margin-top: var(--sp-1); }
+.cs-app .hero p { color: rgba(24, 25, 28, .72); font-size: var(--text-sm); margin-top: var(--sp-1); }
 /* 主按钮：渐变 + 按压反馈 */
 .cs-app .btn {
   width: 100%; padding: var(--sp-3); border: none; border-radius: 12px;
   background: linear-gradient(135deg, var(--cs-accent), var(--cs-accent-2));
   color: #fff; font-size: var(--text-base); font-weight: var(--weight-semibold);
   cursor: pointer; transition: filter .16s ease, transform .12s ease, box-shadow .16s ease;
-  box-shadow: 0 6px 18px -6px rgba(79, 140, 255, .5);
+  box-shadow: 0 6px 18px -6px rgba(0, 174, 236, .4);
 }
 .cs-app .btn:hover { filter: brightness(1.08); }
 .cs-app .btn:active { transform: scale(.98); }
-.cs-app .btn:disabled { filter: grayscale(.6) brightness(.7); cursor: not-allowed; box-shadow: none; }
+.cs-app .btn:disabled { filter: grayscale(.6) brightness(.9); cursor: not-allowed; box-shadow: none; }
 .cs-app .btn.ghost {
-  background: var(--cs-accent-soft); color: #8fb8ff;
-  box-shadow: none; border: 1px solid rgba(79, 140, 255, .3);
+  background: var(--cs-accent-soft); color: #0093cf;
+  box-shadow: none; border: 1px solid rgba(0, 174, 236, .35);
 }
 
 /* ---------- 6. 骨架屏（element-plus Skeleton 零散片段思路，自实现） ---------- */
 .cs-app .cs-skel { padding: var(--sp-4); }
 .cs-app .cs-skel-item {
   border-radius: 8px;
-  background: linear-gradient(90deg, rgba(148, 163, 184, .13) 25%, rgba(148, 163, 184, .26) 37%, rgba(148, 163, 184, .13) 63%);
+  background: linear-gradient(90deg, rgba(0, 0, 0, .05) 25%, rgba(0, 0, 0, .1) 37%, rgba(0, 0, 0, .05) 63%);
   background-size: 400% 100%;
   animation: cs-skel 1.4s ease infinite;
 }
@@ -253,7 +253,7 @@ body { max-width: 520px; margin: 0 auto; }
 .cs-app .cs-skel-hero { height: 120px; border-radius: var(--cs-radius-lg); background: var(--cs-surface); border: 1px solid var(--cs-border); }
 @keyframes cs-skel { 0% { background-position: 100% 50%; } 100% { background-position: 0 50%; } }
 
-/* ---------- 7. 空状态：玻璃容器 + 弱化插图 ---------- */
+/* ---------- 7. 空状态：卡片容器 + 弱化插图 ---------- */
 .cs-app .van-empty { padding: var(--sp-8) 0; }
 .cs-app .van-empty__image { opacity: .55; filter: saturate(.6); }
 .cs-app .van-empty__description { color: var(--cs-text-3); font-size: var(--text-sm); }
@@ -269,7 +269,7 @@ body { max-width: 520px; margin: 0 auto; }
     border-color: var(--cs-border-strong);
     box-shadow: var(--cs-shadow-hover);
   }
-  .cs-app .type-item:hover { background: rgba(255, 255, 255, .07); transform: translateY(-2px); }
+  .cs-app .type-item:hover { background: #f6f7f8; transform: translateY(-2px); }
 }
 @media (hover: none) {
   .cs-app .glass-card.interactive:active,
@@ -310,14 +310,14 @@ body { max-width: 520px; margin: 0 auto; }
   /* 移动端专有控件退场 */
   .cs-app .m-nav, .cs-app .van-tabbar { display: none !important; }
   .cs-app .page { padding-bottom: var(--sp-10); }
-  /* 桌面侧边导航：毛玻璃粘性侧栏 */
+  /* 桌面侧边导航：半透明白粘性侧栏 */
   .cs-app .side-nav {
     display: block;
     position: sticky;
     top: var(--sp-8);
     border-radius: var(--cs-radius-lg);
     padding: var(--sp-4);
-    background: rgba(13, 20, 36, .72);
+    background: rgba(255, 255, 255, .92);
     -webkit-backdrop-filter: blur(16px) saturate(1.4);
     backdrop-filter: blur(16px) saturate(1.4);
     border: 1px solid var(--cs-border);
@@ -332,7 +332,7 @@ body { max-width: 520px; margin: 0 auto; }
     width: 34px; height: 34px; border-radius: 10px; flex: none;
     display: grid; place-items: center; font-size: 18px;
     background: linear-gradient(135deg, var(--cs-accent), var(--cs-accent-2));
-    box-shadow: 0 4px 14px -4px rgba(79, 140, 255, .6);
+    box-shadow: 0 4px 14px -4px rgba(0, 174, 236, .4);
   }
   .cs-app .nav-group { border-top: 1px solid var(--cs-border); padding-top: var(--sp-3); margin-top: var(--sp-1); }
   .cs-app .nav-item {
@@ -343,9 +343,9 @@ body { max-width: 520px; margin: 0 auto; }
     transition: background .16s ease, color .16s ease;
     user-select: none;
   }
-  .cs-app .nav-item:hover { background: rgba(255, 255, 255, .06); color: var(--cs-text-1); }
+  .cs-app .nav-item:hover { background: #f6f7f8; color: var(--cs-text-1); }
   .cs-app .nav-item.active {
-    background: var(--cs-accent-soft); color: #cfe1ff; font-weight: var(--weight-medium);
+    background: var(--cs-accent-soft); color: #0093cf; font-weight: var(--weight-medium);
     box-shadow: inset 2px 0 0 var(--cs-accent);
   }
   .cs-app .nav-item .ico { width: 20px; text-align: center; flex: none; }
