@@ -16,6 +16,12 @@ public interface MessageMapper {
             "values (#{recipientId}, #{title}, #{content}, #{orderId}, 0, #{createTime})")
     void insert(Message message);
 
+    @Insert("<script>insert into message (recipient_id, title, content, order_id, is_read, create_time) values " +
+            "<foreach collection='list' item='m' separator=','>" +
+            "(#{m.recipientId}, #{m.title}, #{m.content}, #{m.orderId}, 0, #{m.createTime})" +
+            "</foreach></script>")
+    void insertBatch(@Param("list") List<Message> list);
+
     @Select("select * from message where recipient_id = #{userId} order by id desc limit #{limit}")
     List<Message> listLatest(@Param("userId") Long userId, @Param("limit") int limit);
 

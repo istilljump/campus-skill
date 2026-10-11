@@ -23,6 +23,11 @@ public interface BookingMapper {
 
     List<BookingVO> listBySkiller(@Param("skillerId") Long skillerId, @Param("status") Integer status);
 
+    /**
+     * 管理端-全平台预约单（可按状态过滤）
+     */
+    List<BookingVO> listAll(@Param("status") Integer status);
+
     @Update("update booking set status = #{status}, update_time = now() where id = #{id}")
     void updateStatus(@Param("id") Long id, @Param("status") Integer status);
 

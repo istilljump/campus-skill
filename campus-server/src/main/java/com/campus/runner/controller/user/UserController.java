@@ -1,6 +1,9 @@
 package com.campus.runner.controller.user;
 
 import com.campus.runner.context.BaseContext;
+import com.campus.runner.dto.AccountLoginDTO;
+import com.campus.runner.dto.AccountRegisterDTO;
+import com.campus.runner.dto.PasswordChangeDTO;
 import com.campus.runner.dto.UserLoginDTO;
 import com.campus.runner.dto.UserUpdateDTO;
 import com.campus.runner.entity.User;
@@ -35,6 +38,25 @@ public class UserController {
         log.info("微信用户登录：{}", userLoginDTO.getCode());
         UserLoginVO userLoginVO = userService.login(userLoginDTO.getCode());
         return Result.success(userLoginVO);
+    }
+
+    @PostMapping("/register")
+    @ApiOperation("账号注册（用户名+密码，成功后直接登录）")
+    public Result<UserLoginVO> register(@RequestBody @Valid AccountRegisterDTO dto) {
+        return Result.success(userService.register(dto));
+    }
+
+    @PostMapping("/accountLogin")
+    @ApiOperation("账号密码登录")
+    public Result<UserLoginVO> accountLogin(@RequestBody @Valid AccountLoginDTO dto) {
+        return Result.success(userService.loginByAccount(dto));
+    }
+
+    @PutMapping("/password")
+    @ApiOperation("修改登录密码（需已登录，校验原密码）")
+    public Result<String> changePassword(@RequestBody @Valid PasswordChangeDTO dto) {
+        userService.changePassword(BaseContext.getCurrentId(), dto);
+        return Result.success("密码已更新");
     }
 
     @PutMapping("/profile")

@@ -16,9 +16,9 @@ logs/
 .DS_Store
 Thumbs.db
 
-# frontend (admin-web)
-admin-web/node_modules/
-admin-web/dist/
+# frontend (admin-web / web-app)
+node_modules/
+dist/
 
 # local security scan & test artifacts
 .mimosa/

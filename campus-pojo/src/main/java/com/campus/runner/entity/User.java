@@ -1,6 +1,7 @@
 package com.campus.runner.entity;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -24,6 +25,17 @@ public class User implements Serializable {
 
     //微信用户唯一标识
     private String openid;
+
+    //登录账号（账号密码登录，唯一；为空表示尚未开通账号密码登录）
+    private String username;
+
+    //登录密码（MD5(salt + 明文)，任何接口不出参）
+    @JsonIgnore
+    private String password;
+
+    //密码盐值
+    @JsonIgnore
+    private String salt;
 
     //姓名
     private String name;

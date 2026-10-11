@@ -58,4 +58,17 @@
         </where>
         order by b.create_time desc
     </select>
+
+    <!-- 管理端-全平台预约单（可按状态过滤） -->
+    <select id="listAll" resultType="com.campus.runner.vo.BookingVO">
+        select <include refid="voColumns"/>
+        from booking b
+        left join service_item si on b.service_item_id = si.id
+        left join user u on b.user_id = u.id
+        left join skiller sk on b.skiller_id = sk.id
+        <where>
+            <if test="status != null">b.status = #{status}</if>
+        </where>
+        order by b.create_time desc
+    </select>
 </mapper>

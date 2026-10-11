@@ -17,6 +17,11 @@ public interface RunnerService {
     UserLoginVO login(String code);
 
     /**
+     * 技能者端-账号密码登录（与用户端共用账号体系，需已认证且未被禁用）
+     */
+    UserLoginVO loginByAccount(com.campus.runner.dto.AccountLoginDTO dto);
+
+    /**
      * 用户端-申请成为技能者/提交认证
      */
     void applyAudit(Long userId, RunnerAuditApplyDTO runnerAuditApplyDTO);

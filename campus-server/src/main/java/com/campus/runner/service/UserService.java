@@ -1,5 +1,8 @@
 package com.campus.runner.service;
 
+import com.campus.runner.dto.AccountLoginDTO;
+import com.campus.runner.dto.AccountRegisterDTO;
+import com.campus.runner.dto.PasswordChangeDTO;
 import com.campus.runner.dto.UserUpdateDTO;
 import com.campus.runner.entity.User;
 import com.campus.runner.result.PageResult;
@@ -8,6 +11,21 @@ import com.campus.runner.vo.UserLoginVO;
 public interface UserService {
 
     UserLoginVO login(String code);
+
+    /**
+     * 账号注册（用户名唯一校验 + 加盐哈希落库 + 直接签发token）
+     */
+    UserLoginVO register(AccountRegisterDTO dto);
+
+    /**
+     * 账号密码登录
+     */
+    UserLoginVO loginByAccount(AccountLoginDTO dto);
+
+    /**
+     * 修改登录密码（校验原密码）
+     */
+    void changePassword(Long userId, PasswordChangeDTO dto);
 
     /**
      * 管理端-用户列表分页

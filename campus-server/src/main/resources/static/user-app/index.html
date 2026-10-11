@@ -2,61 +2,93 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>CampusSkill 校园技能工坊 · 用户端</title>
 <link rel="stylesheet" href="/assets/tokens.css">
 <link rel="stylesheet" href="/assets/vendor/vant.css">
+<link rel="stylesheet" href="/assets/glass.css">
 <script src="/assets/vendor/vue.global.prod.js"></script>
 <script src="/assets/vendor/vant.js"></script>
 <style>
-  body { max-width: 480px; margin: 0 auto; min-height: 100vh; background: var(--bg-secondary); }
-  .page { padding-bottom: 70px; }
-  .hero { background: linear-gradient(135deg, var(--blue-600), var(--blue-400)); color:#fff;
-    padding: var(--sp-6) var(--sp-4) var(--sp-10); border-radius: 0 0 var(--radius-xl) var(--radius-xl); }
-  .hero h3 { font-size: var(--text-xl); font-weight: var(--weight-bold); }
-  .hero p { opacity:.85; font-size: var(--text-sm); margin-top: var(--sp-1); }
-  .type-grid { display:grid; grid-template-columns:repeat(4,1fr); gap: var(--sp-2);
-    margin: calc(var(--sp-10) * -1 + 10px) var(--sp-4) 0; background:#fff; border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-md); padding: var(--sp-4); }
-  .type-item { text-align:center; padding: var(--sp-2) 0; border-radius: var(--radius-md); cursor:pointer; }
-  .type-item:active { background: var(--brand-soft); }
-  .type-emoji { font-size: 24px; }
-  .type-name { font-size: var(--text-xs); color: var(--text-secondary); margin-top: var(--sp-1); }
-  .section { margin: var(--sp-4) var(--sp-4) 0; }
-  .card { background:#fff; border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); padding: var(--sp-4); margin-top: var(--sp-3); }
-  .order-line { display:flex; justify-content:space-between; align-items:center; }
-  .order-title { font-weight: var(--weight-medium); }
-  .money { color: var(--brand-primary); font-weight: var(--weight-bold); }
-  .tag { display:inline-block; font-size: var(--text-xs); padding: 1px 8px; border-radius: var(--radius-full);
-    background: var(--brand-soft); color: var(--brand-primary); margin-left: var(--sp-2); }
-  .btn { width:100%; padding: var(--sp-3); border:none; border-radius: var(--radius-md);
-    background: var(--brand-primary); color:#fff; font-size: var(--text-base); font-weight: var(--weight-medium); cursor:pointer; }
-  .btn.ghost { background: var(--brand-soft); color: var(--brand-primary); }
-  .field { width:100%; padding: var(--sp-3); border:1px solid var(--blue-100); border-radius: var(--radius-md);
-    font-size: var(--text-base); margin-top: var(--sp-1); background: var(--bg-secondary); }
+  /* 用户端主题色（仅变量，结构样式统一在 glass.css） */
+  .cs-app { --cs-accent: #4f8cff; --cs-accent-2: #7c5cff; --cs-accent-soft: rgba(79, 140, 255, .16); }
+  /* 移动端首屏主视觉（impeccable：核心亮点首屏可见） */
+  .cs-app .type-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--sp-2);
+    margin: calc(var(--sp-10) * -1 + 10px) var(--sp-4) 0;
+    background: linear-gradient(160deg, var(--cs-surface-strong), var(--cs-surface));
+    border: 1px solid var(--cs-border);
+    border-radius: var(--cs-radius); box-shadow: var(--cs-shadow); padding: var(--sp-4);
+  }
+  .cs-app .type-item { text-align: center; padding: var(--sp-2) 0; border-radius: var(--radius-md); cursor: pointer; }
+  .cs-app .type-emoji { font-size: 24px; }
+  .cs-app .type-name { font-size: var(--text-xs); color: var(--cs-text-2); margin-top: var(--sp-1); }
 </style>
 </head>
 <body>
-<div id="app">
-  <!-- 登录 -->
-  <div v-if="!token" style="padding:60px 24px">
-    <div style="text-align:center;font-size:56px">🧰</div>
-    <h2 style="text-align:center;margin:12px 0 4px">CampusSkill 校园技能工坊</h2>
-    <p style="text-align:center;color:var(--text-tertiary);margin-bottom:32px">登录后即可发布技能服务需求</p>
-    <van-cell-group inset>
-      <van-field v-model="loginCode" label="登录码" placeholder="输入任意码即可登录（联调模式）"></van-field>
-    </van-cell-group>
-    <div style="margin-top:20px">
-      <button class="btn" @click="doLogin" :disabled="busy">登 录</button>
+<div id="app" class="cs-app">
+  <!-- 登录：账号密码（主流形态）/ 注册 / 体验码（联调降级，对应清单 A1+A7） -->
+  <div v-if="!token" style="padding:48px 20px">
+    <div class="glass-blur" style="max-width:420px;margin:0 auto;padding:36px 28px 32px;border-radius:20px;text-align:center">
+      <div style="font-size:56px">🧰</div>
+      <h2 style="margin:12px 0 4px">CampusSkill 校园技能工坊</h2>
+      <p class="text-tertiary" style="margin-bottom:24px;font-size:var(--text-sm)">登录后即可发布技能服务需求</p>
+
+      <template v-if="loginMode === 'account'">
+        <input class="field" v-model="accountForm.username" placeholder="用户名" @keyup.enter="doAccountLogin"/>
+        <input class="field" type="password" v-model="accountForm.password" placeholder="密码" @keyup.enter="doAccountLogin"/>
+        <button class="btn" style="margin-top:16px" @click="doAccountLogin" :disabled="busy">登 录</button>
+        <div class="order-line" style="margin-top:14px;font-size:13px">
+          <span class="text-secondary" style="cursor:pointer" @click="loginMode='register'">没有账号？立即注册</span>
+          <span class="text-tertiary" style="cursor:pointer" @click="loginMode='guest'">体验登录 ›</span>
+        </div>
+      </template>
+
+      <template v-else-if="loginMode === 'register'">
+        <input class="field" v-model="accountForm.username" placeholder="用户名（4-20位字母/数字/下划线）"/>
+        <input class="field" type="password" v-model="accountForm.password" placeholder="密码（6-32位）"/>
+        <input class="field" type="password" v-model="accountForm.confirmPassword" placeholder="确认密码"/>
+        <input class="field" v-model="accountForm.name" placeholder="昵称（选填）"/>
+        <button class="btn" style="margin-top:16px" @click="doRegister" :disabled="busy">注 册</button>
+        <div class="order-line" style="margin-top:14px;font-size:13px">
+          <span class="text-secondary" style="cursor:pointer" @click="loginMode='account'">‹ 返回账号登录</span>
+        </div>
+      </template>
+
+      <template v-else>
+        <input class="field" v-model="loginCode" placeholder="输入任意体验码即可登录（联调模式）" @keyup.enter="doLogin"/>
+        <button class="btn" style="margin-top:16px" @click="doLogin" :disabled="busy">体验登录</button>
+        <div class="order-line" style="margin-top:14px;font-size:13px">
+          <span class="text-secondary" style="cursor:pointer" @click="loginMode='account'">‹ 返回账号登录</span>
+        </div>
+      </template>
     </div>
   </div>
 
+  <!-- 响应式外壳：移动端流式 + 底部 tabbar；桌面端 侧边导航 + 多列内容 -->
   <div v-else class="page">
-    <van-nav-bar :title="navTitle"></van-nav-bar>
+    <!-- 桌面端侧边导航（≥1024px 显示；仅切换视图，复用既有加载逻辑） -->
+    <aside class="side-nav">
+      <div class="brand"><span class="logo">🧰</span><span>CampusSkill</span></div>
+      <div class="nav-group">
+        <div class="nav-item" :class="{active: view==='home'}" @click="go('home')"><span class="ico">🏠</span>首页</div>
+        <div class="nav-item" :class="{active: view==='hall'}" @click="go('hall')"><span class="ico">🧭</span>订单大厅</div>
+        <div class="nav-item" :class="{active: view==='market'}" @click="go('market')"><span class="ico">🛒</span>技能市场</div>
+        <div class="nav-item" :class="{active: view==='orders'}" @click="go('orders')"><span class="ico">🧾</span>我的订单</div>
+        <div class="nav-item" :class="{active: view==='wallet'}" @click="go('wallet')"><span class="ico">💰</span>我的钱包</div>
+        <div class="nav-item" :class="{active: view==='messages'}" @click="go('messages')"><span class="ico">🔔</span>消息中心</div>
+        <div class="nav-item" :class="{active: view==='skillerApply'}" @click="go('skillerApply')"><span class="ico">🌱</span>成为技能者</div>
+        <div class="nav-item" :class="{active: view==='me'}" @click="go('me')"><span class="ico">👤</span>我的</div>
+      </div>
+    </aside>
+
+    <div class="content">
+      <van-nav-bar class="m-nav" :title="navTitle"></van-nav-bar>
+      <main class="views">
 
     <!-- 首页 -->
-    <div v-if="view==='home'">
-      <div class="hero" style="margin-top:0">
+    <div v-if="view==='home'" class="view">
+      <div class="hero">
         <h3>Hi，让技能帮你搞定</h3>
         <p>信用分 {{ profile.creditScore ?? 100 }} · 已发单 {{ profile.publishOrderCount ?? 0 }} 单</p>
       </div>
@@ -66,60 +98,83 @@
           <div class="type-name">{{ t.name }}</div>
         </div>
       </div>
-      <div class="section" v-if="activeOrders.length">
-        <div class="order-line" style="margin-bottom:8px;padding:0 4px"><b style="font-size:14px">⏳ 进行中的订单</b></div>
-        <div class="card" v-for="o in activeOrders" :key="o.id" @click="openOrder(o.id)"
-          style="border-left:3px solid var(--brand-primary)">
-          <div class="order-line">
-            <div><span class="order-title">{{ o.title }}</span><span class="tag">{{ o.typeName }}</span></div>
-            <van-tag :type="tagType(o.status)">{{ statusText(o.status) }}</van-tag>
-          </div>
-          <div class="order-line" style="margin-top:6px">
-            <span class="text-tertiary" style="font-size:12px">{{ relTime(o.createTime) }} · 悬赏 {{ money(o.rewardAmount) }}</span>
-            <span class="text-secondary" style="font-size:12px">查看进度 ›</span>
-          </div>
+      <!-- 骨架屏：等待进行中订单数据时的低预期加载反馈 -->
+      <div class="section" v-if="skel" aria-hidden="true">
+        <div class="cs-skel-card cs-skel" style="padding:16px">
+          <div class="cs-skel-item cs-skel-title"></div>
+          <div class="cs-skel-item cs-skel-text"></div>
+          <div class="cs-skel-item cs-skel-text w60"></div>
         </div>
       </div>
-      <div class="section">
-        <div class="card" @click="openMessages()">
-          <div class="order-line">
-            <b>🔔 消息中心</b>
-            <span><van-badge v-if="unread > 0" :content="unread" max="99"></van-badge><span class="text-tertiary"> 查看消息 ›</span></span>
+      <div class="section" v-else>
+        <div v-if="activeOrders.length">
+          <div class="sec-title">⏳ 进行中的订单</div>
+          <div class="grid-cards">
+            <div class="glass-card interactive" v-for="o in activeOrders" :key="o.id" @click="openOrder(o.id)"
+              style="border-left:3px solid var(--cs-accent);cursor:pointer">
+              <div class="order-line">
+                <div><span class="order-title">{{ o.title }}</span><span class="tag">{{ o.typeName }}</span></div>
+                <van-tag :type="tagType(o.status)">{{ statusText(o.status) }}</van-tag>
+              </div>
+              <div class="order-line" style="margin-top:6px">
+                <span class="text-tertiary" style="font-size:12px">{{ relTime(o.createTime) }} · 悬赏 {{ money(o.rewardAmount) }}</span>
+                <span class="text-secondary" style="font-size:12px">查看进度 ›</span>
+              </div>
+            </div>
           </div>
         </div>
-        <div class="card" @click="view='hall'">
-          <div class="order-line"><b>🧭 订单大厅</b><span class="text-tertiary">看看大家在发什么 ›</span></div>
-        </div>
-        <div class="card" @click="view='skillerApply'">
-          <div class="order-line"><b>🌱 成为技能者</b><span class="text-tertiary">认证后可入驻接单 ›</span></div>
+        <!-- 空状态给行动指引，桌面端三入口成组多列 -->
+        <div class="grid-cards" style="margin-top:12px">
+          <div class="glass-card interactive" @click="openMessages()" style="cursor:pointer">
+            <div class="order-line">
+              <b>🔔 消息中心</b>
+              <span><van-badge v-if="unread > 0" :content="unread" max="99"></van-badge><span class="text-tertiary"> 查看消息 ›</span></span>
+            </div>
+          </div>
+          <div class="glass-card interactive" @click="go('hall')" style="cursor:pointer">
+            <div class="order-line"><b>🧭 订单大厅</b><span class="text-tertiary">看看大家在发什么 ›</span></div>
+          </div>
+          <div class="glass-card interactive" @click="go('skillerApply')" style="cursor:pointer">
+            <div class="order-line"><b>🌱 成为技能者</b><span class="text-tertiary">认证后可入驻接单 ›</span></div>
+          </div>
         </div>
       </div>
     </div>
 
     <!-- 消息中心 -->
-    <div v-if="view==='messages'">
-      <div class="section card order-line" style="padding:12px">
-        <b>🔔 消息中心</b>
-        <van-button size="small" plain type="primary" @click="readAll" :disabled="busy">全部已读</van-button>
+    <div v-if="view==='messages'" class="view">
+      <div class="section glass-card" style="padding:12px">
+        <div class="order-line">
+          <b>🔔 消息中心</b>
+          <van-button size="small" plain type="primary" @click="readAll" :disabled="busy">全部已读</van-button>
+        </div>
       </div>
       <div class="section">
-        <div v-for="m in messages" :key="m.id" class="card" @click="m.orderId && openOrder(m.orderId)"
-          :style="(m.isRead===0 ? 'border-left:3px solid var(--brand-primary)' : '') + (m.orderId ? ';cursor:pointer' : '')">
-          <div class="order-line">
-            <b style="font-size:14px">{{ m.title }}</b>
-            <span class="text-tertiary" style="font-size:11px">{{ relTime(m.createTime) }}</span>
+        <template v-if="skel" aria-hidden="true">
+          <div class="cs-skel-card cs-skel" style="padding:16px" v-for="i in 3" :key="i">
+            <div class="cs-skel-item cs-skel-title"></div>
+            <div class="cs-skel-item cs-skel-text"></div>
           </div>
-          <div class="text-secondary" style="font-size:13px;margin-top:4px">{{ m.content }}</div>
-          <div v-if="m.orderId" class="text-secondary" style="font-size:12px;margin-top:4px;color:var(--brand-primary)">查看订单详情 ›</div>
+        </template>
+        <div class="grid-cards" v-else>
+          <div v-for="m in messages" :key="m.id" class="glass-card interactive" @click="m.orderId && openOrder(m.orderId)"
+            :style="(m.isRead===0 ? 'border-left:3px solid var(--cs-accent)' : '') + (m.orderId ? ';cursor:pointer' : '')">
+            <div class="order-line">
+              <b style="font-size:14px">{{ m.title }}</b>
+              <span class="text-tertiary" style="font-size:11px">{{ relTime(m.createTime) }}</span>
+            </div>
+            <div class="text-secondary" style="font-size:13px;margin-top:4px">{{ m.content }}</div>
+            <div v-if="m.orderId" class="text-secondary" style="font-size:12px;margin-top:4px;color:var(--cs-accent)">查看订单详情 ›</div>
+          </div>
+          <van-empty v-if="!messages.length" description="暂无消息"></van-empty>
         </div>
-        <van-empty v-if="!messages.length" description="暂无消息"></van-empty>
       </div>
     </div>
 
     <!-- 发单 -->
-    <div v-if="view==='submit'">
-      <div class="section card">
-        <div style="font-weight:600;margin-bottom:12px">发布「{{ typeName }}」订单 <span class="tag">服务费率 {{ (curType.feeRate*100).toFixed(0) }}%</span></div>
+    <div v-if="view==='submit'" class="view">
+      <div class="section glass-card" style="max-width:760px">
+        <div style="font-weight:var(--weight-semibold);margin-bottom:12px;font-size:var(--text-lg)">发布「{{ typeName }}」订单 <span class="tag">服务费率 {{ (curType.feeRate*100).toFixed(0) }}%</span></div>
         <input class="field" v-model="form.title" placeholder="服务标题，如：课程汇报PPT美化（20页内）"/>
         <input class="field" v-model="form.description" placeholder="需求描述：写清交付物形式、修改轮次等（选填）"/>
         <input class="field" v-model="form.pickupAddress" placeholder="服务/取件地点（线下服务填写，选填）"/>
@@ -138,7 +193,7 @@
         <input class="field" v-if="form.addrMode==='manual'" v-model="form.manualAddress" placeholder="填写交付地点，如：东区3号楼502"/>
         <div class="order-line" style="margin-top:4px" v-if="form.addrMode!=='online'">
           <span class="text-tertiary" style="font-size:12px">{{ form.addrMode==='book' ? (addresses.length ? '交付地址' : '还没有收货地址') : '线下服务请填写具体地点' }}</span>
-          <span class="text-secondary" style="font-size:12px;cursor:pointer" @click="view='address'">📍 新增/管理地址</span>
+          <span class="text-secondary" style="font-size:12px;cursor:pointer" @click="go('address')">📍 新增/管理地址</span>
         </div>
         <input class="field" type="number" v-model.number="form.rewardAmount" placeholder="悬赏金额（元）"/>
         <div class="order-line" style="margin-top:6px;gap:8px">
@@ -162,9 +217,9 @@
     </div>
 
     <!-- 订单大厅 -->
-    <div v-if="view==='hall'">
+    <div v-if="view==='hall'" class="view">
       <div class="section">
-        <div class="card" style="padding:12px">
+        <div class="glass-card" style="padding:12px">
           <input class="field" style="margin-top:0" v-model="hallKeyword" placeholder="搜索标题 / 订单号，回车搜索" @keyup.enter="loadHall"/>
           <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
             <van-tag :type="hallType===null?'primary':'default'" size="large" style="cursor:pointer" @click="hallType=null;loadHall()">全部</van-tag>
@@ -172,27 +227,36 @@
               style="cursor:pointer" @click="hallType=t.id;loadHall()">{{ t.name }}</van-tag>
           </div>
         </div>
-        <div v-for="o in hall" :key="o.id" class="card">
-          <div class="order-line">
-            <div><span class="order-title">{{ o.title }}</span><span class="tag">{{ o.typeName }}</span></div>
-            <div class="money">{{ money(o.rewardAmount) }}</div>
+        <template v-if="skel" aria-hidden="true">
+          <div class="cs-skel-card cs-skel" style="padding:16px" v-for="i in 4" :key="i">
+            <div class="cs-skel-item cs-skel-title"></div>
+            <div class="cs-skel-item cs-skel-text"></div>
+            <div class="cs-skel-item cs-skel-text w60"></div>
           </div>
-          <div class="text-tertiary" style="font-size:13px;margin:6px 0">{{ o.pickupAddress }} → {{ o.deliveryAddress }}</div>
-          <div class="order-line"><span class="text-tertiary" style="font-size:12px">{{ o.publisherName }} 发布于 {{ (o.createTime||'').slice(5,16) }}</span></div>
+        </template>
+        <div class="grid-cards" v-else>
+          <div v-for="o in hall" :key="o.id" class="glass-card interactive">
+            <div class="order-line">
+              <div><span class="order-title">{{ o.title }}</span><span class="tag">{{ o.typeName }}</span></div>
+              <div class="money">{{ money(o.rewardAmount) }}</div>
+            </div>
+            <div class="text-tertiary" style="font-size:13px;margin:6px 0">{{ o.pickupAddress }} → {{ o.deliveryAddress }}</div>
+            <div class="order-line"><span class="text-tertiary" style="font-size:12px">{{ o.publisherName }} 发布于 {{ (o.createTime||'').slice(5,16) }}</span></div>
+          </div>
+          <van-empty v-if="!hall.length" description="大厅暂无待接单订单"></van-empty>
         </div>
-        <van-empty v-if="!hall.length" description="大厅暂无待接单订单"></van-empty>
       </div>
     </div>
 
     <!-- 技能市场 -->
-    <div v-if="view==='market'">
+    <div v-if="view==='market'" class="view">
       <van-tabs v-model:active="marketTab" @click-tab="onMarketTab">
         <van-tab title="服务市场" :name="0"></van-tab>
         <van-tab title="我的预约" :name="1"></van-tab>
       </van-tabs>
       <div class="section" v-if="marketTab===0">
       <van-pull-refresh v-model="refreshing" @refresh="onRefresh('market')">
-        <div class="card" style="padding:12px">
+        <div class="glass-card" style="padding:12px">
           <input class="field" style="margin-top:0" v-model="marketKeyword" placeholder="搜索技能服务，回车搜索" @keyup.enter="loadMarket"/>
           <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
             <van-tag :type="marketCategory===null?'primary':'default'" size="large" style="cursor:pointer" @click="marketCategory=null;loadMarket()">全部</van-tag>
@@ -206,42 +270,59 @@
             <van-tag :type="marketSort==='score'?'primary':'default'" style="cursor:pointer" @click="marketSort='score';loadMarket()">评分优先</van-tag>
           </div>
         </div>
-        <div v-for="s in market" :key="s.id" class="card" @click="openSvc(s)">
-          <div class="order-line">
-            <div><span class="order-title">{{ s.title }}</span><span class="tag">{{ s.categoryName }}</span></div>
-            <div class="money">{{ money(s.price) }}</div>
+        <template v-if="skel" aria-hidden="true">
+          <div class="cs-skel-card cs-skel" style="padding:16px" v-for="i in 4" :key="i">
+            <div class="cs-skel-item cs-skel-title"></div>
+            <div class="cs-skel-item cs-skel-text"></div>
+            <div class="cs-skel-item cs-skel-text w60"></div>
           </div>
-          <div class="text-tertiary" style="font-size:12px;margin-top:6px">{{ s.deliveryDays }}天交付 · {{ modeText(s.serviceMode) }}<template v-if="s.salesCount"> · 已售 {{ s.salesCount }}</template></div>
-          <div class="order-line" style="margin-top:4px">
-            <span class="text-secondary" style="font-size:12px">{{ s.skillerName }}</span>
-            <span class="text-tertiary" style="font-size:12px">评分 {{ s.skillerScore ?? '-' }} · 信用 {{ s.skillerCreditScore ?? '-' }}</span>
+        </template>
+        <div class="grid-cards" v-else>
+          <div v-for="s in market" :key="s.id" class="glass-card interactive" @click="openSvc(s)" style="cursor:pointer">
+            <div class="order-line">
+              <div><span class="order-title">{{ s.title }}</span><span class="tag">{{ s.categoryName }}</span></div>
+              <div class="money">{{ money(s.price) }}</div>
+            </div>
+            <div class="text-tertiary" style="font-size:12px;margin-top:6px">{{ s.deliveryDays }}天交付 · {{ modeText(s.serviceMode) }}<template v-if="s.salesCount"> · 已售 {{ s.salesCount }}</template></div>
+            <div class="order-line" style="margin-top:4px">
+              <span class="text-secondary" style="font-size:12px">{{ s.skillerName }}</span>
+              <span class="text-tertiary" style="font-size:12px">评分 {{ s.skillerScore ?? '-' }} · 信用 {{ s.skillerCreditScore ?? '-' }}</span>
+            </div>
           </div>
+          <van-empty v-if="!market.length" description="市场暂无服务，稍后再来看看"></van-empty>
         </div>
-        <van-empty v-if="!market.length" description="市场暂无服务，稍后再来看看"></van-empty>
       </van-pull-refresh>
       </div>
       <div class="section" v-else>
-        <div v-for="b in bookings" :key="b.id" class="card">
-          <div class="order-line">
-            <div><span class="order-title">{{ b.serviceTitle || b.serviceName }}</span></div>
-            <van-tag :type="bkTag(b.status)">{{ bkText(b.status) }}</van-tag>
+        <template v-if="skel" aria-hidden="true">
+          <div class="cs-skel-card cs-skel" style="padding:16px" v-for="i in 3" :key="i">
+            <div class="cs-skel-item cs-skel-title"></div>
+            <div class="cs-skel-item cs-skel-text"></div>
           </div>
-          <div class="text-tertiary" style="font-size:13px;margin-top:6px">期望时间：{{ b.expectTime }}</div>
-          <div v-if="b.remark" class="text-secondary" style="font-size:13px;margin-top:4px">备注：{{ b.remark }}</div>
-          <div v-if="b.status===0 || b.status===1" class="order-line" style="margin-top:8px">
-            <span></span>
-            <span>
-              <van-button v-if="b.status===0" size="small" plain type="danger" @click="cancelBooking(b)" :disabled="busy">取消预约</van-button>
-              <van-button v-if="b.status===1" size="small" type="primary" @click="payBooking(b)" :disabled="busy">去支付</van-button>
-            </span>
+        </template>
+        <div class="grid-cards" v-else>
+          <div v-for="b in bookings" :key="b.id" class="glass-card">
+            <div class="order-line">
+              <div><span class="order-title">{{ b.serviceTitle || b.serviceName }}</span></div>
+              <van-tag :type="bkTag(b.status)">{{ bkText(b.status) }}</van-tag>
+            </div>
+            <div class="text-tertiary" style="font-size:13px;margin-top:6px">期望时间：{{ b.expectTime }}</div>
+            <div v-if="b.remark" class="text-secondary" style="font-size:13px;margin-top:4px">备注：{{ b.remark }}</div>
+            <div v-if="b.status===0 || b.status===1" class="order-line" style="margin-top:8px">
+              <span></span>
+              <span>
+                <van-button v-if="b.status===0" size="small" plain type="danger" @click="cancelBooking(b)" :disabled="busy">取消预约</van-button>
+                <van-button v-if="b.status===1" size="small" type="primary" @click="payBooking(b)" :disabled="busy">去支付</van-button>
+              </span>
+            </div>
           </div>
+          <van-empty v-if="!bookings.length" description="暂无预约记录"></van-empty>
         </div>
-        <van-empty v-if="!bookings.length" description="暂无预约记录"></van-empty>
       </div>
     </div>
 
     <!-- 我的订单 -->
-    <div v-if="view==='orders'">
+    <div v-if="view==='orders'" class="view">
       <van-tabs v-model:active="orderTab" @click-tab="loadOrders">
         <van-tab title="全部" :name="null"></van-tab><van-tab title="待支付" :name="1"></van-tab>
         <van-tab title="待接单" :name="2"></van-tab><van-tab title="进行中" :name="3"></van-tab>
@@ -249,32 +330,40 @@
       </van-tabs>
       <div class="section">
       <van-pull-refresh v-model="refreshing" @refresh="onRefresh('orders')">
-        <div v-for="o in orders" :key="o.id" class="card" @click="openOrder(o.id)">
-          <div class="order-line">
-            <div><span class="order-title">{{ o.title }}</span></div>
-            <van-tag :type="tagType(o.status)">{{ statusText(o.status) }}</van-tag>
+        <template v-if="skel" aria-hidden="true">
+          <div class="cs-skel-card cs-skel" style="padding:16px" v-for="i in 4" :key="i">
+            <div class="cs-skel-item cs-skel-title"></div>
+            <div class="cs-skel-item cs-skel-text"></div>
           </div>
-          <div class="order-line" style="margin-top:8px">
-            <span class="text-tertiary" style="font-size:13px">{{ o.typeName }} · {{ (o.createTime||'').slice(5,16) }}</span>
-            <span class="money">{{ money(o.rewardAmount) }}</span>
+        </template>
+        <div class="grid-cards" v-else>
+          <div v-for="o in orders" :key="o.id" class="glass-card interactive" @click="openOrder(o.id)" style="cursor:pointer">
+            <div class="order-line">
+              <div><span class="order-title">{{ o.title }}</span></div>
+              <van-tag :type="tagType(o.status)">{{ statusText(o.status) }}</van-tag>
+            </div>
+            <div class="order-line" style="margin-top:8px">
+              <span class="text-tertiary" style="font-size:13px">{{ o.typeName }} · {{ (o.createTime||'').slice(5,16) }}</span>
+              <span class="money">{{ money(o.rewardAmount) }}</span>
+            </div>
           </div>
+          <van-empty v-if="!orders.length" description="还没有订单，发一单试试吧">
+            <van-button round type="primary" size="small" style="padding:0 20px" @click="go('home')">去发布订单</van-button>
+          </van-empty>
         </div>
-        <van-empty v-if="!orders.length" description="还没有订单，发一单试试吧">
-          <van-button round type="primary" size="small" style="padding:0 20px" @click="view='home'">去发布订单</van-button>
-        </van-empty>
       </van-pull-refresh>
       </div>
     </div>
 
     <!-- 订单详情/跟踪 -->
-    <div v-if="view==='orderDetail'">
-      <div class="section card" v-if="detail">
-        <van-steps :active="stepActive" active-color="var(--brand-primary)">
+    <div v-if="view==='orderDetail'" class="view">
+      <div class="section glass-card" v-if="detail" style="max-width:760px">
+        <van-steps :active="stepActive" active-color="var(--cs-accent)">
           <van-step>发单</van-step><van-step>支付</van-step><van-step>接单</van-step>
           <van-step>交付</van-step><van-step>完成</van-step>
         </van-steps>
-        <h3 style="margin:16px 0 4px">{{ detail.title }} <van-tag :type="tagType(detail.status)">{{ statusText(detail.status) }}</van-tag>
-          <span v-if="countdown" class="tag" style="background:var(--bg-secondary);color:var(--brand-primary)">⏱ {{ countdown }}</span></h3>
+        <h3 style="margin:16px 0 4px;font-size:var(--text-lg)">{{ detail.title }} <van-tag :type="tagType(detail.status)">{{ statusText(detail.status) }}</van-tag>
+          <span v-if="countdown" class="tag" style="background:rgba(255,255,255,.08);color:#8fb8ff">⏱ {{ countdown }}</span></h3>
         <p class="text-secondary" style="font-size:14px">{{ detail.description }}</p>
         <van-cell-group inset style="margin-top:12px">
           <van-cell title="订单号" :value="detail.number">
@@ -297,10 +386,10 @@
         <div v-if="detail.status===8" class="text-secondary" style="font-size:13px;margin-top:12px">🔁 返修中：技能者正在重新交付，请耐心等待</div>
         <div v-if="detail.status===9" class="text-secondary" style="font-size:13px;margin-top:12px">⚖️ 仲裁中：平台将尽快裁定</div>
         <div v-if="detail.status===4" style="margin-top:12px">
-          <div style="background:var(--bg-secondary);border-radius:var(--radius-md);padding:12px">
-            <div style="font-weight:600;margin-bottom:6px">📦 交付成果</div>
+          <div style="background:rgba(255,255,255,.05);border:1px solid var(--cs-border);border-radius:12px;padding:12px">
+            <div style="font-weight:var(--weight-semibold);margin-bottom:6px">📦 交付成果</div>
             <div v-if="detail.deliverableUrl" style="font-size:13px;margin-bottom:4px;word-break:break-all">
-              交付物链接：<a :href="detail.deliverableUrl" target="_blank" rel="noopener" style="color:var(--brand-primary)">{{ detail.deliverableUrl }}</a>
+              交付物链接：<a :href="detail.deliverableUrl" target="_blank" rel="noopener" style="color:var(--cs-accent)">{{ detail.deliverableUrl }}</a>
               <span style="cursor:pointer;margin-left:4px" @click="copyText(detail.deliverableUrl)">📋复制</span>
             </div>
             <div v-if="detail.deliverableNote" class="text-secondary" style="font-size:13px">交付说明：{{ detail.deliverableNote }}</div>
@@ -330,7 +419,7 @@
     </div>
 
     <!-- 钱包 -->
-    <div v-if="view==='wallet'">
+    <div v-if="view==='wallet'" class="view">
       <div class="hero">
         <p>钱包余额（元）</p>
         <h3 style="font-size:36px">{{ money(wallet.balance) }}</h3>
@@ -338,8 +427,8 @@
         <button class="btn" style="width:auto;padding:8px 24px;margin-top:12px" @click="recharge" :disabled="busy">充值 50 元</button>
       </div>
       <div class="section">
-        <div class="card">
-          <div style="font-weight:600;margin-bottom:8px">收支明细</div>
+        <div class="glass-card">
+          <div style="font-weight:var(--weight-semibold);margin-bottom:8px">收支明细</div>
           <van-cell-group inset>
             <van-cell v-for="t in txs" :key="t.id" :title="txName(t.type)" :label="t.remark"
               :value="(t.type===1||t.type===3||t.type===5?'+':'-')+money(t.amount)"></van-cell>
@@ -350,9 +439,9 @@
     </div>
 
     <!-- 编辑资料 -->
-    <div v-if="view==='profileEdit'">
-      <div class="section card">
-        <div style="font-weight:600;margin-bottom:8px">编辑个人资料</div>
+    <div v-if="view==='profileEdit'" class="view">
+      <div class="section glass-card" style="max-width:760px">
+        <div style="font-weight:var(--weight-semibold);margin-bottom:8px">编辑个人资料</div>
         <input class="field" v-model="editForm.name" placeholder="昵称"/>
         <input class="field" v-model="editForm.phone" placeholder="手机号"/>
         <input class="field" v-model="editForm.studentNo" placeholder="学号"/>
@@ -363,31 +452,33 @@
     </div>
 
     <!-- 地址管理 -->
-    <div v-if="view==='address'">
+    <div v-if="view==='address'" class="view">
       <div class="section">
-        <div v-for="a in addresses" :key="a.id" class="card">
-          <div class="order-line">
-            <div><b>{{ a.campus }} {{ a.building }} {{ a.room }}</b><van-tag v-if="a.isDefault===1" style="margin-left:6px">默认</van-tag></div>
-            <van-button size="small" type="danger" plain @click="delAddress(a.id)">删除</van-button>
+        <div class="grid-cards">
+          <div v-for="a in addresses" :key="a.id" class="glass-card">
+            <div class="order-line">
+              <div><b>{{ a.campus }} {{ a.building }} {{ a.room }}</b><van-tag v-if="a.isDefault===1" style="margin-left:6px">默认</van-tag></div>
+              <van-button size="small" type="danger" plain @click="delAddress(a.id)">删除</van-button>
+            </div>
+            <div class="text-tertiary" style="font-size:13px;margin-top:4px">{{ a.consignee }} · {{ a.phone }}</div>
           </div>
-          <div class="text-tertiary" style="font-size:13px;margin-top:4px">{{ a.consignee }} · {{ a.phone }}</div>
-        </div>
-        <div class="card">
-          <div style="font-weight:600;margin-bottom:8px">新增地址</div>
-          <input class="field" v-model="addrForm.consignee" placeholder="联系人"/>
-          <input class="field" v-model="addrForm.phone" placeholder="手机号"/>
-          <input class="field" v-model="addrForm.campus" placeholder="校区"/>
-          <input class="field" v-model="addrForm.building" placeholder="楼栋"/>
-          <input class="field" v-model="addrForm.room" placeholder="房间号"/>
-          <button class="btn" style="margin-top:12px" @click="saveAddress" :disabled="busy">保存地址</button>
+          <div class="glass-card" style="max-width:760px">
+            <div style="font-weight:var(--weight-semibold);margin-bottom:8px">新增地址</div>
+            <input class="field" v-model="addrForm.consignee" placeholder="联系人"/>
+            <input class="field" v-model="addrForm.phone" placeholder="手机号"/>
+            <input class="field" v-model="addrForm.campus" placeholder="校区"/>
+            <input class="field" v-model="addrForm.building" placeholder="楼栋"/>
+            <input class="field" v-model="addrForm.room" placeholder="房间号"/>
+            <button class="btn" style="margin-top:12px" @click="saveAddress" :disabled="busy">保存地址</button>
+          </div>
         </div>
       </div>
     </div>
 
     <!-- 技能者入驻申请 -->
-    <div v-if="view==='skillerApply'">
-      <div class="section card">
-        <div style="font-weight:600;margin-bottom:8px">🌱 技能者入驻申请</div>
+    <div v-if="view==='skillerApply'" class="view">
+      <div class="section glass-card" style="max-width:760px">
+        <div style="font-weight:var(--weight-semibold);margin-bottom:8px">🌱 技能者入驻申请</div>
         <p class="text-tertiary" style="font-size:13px;margin-bottom:12px">提交后由平台审核，通过后即可在技能者端登录接单。</p>
         <input class="field" v-model="auditForm.realName" placeholder="真实姓名"/>
         <input class="field" v-model="auditForm.studentNo" placeholder="学号"/>
@@ -398,8 +489,8 @@
     </div>
 
     <!-- 我的 -->
-    <div v-if="view==='me'">
-      <div class="section card" style="margin-top:16px">
+    <div v-if="view==='me'" class="view">
+      <div class="section glass-card" style="margin-top:16px;max-width:760px">
         <div class="order-line"><b>{{ profile.name || '校园用户' }}</b><span class="text-tertiary">ID: {{ profile.id }}</span></div>
         <div style="margin-top:12px">
           <van-cell-group inset>
@@ -409,14 +500,18 @@
           </van-cell-group>
         </div>
         <button class="btn ghost" style="margin-top:16px" @click="openProfileEdit">编辑资料</button>
+        <button class="btn ghost" style="margin-top:8px" @click="changePwd">修改密码</button>
         <button class="btn ghost" style="margin-top:8px" @click="openMessages">消息中心</button>
         <button class="btn ghost" style="margin-top:8px" @click="view='address'">地址管理</button>
         <button class="btn ghost" style="margin-top:8px" @click="logout">退出登录</button>
       </div>
     </div>
 
-    <!-- 底部导航 -->
-    <van-tabbar v-model="tab" @change="switchTab">
+      </main>
+    </div>
+
+    <!-- 底部导航（仅移动端显示，桌面端由侧边导航替代） -->
+    <van-tabbar class="m-tabbar" v-model="tab" @change="switchTab">
       <van-tabbar-item icon="wap-nav-o" name="home">首页</van-tabbar-item>
       <van-tabbar-item icon="orders-o" name="orders">订单</van-tabbar-item>
       <van-tabbar-item icon="shop-o" name="market">技能市场</van-tabbar-item>
@@ -427,7 +522,7 @@
     <!-- 服务详情/预约弹窗 -->
     <van-popup v-model:show="showSvc" round position="bottom" style="padding:20px;max-height:72vh;overflow-y:auto">
       <template v-if="svcDetail && !bookingMode">
-        <div style="font-weight:600;font-size:16px">{{ svcDetail.title }}</div>
+        <div style="font-weight:var(--weight-semibold);font-size:16px">{{ svcDetail.title }}</div>
         <div class="order-line" style="margin-top:8px">
           <span class="tag" v-if="svcDetail.categoryName">{{ svcDetail.categoryName }}</span>
           <span class="money" style="font-size:18px">{{ money(svcDetail.price) }}</span>
@@ -441,7 +536,7 @@
         <button class="btn" style="margin-top:16px" @click="bookingMode=true" :disabled="busy">预约服务</button>
       </template>
       <template v-else-if="svcDetail">
-        <div style="font-weight:600;margin-bottom:8px">预约「{{ svcDetail.title }}」</div>
+        <div style="font-weight:var(--weight-semibold);margin-bottom:8px">预约「{{ svcDetail.title }}」</div>
         <van-cell-group inset>
           <van-field v-model="bookingForm.expectTime" label="期望时间" placeholder="格式 2026-10-10 14:00"></van-field>
           <van-field v-model="bookingForm.remark" label="备注" type="textarea" rows="2" autosize placeholder="补充说明（选填）"></van-field>
@@ -529,6 +624,29 @@ createApp({
 
     function toast(msg, ok = true) { showToast({ message: msg, type: ok ? "success" : "fail" } ); }
 
+    /* ===== 视图层增补（仅视图状态，不改动任何业务逻辑与接口代码）=====
+       skel：骨架屏开关 —— 进入/切换视图时展示 450ms 骨架屏，
+       为接口返回争取低预期反馈窗口；纯前端展示态，不影响数据流 */
+    const skel = ref(true);
+    let skelTimer = null;
+    function playSkel() {
+      skel.value = true;
+      clearTimeout(skelTimer);
+      skelTimer = setTimeout(() => { skel.value = false; }, 450);
+    }
+    Vue.watch(view, playSkel);
+    if (token.value) setTimeout(() => { skel.value = false; }, 450);
+    /* 桌面端侧边导航跳转：复用既有 switchTab / load 函数切换视图，不新增接口 */
+    function go(name) {
+      view.value = name;
+      if (name === "orders") loadOrders();
+      else if (name === "wallet") loadWallet();
+      else if (name === "home") loadActiveOrders();
+      else if (name === "market") { marketTab.value === 0 ? loadMarket() : loadBookings(); }
+      else if (name === "hall") loadHall();
+      else if (name === "messages") loadMessages();
+    }
+
     async function doLogin() {
       if (!loginCode.value) return toast("请输入登录码", false);
       busy.value = true;
@@ -536,6 +654,38 @@ createApp({
       busy.value = false;
       if (r.code === 1) { localStorage.setItem("user_token", r.data.token); token.value = r.data.token; init(); }
       else toast(r.msg || "登录失败", false);
+    }
+    // ===== 账号密码登录（A7）：注册 / 登录 / 改密，与体验码登录并存 =====
+    const loginMode = ref("account");   // account 账号登录 | register 注册 | guest 体验码
+    const accountForm = reactive({ username: "", password: "", confirmPassword: "", name: "" });
+    async function doAccountLogin() {
+      if (!accountForm.username || !accountForm.password) return toast("请输入账号和密码", false);
+      busy.value = true;
+      const r = await api("POST", "/user/user/accountLogin", { username: accountForm.username, password: accountForm.password });
+      busy.value = false;
+      if (r.code === 1) { localStorage.setItem("user_token", r.data.token); token.value = r.data.token; init(); }
+      else toast(r.msg || "登录失败", false);
+    }
+    async function doRegister() {
+      if (!accountForm.username || !accountForm.password) return toast("请填写账号和密码", false);
+      if (accountForm.password !== accountForm.confirmPassword) return toast("两次输入的密码不一致", false);
+      busy.value = true;
+      const r = await api("POST", "/user/user/register", { username: accountForm.username, password: accountForm.password, name: accountForm.name });
+      busy.value = false;
+      if (r.code === 1) {
+        toast("注册成功，已自动登录");
+        localStorage.setItem("user_token", r.data.token); token.value = r.data.token; init();
+      } else toast(r.msg || "注册失败", false);
+    }
+    async function changePwd() {
+      const oldPassword = prompt("请输入原密码（首次设置密码可不填，直接确定）");
+      if (oldPassword === null) return;
+      const newPassword = prompt("请输入新密码（6-32位）");
+      if (!newPassword) return;
+      busy.value = true;
+      const r = await api("PUT", "/user/user/password", { oldPassword, newPassword }, token.value);
+      busy.value = false;
+      r.code === 1 ? toast("密码已更新") : toast(r.msg, false);
     }
     function logout() { localStorage.removeItem("user_token"); location.reload(); }
 
@@ -895,7 +1045,9 @@ createApp({
              stepActive, marketTab, market, marketKeyword, marketCategory, svcDetail, showSvc, bookingMode,
              marketSort, countdown, copyText, refreshing, onRefresh,
              bookingForm, bookings, loadMarket, loadBookings, onMarketTab, openSvc, modeText, submitBooking,
-             payBooking, cancelBooking, bkText, bkTag, typeName };
+             payBooking, cancelBooking, bkText, bkTag, typeName,
+             skel, playSkel, go,
+             loginMode, accountForm, doAccountLogin, doRegister, changePwd };
   }
 }).use(vant).mount("#app");
 

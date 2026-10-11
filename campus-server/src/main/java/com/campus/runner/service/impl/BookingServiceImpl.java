@@ -231,6 +231,35 @@ public class BookingServiceImpl implements BookingService {
         log.info("预约已拒绝，bookingId={}, skillerId={}", id, skillerId);
     }
 
+    @Override
+    public PageResult<BookingVO> adminPage(Integer status, Integer page, Integer pageSize) {
+        PageHelper.startPage(page, pageSize);
+        Page<BookingVO> voPage = (Page<BookingVO>) bookingMapper.listAll(status);
+        return new PageResult<>(voPage.getTotal(), voPage.getResult(), voPage.getPageSize(), voPage.getPageNum());
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void adminCancel(Long id) {
+        Booking booking = bookingMapper.getById(id);
+        if (booking == null) {
+            throw new BusinessException(MessageConstant.ORDER_NOT_FOUND);
+        }
+        if (booking.getStatus() == null || booking.getStatus() != Booking.PENDING_CONFIRM) {
+            throw new BusinessException("仅待确认的预约可由管理员取消");
+        }
+        bookingMapper.updateStatus(id, Booking.CANCELLED);
+        //双端通知：预约用户 + 技能者
+        messageService.notify(booking.getUserId(), "预约已取消",
+                "您的预约单因平台管理需要已被取消，如有疑问请联系客服", null);
+        Runner skiller = runnerMapper.getById(booking.getSkillerId());
+        if (skiller != null) {
+            messageService.notify(skiller.getUserId(), "预约已取消",
+                    "一条预约单因平台管理需要已被取消，无需处理", null);
+        }
+        log.info("管理员取消预约，bookingId={}", id);
+    }
+
     private Booking getUserBooking(Long userId, Long id) {
         Booking booking = bookingMapper.getById(id);
         if (booking == null || !booking.getUserId().equals(userId)) {

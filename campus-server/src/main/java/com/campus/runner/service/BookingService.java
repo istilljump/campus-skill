@@ -41,4 +41,14 @@ public interface BookingService {
      * 技能者端-拒绝预约
      */
     void reject(Long skillerId, Long id);
+
+    /**
+     * 管理端-全平台预约单分页（可按状态过滤）
+     */
+    PageResult<BookingVO> adminPage(Integer status, Integer page, Integer pageSize);
+
+    /**
+     * 管理端-取消异常预约（仅待确认可取消，双端通知）
+     */
+    void adminCancel(Long id);
 }

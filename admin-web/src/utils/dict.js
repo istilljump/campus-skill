@@ -60,6 +60,14 @@ export const CANCEL_BY = {
   3: '平台',
 }
 
+export const BOOKING_STATUS = {
+  0: { label: '待确认', type: 'warning' },
+  1: { label: '已确认', type: 'primary' },
+  2: { label: '已完成', type: 'success' },
+  3: { label: '已拒绝', type: 'danger' },
+  4: { label: '已取消', type: 'info' },
+}
+
 export function fmtTime(value) {
   if (!value) return '-'
   return String(value).replace('T', ' ')

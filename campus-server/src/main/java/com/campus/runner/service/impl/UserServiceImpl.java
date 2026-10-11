@@ -4,7 +4,12 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.campus.runner.constant.MessageConstant;
 import com.campus.runner.constant.WeChatConstant;
+import com.campus.runner.dto.AccountLoginDTO;
+import com.campus.runner.dto.AccountRegisterDTO;
+import com.campus.runner.dto.PasswordChangeDTO;
+import com.campus.runner.dto.UserUpdateDTO;
 import com.campus.runner.entity.User;
+import com.campus.runner.exception.BusinessException;
 import com.campus.runner.exception.LoginFailedException;
 import com.campus.runner.mapper.UserMapper;
 import com.campus.runner.result.PageResult;
@@ -17,10 +22,12 @@ import com.campus.runner.vo.UserLoginVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.DigestUtils;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 @Service
 @Slf4j
@@ -44,8 +51,10 @@ public class UserServiceImpl implements UserService {
 
         if (user == null) {
             // 数据库中不存在对应用户，默认新增对应openid的用户
+            // 本地联调模拟用户（campus_dev_{code}）默认昵称取 code，避免各端显示空白
             user = User.builder()
                     .openid(openid)
+                    .name(openid != null && openid.startsWith("campus_dev_") ? openid.substring("campus_dev_".length()) : null)
                     .createTime(LocalDateTime.now())
                     .build();
             userMapper.saveUser(user);
@@ -92,6 +101,78 @@ public class UserServiceImpl implements UserService {
         com.github.pagehelper.PageHelper.startPage(page, pageSize);
         com.github.pagehelper.Page<User> userPage = (com.github.pagehelper.Page<User>) userMapper.page(name, phone, campus);
         return new PageResult<>(userPage.getTotal(), userPage.getResult(), userPage.getPageSize(), userPage.getPageNum());
+    }
+
+    @Override
+    public UserLoginVO register(AccountRegisterDTO dto) {
+        String username = dto.getUsername().trim();
+        if (userMapper.getByUsername(username) != null) {
+            throw new BusinessException("该账号已被注册，请更换");
+        }
+        //随机盐值 + MD5(salt + 明文) 存储（与提现密码同用 DigestUtils 方案）
+        String salt = UUID.randomUUID().toString().replace("-", "");
+        String hashed = DigestUtils.md5DigestAsHex((salt + dto.getPassword()).getBytes());
+        User user = User.builder()
+                .openid("acct_" + salt.substring(0, 16))  //非微信注册用户，openid 用账号标识占位
+                .username(username)
+                .password(hashed)
+                .salt(salt)
+                .name(dto.getName() == null || dto.getName().isBlank() ? username : dto.getName().trim())
+                .createTime(LocalDateTime.now())
+                .build();
+        try {
+            userMapper.saveAccount(user);
+        } catch (org.springframework.dao.DuplicateKeyException e) {
+            //并发注册同名账号：唯一索引兜底，返回友好提示而非系统异常
+            throw new BusinessException("该账号已被注册，请更换");
+        }
+        return buildToken(user, "acct_" + username);
+    }
+
+    @Override
+    public UserLoginVO loginByAccount(AccountLoginDTO dto) {
+        User user = userMapper.getByUsername(dto.getUsername().trim());
+        //账号不存在与密码错误统一提示，避免账号枚举探测
+        if (user == null || user.getPassword() == null) {
+            throw new BusinessException("账号或密码不正确");
+        }
+        String hashed = DigestUtils.md5DigestAsHex((user.getSalt() + dto.getPassword()).getBytes());
+        if (!hashed.equals(user.getPassword())) {
+            throw new BusinessException("账号或密码不正确");
+        }
+        return buildToken(user, "acct_" + user.getUsername());
+    }
+
+    @Override
+    public void changePassword(Long userId, PasswordChangeDTO dto) {
+        User user = userMapper.getById(userId);
+        if (user == null) {
+            throw new BusinessException(MessageConstant.ACCOUNT_NOT_FOUND);
+        }
+        if (user.getPassword() != null) {
+            String oldHashed = DigestUtils.md5DigestAsHex((user.getSalt() + dto.getOldPassword()).getBytes());
+            if (!oldHashed.equals(user.getPassword())) {
+                throw new BusinessException("原密码不正确");
+            }
+        }
+        String salt = UUID.randomUUID().toString().replace("-", "");
+        String hashed = DigestUtils.md5DigestAsHex((salt + dto.getNewPassword()).getBytes());
+        userMapper.updatePassword(userId, hashed, salt);
+    }
+
+    /**
+     * 签发用户端 JWT（claims 与微信登录保持一致，token 三端隔离由拦截器保证）
+     */
+    private UserLoginVO buildToken(User user, String openidClaim) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("userId", user.getId());
+        claims.put("openid", openidClaim);
+        String token = JwtUtil.createJWT(jwtProperties.getUserSecretKey(), jwtProperties.getUserTtl(), claims);
+        return UserLoginVO.builder()
+                .id(user.getId())
+                .openid(openidClaim)
+                .token(token)
+                .build();
     }
 
     /**

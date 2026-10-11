@@ -83,6 +83,7 @@ public class RunnerServiceImpl implements RunnerService {
         if (user == null) {
             user = User.builder()
                     .openid(openid)
+                    .name(openid != null && openid.startsWith("campus_dev_") ? openid.substring("campus_dev_".length()) : null)
                     .createTime(LocalDateTime.now())
                     .build();
             userMapper.saveUser(user);
@@ -104,6 +105,36 @@ public class RunnerServiceImpl implements RunnerService {
         return UserLoginVO.builder()
                 .id(user.getId())
                 .openid(openid)
+                .token(token)
+                .build();
+    }
+
+    @Override
+    public UserLoginVO loginByAccount(com.campus.runner.dto.AccountLoginDTO dto) {
+        User user = userMapper.getByUsername(dto.getUsername().trim());
+        //账号不存在与密码错误统一提示，避免账号枚举探测
+        if (user == null || user.getPassword() == null) {
+            throw new BusinessException("账号或密码不正确");
+        }
+        String hashed = org.springframework.util.DigestUtils.md5DigestAsHex(
+                (user.getSalt() + dto.getPassword()).getBytes());
+        if (!hashed.equals(user.getPassword())) {
+            throw new BusinessException("账号或密码不正确");
+        }
+        Runner runner = runnerMapper.getByUserId(user.getId());
+        if (runner == null || runner.getAuditStatus() == null || runner.getAuditStatus() != RunnerConstant.AUDIT_PASSED) {
+            throw new LoginFailedException(MessageConstant.RUNNER_NOT_CERTIFIED);
+        }
+        if (runner.getStatus() == null || runner.getStatus() != 1) {
+            throw new LoginFailedException(MessageConstant.ACCOUNT_LOCKED);
+        }
+        Map<String, Object> claims = new HashMap<>();
+        claims.put(JwtClaimsConstant.USER_ID, user.getId());
+        claims.put(JwtClaimsConstant.RUNNER_ID, runner.getId());
+        String token = JwtUtil.createJWT(jwtProperties.getUserSecretKey(), jwtProperties.getUserTtl(), claims);
+        return UserLoginVO.builder()
+                .id(user.getId())
+                .openid("acct_" + user.getUsername())
                 .token(token)
                 .build();
     }

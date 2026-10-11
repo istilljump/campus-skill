@@ -1,5 +1,6 @@
 package com.campus.runner.controller.runner;
 
+import com.campus.runner.dto.AccountLoginDTO;
 import com.campus.runner.dto.UserLoginDTO;
 import com.campus.runner.result.Result;
 import com.campus.runner.service.RunnerService;
@@ -32,5 +33,11 @@ public class RunnerAuthController {
     public Result<UserLoginVO> login(@RequestBody @Valid UserLoginDTO userLoginDTO) {
         log.info("技能者登录：{}", userLoginDTO.getCode());
         return Result.success(runnerService.login(userLoginDTO.getCode()));
+    }
+
+    @PostMapping("/accountLogin")
+    @ApiOperation("技能者账号密码登录（与用户端共用账号体系，需已认证）")
+    public Result<UserLoginVO> accountLogin(@RequestBody @Valid AccountLoginDTO dto) {
+        return Result.success(runnerService.loginByAccount(dto));
     }
 }

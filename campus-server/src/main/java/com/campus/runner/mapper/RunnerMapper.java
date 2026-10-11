@@ -50,4 +50,7 @@ public interface RunnerMapper {
      */
     @Update("update skiller set credit_score = greatest(0, credit_score + #{delta}), update_time = now() where id = #{id}")
     void adjustCreditScore(@Param("id") Long id, @Param("delta") Integer delta);
+
+    @Select("select user_id from skiller")
+    java.util.List<Long> listUserIds();
 }

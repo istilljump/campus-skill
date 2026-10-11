@@ -2,7 +2,7 @@
   <div class="login-page">
     <div class="login-box">
       <div class="login-brand">
-        <el-icon :size="40" color="#2563eb"><Bicycle /></el-icon>
+        <span class="login-badge"><el-icon :size="26"><Bicycle /></el-icon></span>
         <h1>CampusSkill 技能工坊</h1>
         <p>管理端控制台</p>
       </div>
@@ -13,7 +13,7 @@
         <el-form-item prop="password">
           <el-input v-model="form.password" type="password" show-password placeholder="密码" :prefix-icon="Lock" />
         </el-form-item>
-        <el-button type="primary" size="large" style="width: 100%" :loading="loading" @click="onSubmit">
+        <el-button type="primary" size="large" class="login-btn" :loading="loading" @click="onSubmit">
           登 录
         </el-button>
         <p class="tip">默认账号：admin / 123456</p>
@@ -60,15 +60,22 @@ async function onSubmit() {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 55%, #3b82f6 100%);
+  background:
+    radial-gradient(1000px 480px at 15% -10%, rgba(59, 130, 246, 0.22), transparent 60%),
+    radial-gradient(900px 460px at 105% 110%, rgba(124, 92, 255, 0.18), transparent 55%),
+    #070b15;
 }
 
+/* 毛玻璃登录卡：与 H5 端登录页同构 */
 .login-box {
-  width: 380px;
-  background: #fff;
-  border-radius: 12px;
+  width: 400px;
+  background: rgba(13, 20, 36, 0.72);
+  -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  backdrop-filter: blur(16px) saturate(1.4);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
   padding: 40px 36px 28px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
 }
 
 .login-brand {
@@ -76,21 +83,38 @@ async function onSubmit() {
   margin-bottom: 28px;
 }
 
+.login-badge {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  display: inline-grid;
+  place-items: center;
+  color: #fff;
+  background: linear-gradient(135deg, #4f8cff, #7c5cff);
+  box-shadow: 0 8px 24px -6px rgba(79, 140, 255, 0.6);
+}
+
 .login-brand h1 {
-  margin: 10px 0 4px;
+  margin: 12px 0 4px;
   font-size: 22px;
+  color: #eef3fb;
 }
 
 .login-brand p {
   margin: 0;
-  color: #6b7280;
+  color: #a7b4c9;
   font-size: 14px;
+}
+
+.login-btn {
+  width: 100%;
+  margin-top: 4px;
 }
 
 .tip {
   margin: 14px 0 0;
   text-align: center;
-  color: #9ca3af;
+  color: #64748b;
   font-size: 12px;
 }
 </style>

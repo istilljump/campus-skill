@@ -1,0 +1,363 @@
+/* ============================================================
+   CampusSkill 暗色科技玻璃拟态设计层（glass.css）
+   ------------------------------------------------------------
+   · 设计原则：pbakaus/impeccable —— 排版层级 / 留白节奏 / 可读性
+   · 玻璃卡片：gladvn 深色玻璃拟态 CSS 片段（半透明 + blur + 细描边）
+   · 骨架屏：参考 element-plus Skeleton 零散源码片段自实现，零依赖
+   · antd：仅参考其 Design Token 分层思路（token → 组件变量），未引入代码
+   · 零依赖：纯 CSS，不引入任何 npm 包 / 组件库
+   · 隔离：除 body 画布与函数式弹层（toast/dialog 挂载在 body 外），
+     全部选择器收敛在 .cs-app 命名空间下，等同 SFC scoped 隔离效果
+   · 性能：动画仅用 transform / opacity；backdrop-filter 只用于
+     少量浮层（侧栏 / 弹层 / 底部导航 / 导航栏），列表卡片不用，
+     避免大面积 blur 造成掉帧；支持 prefers-reduced-motion 降级
+   ============================================================ */
+
+/* ---------- 1. 画布 ---------- */
+html { background: #070b15; }
+body {
+  background:
+    radial-gradient(1100px 520px at 12% -8%, rgba(59, 130, 246, .16), transparent 60%),
+    radial-gradient(900px 480px at 108% 12%, rgba(124, 92, 255, .12), transparent 55%),
+    radial-gradient(760px 420px at 50% 118%, rgba(14, 165, 233, .08), transparent 60%),
+    #070b15;
+  background-attachment: fixed;
+  color: #e6edf7;
+  min-height: 100vh;
+}
+/* 移动端：保留原 H5 居中流式版心 */
+body { max-width: 520px; margin: 0 auto; }
+
+/* ---------- 2. 命名空间令牌（antd token 分层思路：全局 token → 别名） ---------- */
+.cs-app {
+  /* 表面与描边 */
+  --cs-surface: rgba(255, 255, 255, .055);
+  --cs-surface-strong: rgba(255, 255, 255, .09);
+  --cs-border: rgba(255, 255, 255, .10);
+  --cs-border-strong: rgba(255, 255, 255, .18);
+  --cs-glass-blur: 16px;
+  /* 文本（深色底对比度按 impeccable 可读性校准，均 ≥ WCAG AA） */
+  --cs-text-1: #eef3fb;
+  --cs-text-2: #a7b4c9;
+  --cs-text-3: #7c8aa1;
+  --cs-text-inverse: #0b1220;
+  /* 品牌色（深色底提亮，保持蓝色科技感） */
+  --cs-accent: #4f8cff;
+  --cs-accent-2: #7c5cff;
+  --cs-accent-soft: rgba(79, 140, 255, .16);
+  /* 状态色 */
+  --cs-success: #34d399;
+  --cs-warning: #fbbf24;
+  --cs-danger: #f87171;
+  /* 布局外壳 */
+  --shell-max: 1480px;
+  --shell-gap: 24px;
+  /* 圆角与阴影 */
+  --cs-radius: 16px;
+  --cs-radius-lg: 20px;
+  --cs-shadow: 0 8px 28px -8px rgba(2, 6, 17, .55);
+  --cs-shadow-hover: 0 14px 36px -10px rgba(2, 6, 17, .7);
+
+  color: var(--cs-text-1);
+  font-size: var(--text-base);
+  line-height: 1.6; /* impeccable：正文行高 ≥1.5 */
+}
+
+/* ---------- 3. 玻璃卡片（gladvn 片段） ---------- */
+/* 列表卡片：低成本半透明渐变（不用 backdrop-filter，长列表不掉帧） */
+.cs-app .glass-card {
+  background: linear-gradient(160deg, var(--cs-surface-strong), var(--cs-surface) 55%);
+  border: 1px solid var(--cs-border);
+  border-radius: var(--cs-radius);
+  box-shadow: var(--cs-shadow);
+  padding: var(--sp-4);
+  margin-top: var(--sp-3);
+}
+/* 高亮浮层：真正的毛玻璃（只给侧栏/导航/弹层等少量元素用） */
+.cs-app .glass-blur {
+  background: rgba(13, 20, 36, .72);
+  -webkit-backdrop-filter: blur(var(--cs-glass-blur)) saturate(1.4);
+  backdrop-filter: blur(var(--cs-glass-blur)) saturate(1.4);
+  border: 1px solid var(--cs-border);
+}
+
+/* ---------- 4. Vant 暗色主题变量覆盖（零源码修改，仅变量） ---------- */
+.cs-app {
+  --van-background: transparent;
+  --van-background-2: transparent;
+  --van-text-color: var(--cs-text-1);
+  --van-text-color-2: var(--cs-text-2);
+  --van-text-color-3: var(--cs-text-3);
+  --van-border-color: var(--cs-border);
+  --van-cell-background: transparent;
+  --van-cell-text-color: var(--cs-text-1);
+  --van-cell-value-color: var(--cs-text-1);
+  --van-cell-label-color: var(--cs-text-3);
+  --van-cell-border-color: rgba(255, 255, 255, .07);
+  --van-cell-group-background: transparent;
+  --van-cell-group-inset-padding: 0;
+  --van-nav-bar-background: transparent;
+  --van-nav-bar-title-text-color: var(--cs-text-1);
+  --van-nav-bar-height: 52px;
+  --van-tabbar-background: rgba(11, 18, 34, .82);
+  --van-tabbar-item-text-color: var(--cs-text-3);
+  --van-tabbar-item-active-color: var(--cs-accent);
+  --van-tabbar-item-active-background-color: transparent;
+  --van-tabs-bottom-bar-color: var(--cs-accent);
+  --van-tab-text-color: var(--cs-text-3);
+  --van-tab-active-text-color: var(--cs-text-1);
+  --van-tabs-line-height: 44px;
+  --van-tag-text-color: #cdd9ea;
+  --van-popup-background: rgba(17, 26, 46, .96);
+  --van-field-label-color: var(--cs-text-2);
+  --van-field-input-text-color: var(--cs-text-1);
+  --van-radio-checked-icon-color: var(--cs-accent);
+  --van-radio-label-color: var(--cs-text-1);
+  --van-checkbox-checked-icon-color: var(--cs-accent);
+  --van-badge-background: #ef4444;
+  --van-empty-description-color: var(--cs-text-3);
+  --van-step-text-color: var(--cs-text-3);
+  --van-step-active-color: var(--cs-accent);
+  --van-step-finish-text-color: var(--cs-text-2);
+  --van-button-primary-background: var(--cs-accent);
+  --van-button-primary-border-color: var(--cs-accent);
+  --van-button-plain-background: rgba(255, 255, 255, .04);
+  --van-button-default-background: rgba(255, 255, 255, .06);
+  --van-button-default-border-color: var(--cs-border-strong);
+  --van-button-default-text-color: var(--cs-text-1);
+  --van-progress-background: rgba(255, 255, 255, .14);
+  --van-rate-icon-color: #f5c518;
+}
+/* 状态标签玻璃化（彩色底 12% 透明度 + 提亮文字，保证深色底可读） */
+.cs-app .van-tag--primary { background: rgba(79, 140, 255, .18); color: #8fb8ff; }
+.cs-app .van-tag--success { background: rgba(52, 211, 153, .16); color: #6ee7b7; }
+.cs-app .van-tag--warning { background: rgba(251, 191, 36, .16); color: #fcd34d; }
+.cs-app .van-tag--danger  { background: rgba(248, 113, 113, .16); color: #fca5a5; }
+.cs-app .van-tag--default { background: rgba(148, 163, 184, .16); color: #b7c3d6; }
+/* 输入框（.field 旧类继续兼容，统一玻璃质感） */
+.cs-app .field,
+.cs-app .van-field__control {
+  color: var(--cs-text-1);
+  caret-color: var(--cs-accent);
+}
+.cs-app .field {
+  background: rgba(255, 255, 255, .05);
+  border: 1px solid var(--cs-border);
+  border-radius: 12px;
+  transition: border-color .16s ease, box-shadow .16s ease;
+}
+.cs-app .field::placeholder { color: var(--cs-text-3); }
+.cs-app .field:focus {
+  outline: none;
+  border-color: var(--cs-accent);
+  box-shadow: 0 0 0 3px var(--cs-accent-soft);
+}
+/* 函数式弹层（toast / dialog 由 vant 挂在 body 下，需全局覆盖，无命名空间） */
+.van-toast {
+  background: rgba(17, 26, 46, .92);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--cs-border, rgba(255,255,255,.1));
+  color: #eef3fb;
+  box-shadow: 0 10px 30px -8px rgba(2, 6, 17, .6);
+}
+.van-dialog {
+  background: rgba(17, 26, 46, .96);
+  border: 1px solid var(--cs-border, rgba(255,255,255,.1));
+}
+.van-dialog__header { color: #eef3fb; }
+.van-dialog__message { color: #a7b4c9; }
+/* 导航栏 / 底部导航浮层化（移动端） */
+.cs-app .m-nav,
+.cs-app .van-tabbar {
+  -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  backdrop-filter: blur(16px) saturate(1.4);
+}
+.cs-app .m-nav { background: rgba(11, 18, 34, .72); }
+.cs-app .m-nav::after { border-bottom-color: var(--cs-border); }
+.cs-app .van-tabbar { border-top: 1px solid var(--cs-border); }
+/* 下拉刷新指示色 */
+.cs-app .van-pull-refresh__head { color: var(--cs-text-3); }
+.cs-app .van-loading__spinner .van-loading__dot { background: var(--cs-accent); }
+
+/* ---------- 5. 排版 / 留白（impeccable：清晰的字号阶梯 + 4px 间距节奏） ---------- */
+.cs-app h1, .cs-app h2, .cs-app h3 { line-height: 1.3; letter-spacing: .01em; }
+.cs-app .text-secondary { color: var(--cs-text-2); }
+.cs-app .text-tertiary  { color: var(--cs-text-3); }
+.cs-app .sec-title {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--cs-text-2);
+  letter-spacing: .04em;
+  margin: var(--sp-5) var(--sp-1) var(--sp-1);
+}
+.cs-app .money { color: var(--cs-accent); font-weight: var(--weight-bold); }
+.cs-app .order-line { display: flex; justify-content: space-between; align-items: center; }
+.cs-app .order-title { font-weight: var(--weight-medium); }
+.cs-app .tag {
+  display: inline-block; font-size: var(--text-xs); padding: 1px 8px;
+  border-radius: var(--radius-full);
+  background: var(--cs-accent-soft); color: #8fb8ff; margin-left: var(--sp-2);
+}
+/* 首屏主视觉：玻璃渐变 + 光斑，突出品牌与核心数据（LCP 快速呈现亮点） */
+.cs-app .hero {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, rgba(79, 140, 255, .28), rgba(124, 92, 255, .20) 55%, rgba(14, 165, 233, .14));
+  border: 1px solid var(--cs-border-strong);
+  color: var(--cs-text-1);
+  padding: var(--sp-6) var(--sp-4) var(--sp-8);
+  border-radius: 0 0 var(--cs-radius-lg) var(--cs-radius-lg);
+}
+.cs-app .hero::before {
+  content: ""; position: absolute; inset: -40% -20% auto auto; width: 260px; height: 260px;
+  background: radial-gradient(circle, rgba(255, 255, 255, .16), transparent 65%);
+  pointer-events: none;
+}
+.cs-app .hero h3 { font-size: var(--text-xl); font-weight: var(--weight-bold); }
+.cs-app .hero p { color: rgba(230, 239, 247, .82); font-size: var(--text-sm); margin-top: var(--sp-1); }
+/* 主按钮：渐变 + 按压反馈 */
+.cs-app .btn {
+  width: 100%; padding: var(--sp-3); border: none; border-radius: 12px;
+  background: linear-gradient(135deg, var(--cs-accent), var(--cs-accent-2));
+  color: #fff; font-size: var(--text-base); font-weight: var(--weight-semibold);
+  cursor: pointer; transition: filter .16s ease, transform .12s ease, box-shadow .16s ease;
+  box-shadow: 0 6px 18px -6px rgba(79, 140, 255, .5);
+}
+.cs-app .btn:hover { filter: brightness(1.08); }
+.cs-app .btn:active { transform: scale(.98); }
+.cs-app .btn:disabled { filter: grayscale(.6) brightness(.7); cursor: not-allowed; box-shadow: none; }
+.cs-app .btn.ghost {
+  background: var(--cs-accent-soft); color: #8fb8ff;
+  box-shadow: none; border: 1px solid rgba(79, 140, 255, .3);
+}
+
+/* ---------- 6. 骨架屏（element-plus Skeleton 零散片段思路，自实现） ---------- */
+.cs-app .cs-skel { padding: var(--sp-4); }
+.cs-app .cs-skel-item {
+  border-radius: 8px;
+  background: linear-gradient(90deg, rgba(148, 163, 184, .13) 25%, rgba(148, 163, 184, .26) 37%, rgba(148, 163, 184, .13) 63%);
+  background-size: 400% 100%;
+  animation: cs-skel 1.4s ease infinite;
+}
+.cs-app .cs-skel-title { height: 18px; width: 42%; }
+.cs-app .cs-skel-text  { height: 13px; width: 88%; margin-top: 10px; }
+.cs-app .cs-skel-text.w60 { width: 58%; }
+.cs-app .cs-skel-card {
+  border: 1px solid var(--cs-border);
+  border-radius: var(--cs-radius);
+  background: var(--cs-surface);
+  padding: var(--sp-4);
+  margin-top: var(--sp-3);
+}
+.cs-app .cs-skel-hero { height: 120px; border-radius: var(--cs-radius-lg); background: var(--cs-surface); border: 1px solid var(--cs-border); }
+@keyframes cs-skel { 0% { background-position: 100% 50%; } 100% { background-position: 0 50%; } }
+
+/* ---------- 7. 空状态：玻璃容器 + 弱化插图 ---------- */
+.cs-app .van-empty { padding: var(--sp-8) 0; }
+.cs-app .van-empty__image { opacity: .55; filter: saturate(.6); }
+.cs-app .van-empty__description { color: var(--cs-text-3); font-size: var(--text-sm); }
+
+/* ---------- 8. 微交互（轻量：仅 transform/opacity，160ms 内） ---------- */
+.cs-app .view { animation: cs-fade .26s ease both; }
+@keyframes cs-fade { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@media (hover: hover) {
+  .cs-app .glass-card,
+  .cs-app .type-item { transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease, background .16s ease; }
+  .cs-app .glass-card.interactive:hover {
+    transform: translateY(-2px);
+    border-color: var(--cs-border-strong);
+    box-shadow: var(--cs-shadow-hover);
+  }
+  .cs-app .type-item:hover { background: rgba(255, 255, 255, .07); transform: translateY(-2px); }
+}
+@media (hover: none) {
+  .cs-app .glass-card.interactive:active,
+  .cs-app .type-item:active { transform: scale(.985); transition: transform .08s ease; }
+}
+.cs-app :focus-visible {
+  outline: 2px solid var(--cs-accent);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .cs-app *, .van-toast, .van-dialog {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
+
+/* ---------- 9. 响应式外壳 ----------
+   默认（<1024px）：移动端 H5 流式布局，保留底部 van-tabbar
+   ≥1024px（含 1920×1080）：桌面侧边导航 + 内容区多列网格
+   ≥2200px（含 2560×1440）：加宽版心 + 根字号放大，投屏可读性 */
+.cs-app .side-nav { display: none; }
+.cs-app .grid-cards { display: grid; gap: var(--sp-3); grid-template-columns: 1fr; }
+.cs-app .grid-cards > * { margin-top: 0; }
+
+@media (min-width: 1024px) {
+  body { max-width: none; }
+  .cs-app .page {
+    display: grid;
+    grid-template-columns: 232px minmax(0, 1fr);
+    gap: var(--shell-gap);
+    max-width: var(--shell-max);
+    margin: 0 auto;
+    padding: var(--sp-8) var(--sp-8) var(--sp-10);
+    align-items: start;
+  }
+  /* 移动端专有控件退场 */
+  .cs-app .m-nav, .cs-app .van-tabbar { display: none !important; }
+  .cs-app .page { padding-bottom: var(--sp-10); }
+  /* 桌面侧边导航：毛玻璃粘性侧栏 */
+  .cs-app .side-nav {
+    display: block;
+    position: sticky;
+    top: var(--sp-8);
+    border-radius: var(--cs-radius-lg);
+    padding: var(--sp-4);
+    background: rgba(13, 20, 36, .72);
+    -webkit-backdrop-filter: blur(16px) saturate(1.4);
+    backdrop-filter: blur(16px) saturate(1.4);
+    border: 1px solid var(--cs-border);
+    box-shadow: var(--cs-shadow);
+  }
+  .cs-app .side-nav .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-weight: var(--weight-bold); font-size: var(--text-base);
+    padding: var(--sp-2) var(--sp-2) var(--sp-4);
+  }
+  .cs-app .side-nav .brand .logo {
+    width: 34px; height: 34px; border-radius: 10px; flex: none;
+    display: grid; place-items: center; font-size: 18px;
+    background: linear-gradient(135deg, var(--cs-accent), var(--cs-accent-2));
+    box-shadow: 0 4px 14px -4px rgba(79, 140, 255, .6);
+  }
+  .cs-app .nav-group { border-top: 1px solid var(--cs-border); padding-top: var(--sp-3); margin-top: var(--sp-1); }
+  .cs-app .nav-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 12px; margin-top: 2px;
+    border-radius: 12px; cursor: pointer;
+    color: var(--cs-text-2); font-size: var(--text-sm);
+    transition: background .16s ease, color .16s ease;
+    user-select: none;
+  }
+  .cs-app .nav-item:hover { background: rgba(255, 255, 255, .06); color: var(--cs-text-1); }
+  .cs-app .nav-item.active {
+    background: var(--cs-accent-soft); color: #cfe1ff; font-weight: var(--weight-medium);
+    box-shadow: inset 2px 0 0 var(--cs-accent);
+  }
+  .cs-app .nav-item .ico { width: 20px; text-align: center; flex: none; }
+  /* 列表多列网格：跟随宽度自适应（1920 约 3 列，2560 加宽版心后约 4 列） */
+  .cs-app .grid-cards { grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: var(--sp-4); }
+  .cs-app .type-grid { grid-template-columns: repeat(4, 1fr); gap: var(--sp-3); }
+  /* 主视图卡片间距放宽（留白随屏幕升级） */
+  .cs-app .section { max-width: 1160px; }
+  .cs-app .hero { border-radius: var(--cs-radius-lg); }
+}
+@media (min-width: 2200px) {
+  html { font-size: 17px; }            /* 投屏整体放大，行文更易读 */
+  .cs-app { --shell-max: 1760px; --shell-gap: 32px; }
+  .cs-app .page { grid-template-columns: 260px minmax(0, 1fr); }
+}

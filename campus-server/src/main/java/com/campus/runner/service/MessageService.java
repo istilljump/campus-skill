@@ -12,6 +12,13 @@ public interface MessageService {
     void notify(Long userId, String title, String content, Long orderId);
 
     /**
+     * 管理端-系统公告广播：写入全体用户/技能者收件箱并实时推送
+     *
+     * @return 送达人数（去重后）
+     */
+    int broadcast(String title, String content);
+
+    /**
      * 收件箱最新消息（默认20条）
      */
     List<Message> listLatest(Long userId, int limit);

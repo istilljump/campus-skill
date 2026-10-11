@@ -1,0 +1,152 @@
+/* ============================================================
+   CampusSkill 管理端 · 暗色科技玻璃主题（design tokens）
+   与用户端/技能者端 H5（assets/glass.css）保持同一设计语言：
+   深空底 + 蓝紫光斑 + 半透明玻璃卡片 + 细描边
+   Element Plus 暗色变量由 main.js 引入的 dark/css-vars.css 提供，
+   此处只做品牌色与玻璃质感的二次覆盖，不修改任何组件源码
+   ============================================================ */
+:root {
+  --brand: #4f8cff;
+  --brand-light: rgba(79, 140, 255, 0.16);
+  --bg: #070b15;
+  --surface: rgba(255, 255, 255, 0.055);
+  --surface-strong: rgba(255, 255, 255, 0.09);
+  --border-glass: rgba(255, 255, 255, 0.1);
+  --text-main: #e6edf7;
+  --text-sub: #a7b4c9;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+  font-family: 'Inter', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  color: var(--text-main);
+}
+
+body {
+  background:
+    radial-gradient(1100px 520px at 12% -8%, rgba(59, 130, 246, 0.16), transparent 60%),
+    radial-gradient(900px 480px at 108% 12%, rgba(124, 92, 255, 0.12), transparent 55%),
+    #070b15;
+  background-attachment: fixed;
+}
+
+/* ---------- Element Plus 品牌色与玻璃表面覆盖 ---------- */
+html.dark {
+  --el-color-primary: #4f8cff;
+  --el-color-primary-light-3: #6fa2ff;
+  --el-color-primary-light-5: #8fb8ff;
+  --el-color-primary-light-7: #b4cfff;
+  --el-color-primary-light-8: #cfe1ff;
+  --el-color-primary-light-9: rgba(79, 140, 255, 0.16);
+  --el-color-primary-dark-2: #3b78f0;
+  --el-color-success: #34d399;
+  --el-color-warning: #fbbf24;
+  --el-color-danger: #f87171;
+  --el-color-error: #f87171;
+  --el-color-info: #94a3b8;
+  --el-bg-color: #0d1526;
+  --el-bg-color-page: transparent;
+  --el-bg-color-overlay: #131d33;
+  --el-text-color-primary: #e6edf7;
+  --el-text-color-regular: #c3cede;
+  --el-text-color-secondary: #a7b4c9;
+  --el-text-color-placeholder: #64748b;
+  --el-border-color: rgba(255, 255, 255, 0.16);
+  --el-border-color-light: rgba(255, 255, 255, 0.12);
+  --el-border-color-lighter: rgba(255, 255, 255, 0.08);
+  --el-border-color-extra-light: rgba(255, 255, 255, 0.06);
+  --el-fill-color: rgba(255, 255, 255, 0.08);
+  --el-fill-color-light: rgba(255, 255, 255, 0.06);
+  --el-fill-color-lighter: rgba(255, 255, 255, 0.04);
+  --el-fill-color-blank: rgba(255, 255, 255, 0.04);
+  --el-mask-color: rgba(4, 8, 18, 0.65);
+  /* 表格玻璃化 */
+  --el-table-bg-color: transparent;
+  --el-table-tr-bg-color: transparent;
+  --el-table-header-bg-color: rgba(255, 255, 255, 0.04);
+  --el-table-header-text-color: #a7b4c9;
+  --el-table-row-hover-bg-color: rgba(79, 140, 255, 0.08);
+  --el-table-border-color: rgba(255, 255, 255, 0.08);
+  /* 弹层 */
+  --el-dialog-bg-color: #131d33;
+  --el-popover-bg-color: #131d33;
+  --el-drawer-bg-color: #0d1526;
+}
+
+/* 输入控件底色玻璃化 */
+html.dark .el-input__wrapper,
+html.dark .el-textarea__inner,
+html.dark .el-select__wrapper {
+  background-color: rgba(255, 255, 255, 0.05);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12) inset;
+}
+
+html.dark .el-input__wrapper.is-focus,
+html.dark .el-select__wrapper.is-focused {
+  box-shadow: 0 0 0 1px var(--el-color-primary) inset, 0 0 0 3px rgba(79, 140, 255, 0.16);
+}
+
+/* ---------- 通用业务类（各视图沿用，无需改动 scoped 样式） ---------- */
+.page-card {
+  background: linear-gradient(160deg, var(--surface-strong), var(--surface) 55%);
+  border: 1px solid var(--border-glass);
+  border-radius: 16px;
+  padding: 20px;
+  min-height: 100%;
+  box-shadow: 0 8px 28px -8px rgba(2, 6, 17, 0.55);
+}
+
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+  align-items: center;
+}
+
+.filter-bar .el-input,
+.filter-bar .el-select {
+  width: 200px;
+}
+
+.table-pager {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
+.muted {
+  color: var(--text-sub);
+  font-size: 12px;
+}
+
+.money {
+  color: #fbbf24;
+  font-weight: 600;
+}
+
+/* ---------- 细滚动条（桌面端阅读体验） ---------- */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.14);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.24);
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}

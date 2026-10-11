@@ -10,6 +10,7 @@ const routes = [
     children: [
       { path: 'dashboard', name: 'dashboard', component: () => import('@/views/dashboard/DashboardView.vue'), meta: { title: '数据大屏' } },
       { path: 'orders', name: 'orders', component: () => import('@/views/order/OrderListView.vue'), meta: { title: '订单管理' } },
+      { path: 'bookings', name: 'bookings', component: () => import('@/views/booking/BookingManageView.vue'), meta: { title: '预约管理' } },
       { path: 'runners', name: 'runners', component: () => import('@/views/runner/RunnerListView.vue'), meta: { title: '技能者管理' } },
       { path: 'audits', name: 'audits', component: () => import('@/views/runner/AuditListView.vue'), meta: { title: '技能者认证' } },
       { path: 'withdraws', name: 'withdraws', component: () => import('@/views/finance/WithdrawListView.vue'), meta: { title: '提现审核' } },
@@ -20,6 +21,7 @@ const routes = [
       { path: 'users', name: 'users', component: () => import('@/views/user/UserListView.vue'), meta: { title: '用户管理' } },
       { path: 'employees', name: 'employees', component: () => import('@/views/employee/EmployeeListView.vue'), meta: { title: '员工管理' } },
       { path: 'shop', name: 'shop', component: () => import('@/views/shop/ShopView.vue'), meta: { title: '营业设置' } },
+      { path: 'announcements', name: 'announcements', component: () => import('@/views/message/AnnouncementView.vue'), meta: { title: '公告管理' } },
     ],
   },
   { path: '/:pathMatch(.*)*', redirect: '/' },

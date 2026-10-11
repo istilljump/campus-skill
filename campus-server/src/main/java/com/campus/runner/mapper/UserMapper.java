@@ -16,6 +16,17 @@ public interface UserMapper {
     @Select("select * from user where openid = #{openid}")
     User getUserByOpenid(String openid);
 
+    @Select("select * from user where username = #{username}")
+    User getByUsername(String username);
+
+    @Insert("insert into user (openid, username, password, salt, name, create_time) " +
+            "values (#{openid}, #{username}, #{password}, #{salt}, #{name}, #{createTime})")
+    @Options(useGeneratedKeys = true, keyProperty = "id")
+    void saveAccount(User user);
+
+    @Update("update user set password = #{password}, salt = #{salt} where id = #{id}")
+    void updatePassword(@Param("id") Long id, @Param("password") String password, @Param("salt") String salt);
+
     @Select("select * from user where id = #{id}")
     User getById(Long id);
 
@@ -33,4 +44,7 @@ public interface UserMapper {
 
     @Update("update user set credit_score = greatest(0, credit_score + #{delta}) where id = #{id}")
     void adjustCreditScore(@org.apache.ibatis.annotations.Param("id") Long id, @org.apache.ibatis.annotations.Param("delta") Integer delta);
+
+    @Select("select id from user")
+    List<Long> listAllIds();
 }
