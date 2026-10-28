@@ -2,7 +2,6 @@
   <div class="center" v-loading="loading">
     <!-- 主视觉：技能者数据总览 -->
     <div class="hero">
-      <el-button class="share-btn" type="primary" plain round @click="openShare">🔗 分享名片</el-button>
       <div class="hero-main">
         <h2>{{ center.name || '技能者' }}
           <el-tag effect="dark" type="warning" style="margin-left:6px">{{ levelName(center.runnerLevel) }}</el-tag>
@@ -12,6 +11,7 @@
         <el-progress :percentage="limitPct" :stroke-width="8" color="#ffffff"
           :show-text="false" class="limit-bar" />
         <p class="muted-light">每日接单额度使用 {{ limitPct }}%</p>
+        <el-button class="share-btn" type="primary" plain round size="small" @click="openShare">🔗 分享名片</el-button>
       </div>
       <div class="stat-row">
         <div class="stat-box"><div class="stat-num">{{ fmtMoney(center.todayIncome) }}</div><div class="stat-lab">今日收入</div></div>
@@ -268,7 +268,7 @@ onMounted(load)
 }
 .trend-date { font-size: 11px; color: #9499a0; margin-top: 6px; }
 .neg { color: #f25d5d; font-weight: 600; }
-.share-btn { position: absolute; top: 14px; right: 14px; }
+.share-btn { margin-top: 10px; }
 .share-box { display: flex; flex-direction: column; align-items: center; gap: 14px; }
 .share-qr { width: 220px; height: 220px; border-radius: 12px; border: 1px solid #e3e5e7; }
 </style>
