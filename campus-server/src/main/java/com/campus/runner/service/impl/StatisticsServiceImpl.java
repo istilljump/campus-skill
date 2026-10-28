@@ -5,12 +5,14 @@ import com.campus.runner.service.StatisticsService;
 import com.campus.runner.vo.NameCountVO;
 import com.campus.runner.vo.OrderStatisticsVO;
 import com.campus.runner.vo.RunnerStatisticsVO;
+import com.campus.runner.vo.SupplyDemandVO;
 import com.campus.runner.vo.TrendPointVO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -85,6 +87,22 @@ public class StatisticsServiceImpl implements StatisticsService {
         List<NameCountVO> result = new ArrayList<>();
         for (Map<String, Object> row : orderMapper.statCampusRank()) {
             result.add(new NameCountVO(String.valueOf(row.get("name")), ((Number) row.get("count")).intValue()));
+        }
+        return result;
+    }
+
+    @Override
+    public List<SupplyDemandVO> supplyDemand() {
+        List<SupplyDemandVO> result = new ArrayList<>();
+        for (Map<String, Object> row : orderMapper.statSupplyDemand(LocalDateTime.now().minusDays(30))) {
+            result.add(SupplyDemandVO.builder()
+                    .typeId(((Number) row.get("typeId")).longValue())
+                    .typeName(String.valueOf(row.get("typeName")))
+                    .supplyCount(((Number) row.get("supplyCount")).intValue())
+                    .demandCount(((Number) row.get("demandCount")).intValue())
+                    .avgPrice(row.get("avgPrice") != null
+                            ? new BigDecimal(String.valueOf(row.get("avgPrice"))) : BigDecimal.ZERO)
+                    .build());
         }
         return result;
     }

@@ -166,6 +166,25 @@ public interface OrderMapper {
     List<Map<String, Object>> statCampusRank();
 
     /**
+     * 智能定价-类目已完成订单的成交价与交付时长（发单页价格分位参考数据源）
+     */
+    @Select("select reward_amount as rewardAmount, " +
+            "timestampdiff(hour, order_time, finish_time) as deliveryHours from orders " +
+            "where type_id = #{typeId} and status = 5 and finish_time is not null")
+    List<Map<String, Object>> statFinishedPricesByType(@Param("typeId") Long typeId);
+
+    /**
+     * 数据大屏-类目供需对比：在售服务数（供给）vs 近 30 天发单量（需求）+ 历史均价
+     */
+    @Select("select t.id as typeId, t.name as typeName, " +
+            "(select count(*) from service_item s where s.category_id = t.id and s.status = 1) as supplyCount, " +
+            "(select count(*) from orders o where o.type_id = t.id and o.create_time >= #{since}) as demandCount, " +
+            "(select ifnull(round(avg(o.reward_amount)), 0) from orders o where o.type_id = t.id and o.status = 5) as avgPrice " +
+            "from skill_category t where t.status = 1 " +
+            "order by demandCount desc, supplyCount desc")
+    List<Map<String, Object>> statSupplyDemand(@Param("since") LocalDateTime since);
+
+    /**
      * 技能者端-按日统计完成单量与收入（按送达时间）
      */
     @Select("select date_format(finish_time, '%Y-%m-%d') as date, count(*) as orderCount, " +

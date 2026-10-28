@@ -55,6 +55,7 @@ export const overviewStats = () => request.get('/admin/statistics/overview')
 export const trendStats = (days = 7) => request.get('/admin/statistics/trend', { params: { days } })
 export const typeRankStats = (limit = 5) => request.get('/admin/statistics/typeRank', { params: { limit } })
 export const campusRankStats = () => request.get('/admin/statistics/campusRank')
+export const supplyDemandStats = () => request.get('/admin/statistics/supplyDemand')
 
 // ========== 系统公告 ==========
 export const broadcastAnnouncement = (data) => request.post('/admin/message/broadcast', data)

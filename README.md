@@ -61,8 +61,8 @@ java -jar campus-server/target/campus-server-1.0-SNAPSHOT.jar
 
 | 入口 | 地址 | 说明 |
 |---|---|---|
-| 🖥️ 管理端控制台（工程版·推荐） | http://localhost:8080/admin-web/ | Vue3 + Vite + Element Plus + Pinia + ECharts 蓝白活力风桌面工作台：数据大屏、订单、预约、技能者、作品审核、仲裁工单、信用榜单、认证/提现审核、类目、系统公告；源码见 `admin-web/` |
-| 🌐 Web 门户（桌面端·推荐） | http://localhost:8080/web-app/ | Vue3 + Vite + Element Plus 蓝白活力风桌面工作台：用户端与技能者端业务一体（概览/悬赏大厅/技能市场/发布悬赏/订单全流程/钱包/消息/地址/资料/入驻 + 接单台/服务/作品/技能者中心），双身份登录自动联动导航；源码见 `web-app/` |
+| 🖥️ 管理端控制台（工程版·推荐） | http://localhost:8080/admin-web/ | Vue3 + Vite + Element Plus + Pinia + ECharts 蓝白活力风桌面工作台：数据大屏（含类目供需缺口对比看板）、订单、预约、技能者、作品审核、仲裁工单、信用榜单、认证/提现审核、类目、系统公告；源码见 `admin-web/` |
+| 🌐 Web 门户（桌面端·推荐） | http://localhost:8080/web-app/ | Vue3 + Vite + Element Plus 蓝白活力风桌面工作台：用户端与技能者端业务一体（概览/悬赏大厅/技能市场/发布悬赏/订单全流程/钱包/消息/地址/资料/入驻 + 接单台/服务/作品/技能者中心），双身份登录自动联动导航；发单页智能定价参考（类目历史成交分位 + 区间柔性提示）、技能者分享名片海报（Canvas + 离线二维码，公开名片页 /card/:id）；源码见 `web-app/` |
 
 ### 管理端工程版（admin-web）
 

@@ -50,7 +50,8 @@ public class WebMvcConfiguration extends WebMvcConfigurationSupport {
                 .excludePathPatterns("/user/user/login")
                 .excludePathPatterns("/user/user/register")
                 .excludePathPatterns("/user/user/accountLogin")
-                .excludePathPatterns("/user/shop/status");
+                .excludePathPatterns("/user/shop/status")
+                .excludePathPatterns("/user/market/skiller-card/*");
 
         registry.addInterceptor(jwtTokenRunnerInterceptor)
                 .addPathPatterns("/skiller/**")

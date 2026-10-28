@@ -4,8 +4,11 @@ import com.campus.runner.result.PageResult;
 import com.campus.runner.result.Result;
 import com.campus.runner.context.BaseContext;
 import com.campus.runner.entity.UserBehavior;
+import com.campus.runner.service.MarketInsightService;
 import com.campus.runner.service.RecommendService;
 import com.campus.runner.service.ServiceItemService;
+import com.campus.runner.vo.PriceReferenceVO;
+import com.campus.runner.vo.SkillerCardVO;
 import com.campus.runner.vo.ServiceItemVO;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -33,6 +36,21 @@ public class MarketController {
 
     @Autowired
     private RecommendService recommendService;
+
+    @Autowired
+    private MarketInsightService marketInsightService;
+
+    @GetMapping("/skiller-card/{runnerId}")
+    @ApiOperation("技能者分享名片（公开脱敏，扫码落地页与海报数据源，无需登录）")
+    public Result<SkillerCardVO> skillerCard(@PathVariable Long runnerId) {
+        return Result.success(marketInsightService.skillerCard(runnerId));
+    }
+
+    @GetMapping("/price-reference")
+    @ApiOperation("类目历史成交价参考（发单页智能定价：P25/P50/P75 分位 + 平均交付时长，Redis 缓存 5 分钟）")
+    public Result<PriceReferenceVO> priceReference(@RequestParam Long typeId) {
+        return Result.success(marketInsightService.priceReference(typeId));
+    }
 
     @GetMapping
     @ApiOperation("服务市场分页（仅上架，支持类目/关键词筛选）")

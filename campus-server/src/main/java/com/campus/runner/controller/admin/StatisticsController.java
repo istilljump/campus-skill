@@ -5,6 +5,7 @@ import com.campus.runner.service.RecommendService;
 import com.campus.runner.service.StatisticsService;
 import com.campus.runner.vo.NameCountVO;
 import com.campus.runner.vo.OrderStatisticsVO;
+import com.campus.runner.vo.SupplyDemandVO;
 import com.campus.runner.vo.TrendPointVO;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -60,5 +61,11 @@ public class StatisticsController {
     @ApiOperation("各校区订单量分布")
     public Result<List<NameCountVO>> campusRank() {
         return Result.success(statisticsService.campusRank());
+    }
+
+    @GetMapping("/supplyDemand")
+    @ApiOperation("类目供需缺口对比：在售服务数（供给）vs 近 30 天发单量（需求）+ 历史均价，按缺口排序")
+    public Result<List<SupplyDemandVO>> supplyDemand() {
+        return Result.success(statisticsService.supplyDemand());
     }
 }

@@ -29,6 +29,8 @@ const routes = [
       { path: 'sk/messages', name: 'skMessages', component: () => import('@/views/MessageView.vue'), meta: { area: 'sk', title: '消息中心', requireSkiller: true } },
     ],
   },
+  // 技能者分享名片落地页：公开可访问（扫码进入，无需登录）
+  { path: '/card/:runnerId', name: 'skillerCard', component: () => import('@/views/SkillerCardView.vue'), meta: { title: '技能者名片' } },
   { path: '/:pathMatch(.*)*', redirect: '/' },
 ]
 
@@ -39,7 +41,7 @@ const router = createRouter({
 })
 
 router.beforeEach((to) => {
-  if (to.path !== '/login') {
+  if (to.path !== '/login' && to.name !== 'skillerCard') {
     if (to.meta.requireSkiller && !getRunnerToken()) return { path: '/login', query: { redirect: to.fullPath, role: 'skiller' } }
     if (!getUserToken() && !getRunnerToken()) return { path: '/login', query: { redirect: to.fullPath } }
   }

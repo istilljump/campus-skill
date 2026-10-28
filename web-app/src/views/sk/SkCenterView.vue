@@ -2,6 +2,7 @@
   <div class="center" v-loading="loading">
     <!-- 主视觉：技能者数据总览 -->
     <div class="hero">
+      <el-button class="share-btn" type="primary" plain round @click="openShare">🔗 分享名片</el-button>
       <div class="hero-main">
         <h2>{{ center.name || '技能者' }}
           <el-tag effect="dark" type="warning" style="margin-left:6px">{{ levelName(center.runnerLevel) }}</el-tag>
@@ -105,6 +106,14 @@
         </el-table>
       </div>
     </div>
+    <!-- 分享名片弹窗：本地生成二维码（离线），指向公开名片落地页 -->
+    <el-dialog v-model="shareVisible" title="分享我的技能名片" width="360px" align-center>
+      <div class="share-box">
+        <img v-if="shareQr" :src="shareQr" alt="名片二维码" class="share-qr" />
+        <p class="muted" style="font-size:12px">扫码查看公开名片（不含手机号等隐私），可生成下载海报</p>
+        <el-button type="primary" @click="openCardPage">打开名片页 / 下载海报</el-button>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -117,6 +126,7 @@ import {
 } from '@/api'
 import { TX_TYPE, WD_STATUS, LEVEL_NAMES, fmtMoney, fmtTime } from '@/utils/dict'
 import { ORDER_STATUS } from '@/utils/dict'
+import QRCode from 'qrcode'
 import { useUserStore } from '@/stores/user'
 
 const store = useUserStore()
@@ -129,6 +139,19 @@ const wdAmount = ref(null)
 const wdPassword = ref('')
 const busy = ref(false)
 const loading = ref(false)
+const shareVisible = ref(false)
+const shareQr = ref('')
+
+async function openShare() {
+  if (!center.value.id) return ElMessage.warning('名片信息加载中，请稍后再试')
+  const url = `${location.origin}${location.pathname}#/card/${center.value.id}`
+  shareQr.value = await QRCode.toDataURL(url, { width: 260, margin: 1 })
+  shareVisible.value = true
+}
+
+function openCardPage() {
+  window.open(`${location.origin}${location.pathname}#/card/${center.value.id}`, '_blank')
+}
 
 // 等级门槛：20/50/100 单晋升铜/银/金牌（与 H5 LEVEL_GOALS 一致）
 const LEVEL_GOALS = { 1: 20, 2: 50, 3: 100 }
@@ -195,6 +218,7 @@ onMounted(load)
 
 <style scoped>
 .hero {
+  position: relative;
   display: flex;
   justify-content: space-between;
   gap: 24px;
@@ -244,4 +268,7 @@ onMounted(load)
 }
 .trend-date { font-size: 11px; color: #9499a0; margin-top: 6px; }
 .neg { color: #f25d5d; font-weight: 600; }
+.share-btn { position: absolute; top: 14px; right: 14px; }
+.share-box { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.share-qr { width: 220px; height: 220px; border-radius: 12px; border: 1px solid #e3e5e7; }
 </style>

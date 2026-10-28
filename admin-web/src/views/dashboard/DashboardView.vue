@@ -44,6 +44,10 @@
         <div class="panel-title">订单状态分布</div>
         <div ref="statusRef" class="chart chart-tall"></div>
       </div>
+      <div class="chart-panel span-full">
+        <div class="panel-title">类目供需缺口对比（在售服务 = 供给 · 近30天发单 = 需求，按缺口排序）</div>
+        <div ref="supplyRef" class="chart chart-tall"></div>
+      </div>
     </div>
   </div>
 </template>
@@ -52,7 +56,7 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import * as echarts from 'echarts'
 import { Refresh, FullScreen } from '@element-plus/icons-vue'
-import { overviewStats, trendStats, typeRankStats, campusRankStats } from '@/api'
+import { overviewStats, trendStats, typeRankStats, campusRankStats, supplyDemandStats } from '@/api'
 
 const trendDays = ref(7)
 const dashRef = ref(null)
@@ -60,11 +64,13 @@ const trendRef = ref(null)
 const typeRef = ref(null)
 const campusRef = ref(null)
 const statusRef = ref(null)
+const supplyRef = ref(null)
 
 const overview = ref({})
 const trend = ref([])
 const typeRank = ref([])
 const campusRank = ref([])
+const supplyDemand = ref([])
 
 let charts = []
 let timer = null
@@ -164,6 +170,41 @@ function renderStatus() {
   })
 }
 
+function renderSupplyDemand() {
+  const data = [...supplyDemand.value].reverse()
+  initOrResize(supplyRef.value, {
+    tooltip: {
+      trigger: 'axis', axisPointer: { type: 'shadow' },
+      formatter: (params) => {
+        const d = supplyDemand.value.find((x) => x.typeName === params[0].name)
+        if (!d) return params[0].name
+        const gap = d.demandCount - d.supplyCount
+        return `${d.typeName}<br/>在售服务（供给）：<b>${d.supplyCount}</b><br/>近30天发单（需求）：<b>${d.demandCount}</b><br/>缺口：${gap > 0 ? `<b style="color:#f25d5d">需大于供 +${gap}</b>` : '供需平衡'}<br/>历史均价：¥${d.avgPrice}`
+      },
+    },
+    legend: { data: ['在售服务（供给）', '近30天发单（需求）'], textStyle: { color: DARK_TEXT }, top: 0 },
+    grid: { left: 90, right: 50, top: 30, bottom: 24 },
+    xAxis: { type: 'value', minInterval: 1, splitLine: { lineStyle: { color: '#e3e5e7' } }, axisLabel: { color: DARK_TEXT } },
+    yAxis: { type: 'category', data: data.map((d) => d.typeName), axisLabel: { color: DARK_TEXT, width: 80, overflow: 'truncate' } },
+    series: [
+      {
+        name: '在售服务（供给）', type: 'bar', barWidth: 11, data: data.map((d) => d.supplyCount),
+        itemStyle: { borderRadius: [0, 6, 6, 0], color: '#4dc3f2' }, label: { show: true, position: 'right', color: DARK_TEXT },
+      },
+      {
+        name: '近30天发单（需求）', type: 'bar', barWidth: 11,
+        data: data.map((d) => ({
+          value: d.demandCount,
+          itemStyle: d.demandCount > d.supplyCount
+            ? { borderRadius: [0, 6, 6, 0], color: '#fb7299' }
+            : { borderRadius: [0, 6, 6, 0], color: '#c9cdd4' },
+        })),
+        label: { show: true, position: 'right', color: DARK_TEXT },
+      },
+    ],
+  })
+}
+
 const rendered = new WeakMap()
 
 function initOrResize(el, option) {
@@ -197,6 +238,7 @@ async function loadAll() {
     loadTrend(),
     typeRankStats(5).then((d) => { typeRank.value = d; renderTypeRank() }),
     campusRankStats().then((d) => { campusRank.value = d; renderCampus() }),
+    supplyDemandStats().then((d) => { supplyDemand.value = d || []; renderSupplyDemand() }),
   ])
 }
 

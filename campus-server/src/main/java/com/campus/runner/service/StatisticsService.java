@@ -2,6 +2,7 @@ package com.campus.runner.service;
 
 import com.campus.runner.vo.NameCountVO;
 import com.campus.runner.vo.OrderStatisticsVO;
+import com.campus.runner.vo.SupplyDemandVO;
 import com.campus.runner.vo.RunnerStatisticsVO;
 import com.campus.runner.vo.TrendPointVO;
 
@@ -33,4 +34,9 @@ public interface StatisticsService {
      * 管理端-各校区订单量分布
      */
     List<NameCountVO> campusRank();
+
+    /**
+     * 管理端-类目供需对比（在售服务数 vs 近 30 天发单量 + 历史均价），按缺口排序
+     */
+    List<SupplyDemandVO> supplyDemand();
 }

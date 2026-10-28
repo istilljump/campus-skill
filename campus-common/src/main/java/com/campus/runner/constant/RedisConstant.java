@@ -19,4 +19,7 @@ public class RedisConstant {
 
     //抢单限流 key 前缀，完整键为 campus:order:grab:limit:{runnerId}
     public static final String RUNNER_GRAB_LIMIT = "campus:order:grab:limit:";
+
+    //类目价格参考缓存 key 前缀，完整键为 campus:market:price-ref:{typeId}（5 分钟过期）
+    public static final String MARKET_PRICE_REF = "campus:market:price-ref:";
 }
