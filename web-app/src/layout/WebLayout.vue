@@ -64,6 +64,11 @@
         </div>
       </el-header>
       <el-main class="main">
+        <!-- 全局网络异常横幅：服务未启动/断网时给出可恢复入口 -->
+        <div v-if="netState.error" class="net-bar">
+          <span>⚠️ 网络异常，服务可能未启动或已断开</span>
+          <el-button size="small" type="primary" plain @click="reloadPage">重试</el-button>
+        </div>
         <router-view />
       </el-main>
     </el-container>
@@ -72,12 +77,17 @@
 
 <script setup>
 import { computed, onMounted, watch } from 'vue'
+import { networkState } from '@/utils/request'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { skCenter } from '@/api'
 
 const route = useRoute()
+const netState = networkState
+function reloadPage() { location.reload() }
+//网络异常事件监听：避免跨 chunk 模块实例差异，统一以 window 事件驱动横幅
+onMounted(() => { window.addEventListener('campus:net-error', () => { netState.error = true }) })
 const router = useRouter()
 const store = useUserStore()
 
@@ -216,4 +226,17 @@ async function onCommand(cmd) {
 .user-avatar { background: linear-gradient(135deg, #00aeec, #fb7299); }
 
 .main { padding: 20px; background: transparent; }
+.net-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: #fff7e6;
+  border: 1px solid #ffd591;
+  color: #ad6800;
+  border-radius: 12px;
+  padding: 10px 16px;
+  margin-bottom: 16px;
+  font-size: 14px;
+}
 </style>

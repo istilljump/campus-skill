@@ -1,0 +1,38 @@
+flowchart LR
+    subgraph Input["行为采集（旁路埋点，失败不影响主流程）"]
+        V["浏览详情<br/>src=1市场/2推荐/3看了又看"]
+        B["提交预约<br/>权重 3.0"]
+        D["成交支付<br/>权重 5.0"]
+    end
+
+    V --> UB[("user_behavior<br/>行为表（30分钟浏览去重）")]
+    B --> UB
+    D --> UB
+
+    subgraph Core["混合推荐打分"]
+        direction LR
+        CF["① ItemCF 协同过滤<br/>近90天行为矩阵<br/>余弦相似度"]
+        CT["② 内容特征<br/>类目偏好0.5<br/>标签Jaccard0.3<br/>价格贴近0.2"]
+        Q["③ 质量因子<br/>销量0.4<br/>均分0.3<br/>信用0.2<br/>定级0.1"]
+    end
+
+    UB --> CF
+    UB --> CT
+    CAND[("上架服务候选集")] --> CF
+    CAND --> CT
+    CAND --> Q
+
+    CF --> MIX{"三路加权融合<br/>score = 0.45·CF + 0.30·内容 + 0.25·质量"}
+    CT --> MIX
+    Q --> MIX
+
+    COLD{"用户无行为？<br/>（冷启动判断）"}
+    MIX --> COLD
+    COLD -->|是| HOT["热门精选<br/>质量分降序兜底"]
+    COLD -->|否| FILT["过滤与降权<br/>排除已成交/本人挂牌<br/>已浏览降权×0.6"]
+
+    HOT --> OUT["输出 Top-N + 推荐理由"]
+    FILT --> OUT
+    OUT --> R1["首页「猜你喜欢」"]
+    OUT --> R2["详情页「看了又看」<br/>同款算法：类目+标签+价格+协同"]
+    OUT --> STAT["管理端效果统计<br/>/admin/statistics/recommendEffect<br/>分来源转化率对比"]

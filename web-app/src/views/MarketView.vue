@@ -59,7 +59,9 @@
             <el-button v-if="row.status === 1" size="small" type="primary" @click="onPayBooking(row)">去支付</el-button>
           </template>
         </el-table-column>
-        <template #empty><el-empty description="暂无预约记录" :image-size="72" /></template>
+        <template #empty><el-empty description="暂无预约记录，预约技能者的服务后会出现在这里" :image-size="72">
+  <el-button type="primary" plain @click="tab = 'market'; load()">去技能市场逛逛</el-button>
+</el-empty></template>
       </el-table>
     </template>
 
@@ -82,6 +84,16 @@
           </el-form-item>
         </el-form>
         <el-button type="primary" style="width:100%" :loading="busy" @click="onSubmitBooking">提交预约</el-button>
+        <template v-if="similarList.length">
+          <el-divider content-position="left">看了又看</el-divider>
+          <div class="similar-row">
+            <div v-for="sim in similarList" :key="sim.id" class="similar-card" @click="openSvc(sim, 3)">
+              <div class="similar-title">{{ sim.title }}</div>
+              <div class="muted similar-meta">{{ fmtMoney(sim.price) }} · 评分 {{ sim.avgScore ?? '-' }}</div>
+              <el-tag size="small" effect="plain" type="info">{{ sim.recommendReason || '相似推荐' }}</el-tag>
+            </div>
+          </div>
+        </template>
       </template>
     </el-dialog>
   </div>
@@ -91,7 +103,8 @@
 import { onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search } from '@element-plus/icons-vue'
-import { listCategories, listMarket, pageBookings, createBooking, cancelBooking, payBooking } from '@/api'
+import { listCategories, listMarket, pageBookings, createBooking, cancelBooking, payBooking, getSimilar, getMarketDetail } from '@/api'
+import { useRoute } from 'vue-router'
 import { BOOKING_STATUS, fmtMoney, modeText } from '@/utils/dict'
 
 const tab = ref('market')
@@ -108,6 +121,8 @@ const total = ref(0)
 const bookings = ref([])
 const svcVisible = ref(false)
 const svcDetail = ref(null)
+const similarList = ref([])
+const lastSvcSrc = ref(1)
 const bookingForm = reactive({ serviceItemId: null, expectTime: '', remark: '' })
 
 async function load() {
@@ -131,19 +146,41 @@ function onSearch() {
   load()
 }
 
-function openSvc(s) {
+// src=行为来源：1市场列表 2猜你喜欢 3看了又看（推荐效果实验埋点）
+async function openSvc(s, src = 1) {
+  lastSvcSrc.value = src
   svcDetail.value = s
   bookingForm.serviceItemId = s.id
   bookingForm.expectTime = ''
   bookingForm.remark = ''
   svcVisible.value = true
+  //浏览详情即产生行为埋点（后端 /user/market/{id}?src=），并拉取「看了又看」
+  similarList.value = []
+  try {
+    const detail = await getMarketDetail(s.id, src)
+    if (detail) svcDetail.value = detail
+  } catch { /* 详情刷新失败保留列表数据 */ }
+  try {
+    similarList.value = (await getSimilar(s.id, 4)) || []
+  } catch { /* 推荐失败静默降级 */ }
+}
+
+// 支持从首页「猜你喜欢」深链直达：/market?svc={id}
+const route = useRoute()
+async function openFromQuery() {
+  const id = Number(route.query.svc)
+  if (!id) return
+  try {
+    const detail = await getMarketDetail(id, route.query.src === 'rec' ? 2 : 1)
+    if (detail) openSvc(detail, route.query.src === 'rec' ? 2 : 1)
+  } catch { /* 服务可能已下架 */ }
 }
 
 async function onSubmitBooking() {
   if (!bookingForm.expectTime) return ElMessage.warning('请填写期望服务时间，如 2026-10-20 14:00')
   busy.value = true
   try {
-    await createBooking({ ...bookingForm })
+    await createBooking({ ...bookingForm, src: lastSvcSrc.value })
     ElMessage.success('预约成功，等待技能者确认')
     svcVisible.value = false
     tab.value = 'bookings'
@@ -183,6 +220,7 @@ async function payOrderSafe(orderNumber) {
 onMounted(async () => {
   load()
   types.value = await listCategories() || []
+  openFromQuery()
 })
 </script>
 
@@ -209,4 +247,16 @@ onMounted(async () => {
 .meta { margin: 8px 0; font-size: 13px; }
 .hall-foot { display: flex; justify-content: space-between; font-size: 12px; }
 .desc { white-space: pre-wrap; color: #61666d; font-size: 14px; margin: 10px 0; }
+
+.similar-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.similar-card {
+  border: 1px solid #e3e5e7;
+  border-radius: 10px;
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: border-color .16s ease, transform .16s ease;
+}
+.similar-card:hover { border-color: rgba(0, 174, 236, .45); transform: translateY(-2px); }
+.similar-title { font-size: 13px; font-weight: 600; color: #18191c; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.similar-meta { font-size: 12px; margin: 4px 0 6px; }
 </style>

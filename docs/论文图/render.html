@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.1/mermaid.min.js"></script>
+<style>
+  body { background: #fff; margin: 0; padding: 0; }
+  #stack > div { padding: 24px; }
+</style>
+</head>
+<body>
+<div id="stack"></div>
+<script>
+  mermaid.initialize({ startOnLoad: false, securityLevel: "loose", theme: "neutral" });
+  window.renderAll = async function () {
+    const src = await (await fetch("./mmd-src.json", { cache: "no-store" })).json();
+    const stack = document.getElementById("stack");
+    const result = [];
+    for (const name of Object.keys(src)) {
+      const holder = document.createElement("div");
+      holder.dataset.name = name;
+      stack.appendChild(holder);
+      try {
+        const { svg } = await mermaid.render("g" + name.replace(/[^0-9]/g, ""), src[name]);
+        holder.innerHTML = svg;
+        result.push({ name, ok: true, bytes: svg.length });
+      } catch (e) {
+        result.push({ name, ok: false, err: String(e).slice(0, 150) });
+      }
+    }
+    return result;
+  };
+</script>
+</body>
+</html>

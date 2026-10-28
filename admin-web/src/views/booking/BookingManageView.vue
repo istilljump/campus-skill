@@ -39,6 +39,7 @@
           <span v-else class="muted">-</span>
         </template>
       </el-table-column>
+          <template #empty><el-empty description="暂无数据" :image-size="72" /></template>
     </el-table>
 
     <div class="table-pager">

@@ -39,7 +39,11 @@
               <el-button link type="primary" @click="$router.push(`/orders/${row.id}`)">进度</el-button>
             </template>
           </el-table-column>
-          <template #empty><el-empty description="暂无进行中的订单，发一单试试吧" :image-size="72" /></template>
+          <template #empty>
+            <el-empty description="暂无进行中的订单，发一单试试吧" :image-size="72">
+              <el-button type="primary" @click="$router.push('/submit')">去发布悬赏</el-button>
+            </el-empty>
+          </template>
         </el-table>
       </div>
 
@@ -68,13 +72,35 @@
         </div>
       </div>
     </div>
+
+    <!-- 猜你喜欢：个性化推荐引擎（ItemCF + 内容特征混合打分） -->
+    <div class="page-card rec-card" v-loading="recLoading">
+      <div class="card-title">
+        <el-icon><MagicStick /></el-icon><span>猜你喜欢</span>
+        <span class="rec-sub">根据你的浏览与成交行为个性化推荐</span>
+        <el-button size="small" text :icon="Refresh" class="refresh-btn" @click="loadRecommend">换一批</el-button>
+      </div>
+      <div class="rec-grid" v-if="recommend.length">
+        <div v-for="r in recommend" :key="r.id" class="rec-item" @click="$router.push(`/market?svc=${r.id}&src=rec`)">
+          <div class="rec-head">
+            <span class="rec-title">{{ r.title }}</span>
+            <span class="money">{{ fmtMoney(r.price) }}</span>
+          </div>
+          <div class="muted rec-meta">{{ r.categoryName }} · 评分 {{ r.avgScore ?? '-' }}<template v-if="r.salesCount"> · 已售 {{ r.salesCount }}</template></div>
+          <el-tag size="small" effect="plain" type="primary">{{ r.recommendReason || '为你推荐' }}</el-tag>
+        </div>
+      </div>
+      <el-empty v-else-if="!recLoading" description="逛逛技能市场，推荐会更懂你" :image-size="72">
+        <el-button type="primary" plain @click="$router.push('/market')">去技能市场</el-button>
+      </el-empty>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { onMounted, ref } from 'vue'
-import { EditPen, ShoppingCart, Refresh } from '@element-plus/icons-vue'
-import { pageOrders, getWallet } from '@/api'
+import { EditPen, ShoppingCart, Refresh, MagicStick } from '@element-plus/icons-vue'
+import { pageOrders, getWallet, getRecommend } from '@/api'
 import { useUserStore } from '@/stores/user'
 import { ORDER_STATUS, fmtMoney, relTime } from '@/utils/dict'
 
@@ -82,6 +108,8 @@ const store = useUserStore()
 const activeOrders = ref([])
 const wallet = ref({})
 const loading = ref(false)
+const recommend = ref([])
+const recLoading = ref(false)
 
 async function loadActive() {
   loading.value = true
@@ -93,8 +121,18 @@ async function loadActive() {
   }
 }
 
+async function loadRecommend() {
+  recLoading.value = true
+  try {
+    recommend.value = (await getRecommend(8)) || []
+  } finally {
+    recLoading.value = false
+  }
+}
+
 onMounted(async () => {
   loadActive()
+  loadRecommend()
   store.loadProfile()
   wallet.value = await getWallet() || {}
 })
@@ -161,6 +199,21 @@ onMounted(async () => {
 
 .quick-item:hover { background: #f6f7f8; border-color: rgba(0, 174, 236, .45); transform: translateY(-2px); }
 .quick-badge { position: absolute; top: -6px; right: -6px; }
+
+.rec-card { margin-top: 16px; }
+.rec-sub { margin-left: 8px; font-size: 12px; font-weight: 400; color: #9499a0; }
+.rec-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
+.rec-item {
+  border: 1px solid #e3e5e7;
+  border-radius: 12px;
+  padding: 12px 14px;
+  cursor: pointer;
+  transition: transform .16s ease, border-color .16s ease;
+}
+.rec-item:hover { transform: translateY(-2px); border-color: rgba(0, 174, 236, .45); }
+.rec-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.rec-title { font-size: 14px; font-weight: 600; color: #18191c; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rec-meta { font-size: 12px; margin: 6px 0 8px; }
 
 @media (max-width: 1100px) {
   .home-grid { grid-template-columns: 1fr; }

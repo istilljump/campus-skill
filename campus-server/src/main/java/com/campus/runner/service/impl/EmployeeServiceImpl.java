@@ -36,7 +36,7 @@ public class EmployeeServiceImpl implements EmployeeService {
      */
     public Employee login(EmployeeLoginDTO employeeLoginDTO) {
         String username = employeeLoginDTO.getUsername();
-        String password = DigestUtils.md5DigestAsHex(employeeLoginDTO.getPassword().getBytes());
+        //管理员历史口令为无盐 MD5；统一走 PasswordUtil 兼容校验（BCrypt 优先，回退 MD5）
 
         //1、根据用户名查询数据库中的数据
         Employee employee = employeeMapper.getByUsername(username);
@@ -48,7 +48,7 @@ public class EmployeeServiceImpl implements EmployeeService {
         }
 
         //密码比对
-        if (!password.equals(employee.getPassword())) {
+        if (!com.campus.runner.utils.PasswordUtil.matches(employeeLoginDTO.getPassword(), "", employee.getPassword())) {
             //密码错误
             throw new PasswordErrorException(MessageConstant.PASSWORD_ERROR);
         }

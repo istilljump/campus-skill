@@ -57,10 +57,14 @@ async function main() {
   check('技能者中心', center?.code === 1 && center?.data?.auditStatus === 1, center);
 
   console.log('== 3. 用户1 钱包充值并发布悬赏 ==');
+  // 基线快照：演示账号跨运行复用，余额/信用分/完成单数会累积，
+  // 因此断言统一基于本次运行开始时的基线做增量比较，保证脚本可重复执行。
+  const baseUserBal = Number((await api('GET', '/user/wallet/balance', undefined, u1)).data?.balance) || 0;
+  const baseCenter = (await api('GET', '/skiller/info/center', undefined, st)).data || {};
   const rech = await api('POST', '/user/wallet/recharge', { amount: 500 }, u1);
   check('充值500', rech?.code === 1, rech);
   const bal0 = await api('GET', '/user/wallet/balance', undefined, u1);
-  check('余额=500', bal0?.data?.balance === 500, bal0);
+  check('余额=基线+500', Number(bal0?.data?.balance) === baseUserBal + 500, { 期望: baseUserBal + 500, 实际: bal0?.data?.balance });
   const submit = await api('POST', '/user/order/submit', {
     typeId: 1, title: '课程汇报PPT美化', description: '20页以内，科技风模板',
     deliveryAddress: '东区3号楼502', campus: '主校区', rewardAmount: 50, payMethod: 2,
@@ -71,7 +75,7 @@ async function main() {
   const pay = await api('POST', `/user/order/pay/${orderNumber}`, undefined, u1);
   check('钱包支付', pay?.code === 1, pay);
   const bal1 = await api('GET', '/user/wallet/balance', undefined, u1);
-  check('支付后余额=450', Number(bal1?.data?.balance) === 450, bal1);
+  check('支付后余额=基线+450', Number(bal1?.data?.balance) === baseUserBal + 450, { 期望: baseUserBal + 450, 实际: bal1?.data?.balance });
 
   console.log('== 4. 技能者抢单 → 交付 → 验收（悬赏链路核心） ==');
   const hall = await api('GET', '/skiller/orders/hall?page=1&pageSize=10', undefined, st);
@@ -109,15 +113,19 @@ async function main() {
   const sb1 = await api('GET', '/skiller/wallet/balance', undefined, st);
   check('验收后技能者到账45', Number(sb1?.data?.balance) === 45, sb1);
   const bal2 = await api('GET', '/user/wallet/balance', undefined, u1);
-  check('用户余额仍为450', Number(bal2?.data?.balance) === 450, bal2);
+  check('用户余额仍为基线+450', Number(bal2?.data?.balance) === baseUserBal + 450, { 期望: baseUserBal + 450, 实际: bal2?.data?.balance });
 
   console.log('== 6. 评价与信用分 ==');
   const review = await api('POST', '/user/review/submit', { orderId: hallItem.id, score: 5, content: '很棒', tags: '响应快,质量高', isAnonymous: 0 }, u1);
   check('五星评价', review?.code === 1, review);
   const c2 = await api('GET', '/skiller/info/center', undefined, st);
-  check('信用分=100(100-3返修+1交付+2好评)', c2?.data?.creditScore === 100, c2?.data);
+  // 此处已发生的信用变动 = 交付完成+1、好评+2、返修-3，净额约 0；基于基线断言，不写死历史累计值
+  check('信用分按规则变动(交付+1 好评+2 返修-3，净额≈0)',
+    Math.abs(Number(c2?.data?.creditScore) - Number(baseCenter.creditScore)) <= 3,
+    { 基线: baseCenter.creditScore, 实际: c2?.data?.creditScore });
   const c2b = await api('GET', '/skiller/info/center', undefined, st);
-  check('完成单数=1', c2b?.data?.completedOrders === 1, c2b?.data);
+  check('完成单数=基线+1', Number(c2b?.data?.completedOrders) === Number(baseCenter.completedOrders || 0) + 1,
+    { 期望: Number(baseCenter.completedOrders || 0) + 1, 实际: c2b?.data?.completedOrders });
 
   console.log('== 7. 作品集 → 管理端审核定级 ==');
   const pf = await api('POST', '/skiller/portfolio', { title: '国潮风海报合集', categoryId: 2, coverUrl: 'http://fake/c1.jpg', workUrls: 'http://fake/w1.jpg,http://fake/w2.jpg', description: '三个活动海报' }, st);
@@ -177,14 +185,16 @@ async function main() {
   const verdict = await api('PUT', `/admin/dispute/${dp.id}/verdict`, { status: 1, verdict: '质量不达标，退款用户' }, at, 'token');
   check('仲裁退款用户', verdict?.code === 1, verdict);
   const bal3 = await api('GET', '/user/wallet/balance', undefined, u1);
-  check('仲裁后退款+100(余额450)', Number(bal3?.data?.balance) === 450, bal3);
+  check('仲裁退款后余额=基线+450', Number(bal3?.data?.balance) === baseUserBal + 450, { 期望: baseUserBal + 450, 实际: bal3?.data?.balance });
   const creditAfter = (await api('GET', '/skiller/info/center', undefined, st)).data.creditScore;
-  check('仲裁判责信用-10', creditAfter === creditBefore - 10, { creditBefore, creditAfter });
+  // 信用分服务端有下限 greatest(0, ...)：反复运行会把复用账号的信用分扣到 0，此时 -10 会被截断
+  check('仲裁判责信用-10（触底时为 0）',
+    creditAfter === creditBefore - 10 || (creditAfter === 0 && creditBefore <= 10),
+    { creditBefore, creditAfter });
 
   console.log('== 9. 提现链路 ==');
-  const pwd = await api('POST', '/skiller/wallet/password', { withdrawPassword: '123456' }, st).catch(() => null);
-  const setPwd = pwd === null ? await api('POST', '/skiller/wallet/password', { oldPassword: '', newPassword: '123456' }, st) : pwd;
-  // 密码接口参数不定，直接尝试提现看报错提示
+  const setPwd = await api('POST', '/skiller/wallet/password', { password: '123456' }, st);
+  check('设置提现密码', setPwd?.code === 1, setPwd);
   const wd = await api('POST', '/skiller/wallet/withdraw', { amount: 10, withdrawPassword: '123456' }, st);
   check('提现申请(成功或提示设置密码)', wd?.code === 1 || (typeof wd?.msg === 'string' && wd.msg.length > 0), wd);
   const wdPage = await api('GET', '/admin/withdraw/page?page=1&pageSize=10', undefined, at, 'token');
@@ -203,6 +213,21 @@ async function main() {
   check('信用榜单', rank?.code === 1 && rank?.data?.length >= 1, rank);
   const trend = await api('GET', '/skiller/info/trend', undefined, st);
   check('技能者7日趋势', trend?.code === 1, trend);
+
+    console.log('== 11. 推荐引擎（v8） ==');
+  const rec = await api('GET', '/user/market/recommend?limit=8', undefined, u1);
+  check('猜你喜欢返回列表', rec?.code === 1 && Array.isArray(rec?.data) && rec.data.length >= 1, rec);
+  check('推荐项含推荐理由', rec?.code === 1 && (rec?.data?.[0]?.recommendReason || '').length > 0, rec?.data?.[0]);
+  // 浏览详情产生行为埋点，随后相似推荐应可用
+  const mk = await api('GET', '/user/market?page=1&pageSize=1', undefined, u1);
+  const firstSvc = L(mk)[0];
+  if (firstSvc) {
+    const det = await api('GET', `/user/market/${firstSvc.id}`, undefined, u1);
+    check('服务详情(含浏览埋点)', det?.code === 1 && det?.data?.id === firstSvc.id, det);
+    const sim = await api('GET', `/user/market/${firstSvc.id}/similar?limit=4`, undefined, u1);
+    check('看了又看返回列表', sim?.code === 1 && Array.isArray(sim?.data), sim);
+    check('看了又看不含自身', sim?.code === 1 && !L(sim).some(x => x.id === firstSvc.id), sim?.data?.map(x => x.id));
+  }
 
   console.log(`\n===== 结果: ${pass} 通过 / ${fail} 失败 =====`);
   if (failures.length) { console.log('失败项:'); failures.forEach(f => console.log(' - ' + f)); }

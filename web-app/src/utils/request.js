@@ -34,6 +34,10 @@ const request = axios.create({
   timeout: 15000,
 })
 
+// 全局网络状态（供布局层展示异常横幅与一键重试；独立于 pinia 避免循环依赖）
+import { reactive } from 'vue'
+export const networkState = reactive({ error: false })
+
 request.interceptors.request.use((config) => {
   const url = config.url || ''
   // /skiller/** 用技能者 token；其余默认用户 token。
@@ -56,6 +60,7 @@ function toLogin() {
 
 request.interceptors.response.use(
   (response) => {
+    networkState.error = false
     const res = response.data
     if (res.code === 1) return res.data
     const msg = res.msg || '请求失败'
@@ -68,6 +73,9 @@ request.interceptors.response.use(
     return Promise.reject(new Error(msg))
   },
   (error) => {
+    //网络不通/服务未启动：置全局异常态并广播事件，布局层展示横幅与一键重试
+    networkState.error = error.message === 'Network Error' || (error.response && error.response.status >= 500)
+    if (networkState.error) window.dispatchEvent(new CustomEvent('campus:net-error'))
     ElMessage.error(error.message === 'Network Error' ? '网络异常，请检查后端服务' : error.message)
     return Promise.reject(error)
   },

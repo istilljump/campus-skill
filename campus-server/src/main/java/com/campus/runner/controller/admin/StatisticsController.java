@@ -1,6 +1,7 @@
 package com.campus.runner.controller.admin;
 
 import com.campus.runner.result.Result;
+import com.campus.runner.service.RecommendService;
 import com.campus.runner.service.StatisticsService;
 import com.campus.runner.vo.NameCountVO;
 import com.campus.runner.vo.OrderStatisticsVO;
@@ -28,6 +29,9 @@ public class StatisticsController {
     @Autowired
     private StatisticsService statisticsService;
 
+    @Autowired
+    private RecommendService recommendService;
+
     @GetMapping("/overview")
     @ApiOperation("平台订单统计看板")
     public Result<OrderStatisticsVO> overview() {
@@ -38,6 +42,12 @@ public class StatisticsController {
     @ApiOperation("近 N 日订单趋势（默认7天）")
     public Result<List<TrendPointVO>> trend(@RequestParam(defaultValue = "7") Integer days) {
         return Result.success(statisticsService.dailyTrend(days));
+    }
+
+    @GetMapping("/recommendEffect")
+    @ApiOperation("推荐效果对比（v8 实验）：近 N 天各行为来源的浏览量与预约/成交转化率")
+    public Result<List<com.campus.runner.vo.RecommendEffectVO>> recommendEffect(@RequestParam(defaultValue = "7") Integer days) {
+        return Result.success(recommendService.effectStats(days));
     }
 
     @GetMapping("/typeRank")

@@ -27,6 +27,7 @@
       </el-table-column>
       <el-table-column prop="score" label="评分" width="80" />
       <el-table-column prop="completedOrders" label="完成单数" width="100" />
+          <template #empty><el-empty description="暂无数据" :image-size="72" /></template>
     </el-table>
   </div>
 </template>

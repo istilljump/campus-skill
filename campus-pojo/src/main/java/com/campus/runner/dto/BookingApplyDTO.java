@@ -38,4 +38,8 @@ public class BookingApplyDTO implements Serializable {
     @ApiModelProperty("需求备注")
     @Size(max = 500, message = "备注不能超过500字")
     private String remark;
+
+    //行为来源 1市场列表 2猜你喜欢 3看了又看 4其他（推荐效果实验埋点，选填）
+    @ApiModelProperty(value = "行为来源 1市场列表 2猜你喜欢 3看了又看 4其他", hidden = true)
+    private Integer src;
 }

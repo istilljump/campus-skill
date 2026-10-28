@@ -2,6 +2,7 @@ package com.campus.runner.controller.runner;
 
 import com.campus.runner.context.BaseContext;
 import com.campus.runner.dto.WithdrawApplyDTO;
+import com.campus.runner.dto.WithdrawPasswordDTO;
 import com.campus.runner.result.PageResult;
 import com.campus.runner.result.Result;
 import com.campus.runner.service.RunnerService;
@@ -68,8 +69,8 @@ public class RunnerWalletController {
 
     @PostMapping("/password")
     @ApiOperation("设置/修改提现密码")
-    public Result<String> setPassword(@RequestParam String password) {
-        walletService.setWithdrawPassword(currentUserId(), password);
+    public Result<String> setPassword(@RequestBody @Valid WithdrawPasswordDTO withdrawPasswordDTO) {
+        walletService.setWithdrawPassword(currentUserId(), withdrawPasswordDTO.getPassword());
         return Result.success("提现密码已更新");
     }
 

@@ -1,0 +1,44 @@
+# 测试环境：并发对账集成测试专用
+# - 独立数据库 campus_runner_test（用开发库结构导出初始化，避免污染演示数据）
+# - Redis 切到 database 1，与开发环境隔离
+server:
+  port: 0
+
+campus:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    host: localhost
+    port: 3306
+    database: campus_runner_test
+    username: root
+    password: ""
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password: ""
+      database: 1
+  alioss:
+    endpoint: oss-cn-beijing.aliyuncs.com
+    access-key-id: placeholder
+    access-key-secret: placeholder
+    bucket-name: placeholder
+    region: cn-beijing
+  baidu:
+    ak: placeholder
+    location-url: https://api.map.baidu.com/geocoding/v3/
+    distance-url: https://api.map.baidu.com/routedirection/v2/riding
+  wechat:
+    appid: placeholder
+    secret: placeholder
+    mchid: placeholder
+    mch-serial-no: placeholder
+    private-key-file-path: placeholder
+    api-v3-key: placeholder
+    notify-url: placeholder
+    refund-notify-url: placeholder
+  shop:
+    location:
+      lng: 116.404
+      lat: 39.915
+    limit-distance: 10

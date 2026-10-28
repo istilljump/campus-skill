@@ -20,7 +20,9 @@
           <el-link v-if="row.orderId" type="primary">查看订单 ›</el-link>
         </template>
       </el-table-column>
-      <template #empty><el-empty description="暂无消息" :image-size="72" /></template>
+      <template #empty><el-empty description="暂无消息，订单动态与平台通知会在这里出现" :image-size="72">
+  <el-button type="primary" plain @click="$router.push('/hall')">去悬赏大厅看看</el-button>
+</el-empty></template>
     </el-table>
   </div>
 </template>

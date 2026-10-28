@@ -1,0 +1,19 @@
+{
+  "at": "2026-10-25T15:50:23.270Z",
+  "users": 10,
+  "exposePerGroup": 6,
+  "recommend": {
+    "views": 60,
+    "interestHits": 22,
+    "hitRate": "36.7%",
+    "conversions": 22,
+    "ctr": "36.7%"
+  },
+  "market": {
+    "views": 60,
+    "interestHits": 0,
+    "hitRate": "0.0%",
+    "conversions": 0,
+    "ctr": "0.0%"
+  }
+}

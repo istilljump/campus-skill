@@ -169,6 +169,7 @@ public interface OrderMapper {
      * 技能者端-按日统计完成单量与收入（按送达时间）
      */
     @Select("select date_format(finish_time, '%Y-%m-%d') as date, count(*) as orderCount, " +
+            "sum(case when status = 5 then 1 else 0 end) as completedCount, " +
             "ifnull(sum(runner_income), 0) as amount from orders " +
             "where runner_id = #{runnerId} and status in (4, 5) and finish_time >= #{begin} " +
             "group by date_format(finish_time, '%Y-%m-%d') order by date")

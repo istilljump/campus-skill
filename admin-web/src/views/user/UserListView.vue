@@ -25,6 +25,7 @@
       <el-table-column label="注册时间" width="170">
         <template #default="{ row }">{{ fmtTime(row.createTime) }}</template>
       </el-table-column>
+          <template #empty><el-empty description="暂无数据" :image-size="72" /></template>
     </el-table>
 
     <div class="table-pager">

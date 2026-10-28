@@ -19,4 +19,9 @@ public interface CreditService {
      * 管理端-信用分排行榜（按信用分降序取前 N）
      */
     List<CreditRankVO> getRank(int limit);
+
+    /**
+     * 技能者端-我的信用档案（当前分 + 等级 + 流水明细）
+     */
+    com.campus.runner.vo.SkillerCreditVO myCredit(Long skillerId);
 }

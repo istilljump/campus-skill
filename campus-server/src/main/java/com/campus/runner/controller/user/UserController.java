@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.validation.Valid;
@@ -32,9 +33,15 @@ public class UserController {
     @Autowired
     private UserService userService;
 
+    @Value("${campus.guest-login.enabled:true}")
+    private boolean guestLoginEnabled;
+
     @PostMapping("/login")
-    @ApiOperation("微信用户登录")
+    @ApiOperation("微信用户登录（体验码降级入口，可用 campus.guest-login.enabled 关闭）")
     public Result<UserLoginVO> login(@RequestBody @Valid UserLoginDTO userLoginDTO) {
+        if (!guestLoginEnabled) {
+            throw new com.campus.runner.exception.BusinessException("体验登录已关闭，请使用账号密码登录");
+        }
         log.info("微信用户登录：{}", userLoginDTO.getCode());
         UserLoginVO userLoginVO = userService.login(userLoginDTO.getCode());
         return Result.success(userLoginVO);

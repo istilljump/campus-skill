@@ -109,9 +109,9 @@ public class UserServiceImpl implements UserService {
         if (userMapper.getByUsername(username) != null) {
             throw new BusinessException("该账号已被注册，请更换");
         }
-        //随机盐值 + MD5(salt + 明文) 存储（与提现密码同用 DigestUtils 方案）
+        //BCrypt 存储（自带随机盐与慢哈希）；salt 列保留以兼容历史数据与提现密码口径
         String salt = UUID.randomUUID().toString().replace("-", "");
-        String hashed = DigestUtils.md5DigestAsHex((salt + dto.getPassword()).getBytes());
+        String hashed = com.campus.runner.utils.PasswordUtil.encode(dto.getPassword());
         User user = User.builder()
                 .openid("acct_" + salt.substring(0, 16))  //非微信注册用户，openid 用账号标识占位
                 .username(username)
@@ -136,9 +136,12 @@ public class UserServiceImpl implements UserService {
         if (user == null || user.getPassword() == null) {
             throw new BusinessException("账号或密码不正确");
         }
-        String hashed = DigestUtils.md5DigestAsHex((user.getSalt() + dto.getPassword()).getBytes());
-        if (!hashed.equals(user.getPassword())) {
+        if (!com.campus.runner.utils.PasswordUtil.matches(dto.getPassword(), user.getSalt(), user.getPassword())) {
             throw new BusinessException("账号或密码不正确");
+        }
+        //旧 MD5 口径登录成功后自动升级为 BCrypt（渐进迁移，无需重置全部密码）
+        if (com.campus.runner.utils.PasswordUtil.needsRehash(user.getPassword())) {
+            userMapper.updatePassword(user.getId(), com.campus.runner.utils.PasswordUtil.encode(dto.getPassword()), user.getSalt());
         }
         return buildToken(user, "acct_" + user.getUsername());
     }
@@ -149,14 +152,12 @@ public class UserServiceImpl implements UserService {
         if (user == null) {
             throw new BusinessException(MessageConstant.ACCOUNT_NOT_FOUND);
         }
-        if (user.getPassword() != null) {
-            String oldHashed = DigestUtils.md5DigestAsHex((user.getSalt() + dto.getOldPassword()).getBytes());
-            if (!oldHashed.equals(user.getPassword())) {
-                throw new BusinessException("原密码不正确");
-            }
+        if (user.getPassword() != null
+                && !com.campus.runner.utils.PasswordUtil.matches(dto.getOldPassword(), user.getSalt(), user.getPassword())) {
+            throw new BusinessException("原密码不正确");
         }
         String salt = UUID.randomUUID().toString().replace("-", "");
-        String hashed = DigestUtils.md5DigestAsHex((salt + dto.getNewPassword()).getBytes());
+        String hashed = com.campus.runner.utils.PasswordUtil.encode(dto.getNewPassword());
         userMapper.updatePassword(userId, hashed, salt);
     }
 

@@ -19,6 +19,11 @@
       <el-table-column label="下单时间" width="160">
         <template #default="{ row }">{{ fmtTime(row.createTime) }}</template>
       </el-table-column>
+      <template #empty>
+        <el-empty :image-size="80" description="该状态下暂无订单">
+          <el-button type="primary" @click="$router.push('/submit')">去发布悬赏</el-button>
+        </el-empty>
+      </template>
     </el-table>
 
     <div class="table-pager">

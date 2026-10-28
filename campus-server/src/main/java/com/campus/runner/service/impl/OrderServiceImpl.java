@@ -45,6 +45,8 @@ import com.github.pagehelper.PageHelper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -52,6 +54,8 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -105,6 +109,44 @@ public class OrderServiceImpl implements OrderService {
 
     @Autowired
     private RedisTemplate<String, Object> redisTemplate;
+
+    @Autowired
+    private StringRedisTemplate stringRedisTemplate;
+
+    /**
+     * 抢单基线开关：true 时走优化前三步实现（A/B 压测与答辩对比用），
+     * 启动参数 --campus.grab.legacy=true 切换，默认 false 走 Lua 优化路径
+     */
+    @org.springframework.beans.factory.annotation.Value("${campus.grab.legacy:false}")
+    private boolean grabLegacyMode;
+
+    /**
+     * 抢单原子脚本：一次 Redis 往返同时完成「限流计数」与「订单占用占位」
+     * （替代原 INCR + EXPIRE + SETNX 三次往返）。返回 -1 触发限流、0 订单已被占用、1 占位成功。
+     * KEYS[1]=限流key KEYS[2]=占位key；ARGV[1]=限流窗口秒 ARGV[2]=限流阈值 ARGV[3]=占位值 ARGV[4]=占位TTL秒
+     */
+    private static final DefaultRedisScript<Long> GRAB_ATOMIC_SCRIPT = new DefaultRedisScript<>(
+            "local c = redis.call('INCR', KEYS[1]) " +
+            "if c == 1 then redis.call('EXPIRE', KEYS[1], ARGV[1]) end " +
+            "if c > tonumber(ARGV[2]) then return -1 end " +
+            "if redis.call('SET', KEYS[2], ARGV[3], 'NX', 'EX', ARGV[4]) then return 1 else return 0 end",
+            Long.class);
+
+    //接单权限本地缓存：允许 30s / 拒绝 5s。热门订单瞬时涌入的请求绝大多数直接命中内存，不再打库；
+    //代价是封禁/限额等风控变更最多延迟 30s 生效（对抢单场景可接受）
+    private static final long GRAB_PERMISSION_ALLOW_MS = 30_000;
+    private static final long GRAB_PERMISSION_DENY_MS = 5_000;
+    private final Map<Long, GrabPermissionEntry> grabPermissionCache = new ConcurrentHashMap<>();
+
+    private static final class GrabPermissionEntry {
+        final long expiresAt;
+        final String error;
+
+        GrabPermissionEntry(long expiresAt, String error) {
+            this.expiresAt = expiresAt;
+            this.error = error;
+        }
+    }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -306,9 +348,46 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public void grab(Long runnerId, OrdersGrabDTO dto) {
-        //接单权限校验：认证状态、账号状态、每日接单上限
-        checkGrabPermission(runnerId, dto.getId());
         Long orderId = dto.getId();
+        if (grabLegacyMode) {
+            grabLegacy(runnerId, orderId);
+            return;
+        }
+        //第一步：Lua 脚本一次往返完成限流 + 订单占用，把拒绝请求挡在最前面（限流规则不变：10 秒 5 次）
+        Long verdict = stringRedisTemplate.execute(GRAB_ATOMIC_SCRIPT,
+                List.of(RedisConstant.RUNNER_GRAB_LIMIT + runnerId, RedisConstant.ORDER_GRAB_LOCK + orderId),
+                "10", String.valueOf(GRAB_RATE_LIMIT), runnerId.toString(), "10");
+        if (verdict == null || verdict == -1L) {
+            throw new GrabFailedException(MessageConstant.GRAB_TOO_FREQUENT);
+        }
+        if (verdict == 0L) {
+            throw new GrabFailedException(MessageConstant.ORDER_GRAB_FAILED);
+        }
+        try {
+            //第二步：接单权限校验（带本地缓存，热点请求不打库）
+            checkGrabPermission(runnerId);
+            //第三步：条件更新，仅当订单仍为待接单且已支付时生效，数据库层面保证不重复抢单
+            int rows = orderMapper.grabOrder(orderId, runnerId);
+            if (rows == 0) {
+                throw new GrabFailedException(MessageConstant.ORDER_NOT_GRABBABLE);
+            }
+            afterGrabSuccess(orderId, runnerId);
+        } finally {
+            //占位 key 短 TTL 兜底，这里主动删除以便并发请求尽快拿到明确结果
+            stringRedisTemplate.delete(RedisConstant.ORDER_GRAB_LOCK + orderId);
+        }
+    }
+
+    /**
+     * 优化前基线实现：权限先查库（2 次 SQL）+ 限流/占用三次 Redis 往返。
+     * 保留用于 A/B 压测与答辩对比演示，启动参数 --campus.grab.legacy=true 切换。
+     */
+    private void grabLegacy(Long runnerId, Long orderId) {
+        //接单权限校验：认证状态、账号状态、每日接单上限（每次请求直接查库）
+        String denied = loadGrabPermission(runnerId);
+        if (denied != null) {
+            throw new GrabFailedException(denied);
+        }
         //限流：同一技能者 10 秒内最多 5 次抢单请求，防止刷接口
         String limitKey = RedisConstant.RUNNER_GRAB_LIMIT + runnerId;
         Long count = redisTemplate.opsForValue().increment(limitKey);
@@ -329,24 +408,30 @@ public class OrderServiceImpl implements OrderService {
             if (rows == 0) {
                 throw new GrabFailedException(MessageConstant.ORDER_NOT_GRABBABLE);
             }
-            log.info("抢单成功，orderId={}, runnerId={}", orderId, runnerId);
-            //站内消息：通知发单用户
-            Orders grabbed = orderMapper.getById(orderId);
-            if (grabbed != null) {
-                //用户未定期限的技能订单：接单后交付窗口从2小时(接单等待)放宽为24小时，避免被超时任务误杀
-                if (grabbed.getExpectedTime() == null) {
-                    orderMapper.update(Orders.builder().id(orderId)
-                            .timeoutTime(LocalDateTime.now().plusHours(24))
-                            .build());
-                }
-                Runner grabRunner = runnerMapper.getById(runnerId);
-                messageService.notify(grabbed.getUserId(), "订单已被接单",
-                        "您的订单「" + grabbed.getTitle() + "」已被"
-                                + (grabRunner != null ? grabRunner.getName() : "技能者") + "接单，请留意服务进度",
-                        grabbed.getId());
-            }
+            afterGrabSuccess(orderId, runnerId);
         } finally {
             redisTemplate.delete(lockKey);
+        }
+    }
+
+    /**
+     * 抢单成功后的公共后置处理：未定期限订单放宽交付窗口 + 站内通知发单用户
+     */
+    private void afterGrabSuccess(Long orderId, Long runnerId) {
+        log.info("抢单成功，orderId={}, runnerId={}", orderId, runnerId);
+        Orders grabbed = orderMapper.getById(orderId);
+        if (grabbed != null) {
+            //用户未定期限的技能订单：接单后交付窗口从2小时(接单等待)放宽为24小时，避免被超时任务误杀
+            if (grabbed.getExpectedTime() == null) {
+                orderMapper.update(Orders.builder().id(orderId)
+                        .timeoutTime(LocalDateTime.now().plusHours(24))
+                        .build());
+            }
+            Runner grabRunner = runnerMapper.getById(runnerId);
+            messageService.notify(grabbed.getUserId(), "订单已被接单",
+                    "您的订单「" + grabbed.getTitle() + "」已被"
+                            + (grabRunner != null ? grabRunner.getName() : "技能者") + "接单，请留意服务进度",
+                    grabbed.getId());
         }
     }
 
@@ -811,21 +896,42 @@ public class OrderServiceImpl implements OrderService {
         orderMapper.update(upd);
     }
 
-    private void checkGrabPermission(Long runnerId, Long orderId) {
+    private void checkGrabPermission(Long runnerId) {
+        long now = System.currentTimeMillis();
+        GrabPermissionEntry cached = grabPermissionCache.get(runnerId);
+        if (cached != null && now < cached.expiresAt) {
+            if (cached.error != null) {
+                throw new GrabFailedException(cached.error);
+            }
+            return;
+        }
+        String error = loadGrabPermission(runnerId);
+        grabPermissionCache.put(runnerId, new GrabPermissionEntry(
+                now + (error == null ? GRAB_PERMISSION_ALLOW_MS : GRAB_PERMISSION_DENY_MS), error));
+        if (error != null) {
+            throw new GrabFailedException(error);
+        }
+    }
+
+    /**
+     * 实际的接单权限检查（两次查库：技能者档案 + 当日接单数），返回 null 表示允许
+     */
+    private String loadGrabPermission(Long runnerId) {
         Runner runner = runnerMapper.getById(runnerId);
         if (runner == null) {
-            throw new GrabFailedException(MessageConstant.RUNNER_NOT_FOUND);
+            return MessageConstant.RUNNER_NOT_FOUND;
         }
         if (runner.getAuditStatus() == null || runner.getAuditStatus() != RunnerConstant.AUDIT_PASSED) {
-            throw new GrabFailedException(MessageConstant.RUNNER_NOT_CERTIFIED);
+            return MessageConstant.RUNNER_NOT_CERTIFIED;
         }
         if (runner.getStatus() == null || runner.getStatus() != 1) {
-            throw new GrabFailedException(MessageConstant.ACCOUNT_LOCKED);
+            return MessageConstant.ACCOUNT_LOCKED;
         }
         int todayCount = orderMapper.countRunnerTodayOrders(runnerId);
         if (runner.getDailyOrderLimit() != null && todayCount >= runner.getDailyOrderLimit()) {
-            throw new GrabFailedException(MessageConstant.DAILY_LIMIT_REACHED);
+            return MessageConstant.DAILY_LIMIT_REACHED;
         }
+        return null;
     }
 
     private Orders getOwnedOrder(Long orderId, Long runnerId) {

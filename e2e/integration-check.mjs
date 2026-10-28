@@ -103,12 +103,14 @@ T('技能者中心字段完整', skCenter?.code === 1 &&
   ['completedOrders', 'creditScore', 'dailyOrderLimit', 'todayOrderCount'].every(k => k in skCenter.data), skCenter?.data && Object.keys(skCenter.data));
 
 console.log('== 5. 预约链路 ==');
-const mk = await api('GET', '/user/market?page=1&pageSize=1', null, UT);
-const svc = (mk.data.records || [])[0];
+// 取「当前技能者自己上架的服务」，避免依赖市场排序（排序会随演示数据变化）
+const skSvcs = await api('GET', '/skiller/service/list', null, SKT);
+const svc = (skSvcs.data || []).find(s => s.status === 1) || (skSvcs.data || [])[0];
 const bk = await api('POST', '/user/booking', { serviceItemId: svc.id, expectTime: '2026-10-20 14:00', remark: '联调预约' }, UT);
 T('创建预约', bk?.code === 1, bk);
-const skb = await api('GET', '/skiller/booking/page?page=1&pageSize=5&status=0', null, SKT);
-const target = (skb.data.records || []).find(b => b.serviceItemId === svc.id);
+const skb = await api('GET', '/skiller/booking/page?page=1&pageSize=20&status=0', null, SKT);
+// 按本次联调备注定位自己刚建的预约单，避免误操作到演示数据
+const target = (skb.data.records || []).find(b => b.remark === '联调预约');
 T('技能者可见待确认预约（含 userName/skillerName）', !!target && !!target.userName && !!target.skillerName, skb);
 const cf = await api('POST', `/skiller/booking/${target.id}/confirm`, null, SKT);
 T('技能者确认预约', cf?.code === 1, cf);

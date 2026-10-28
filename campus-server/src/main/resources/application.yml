@@ -51,6 +51,9 @@ logging:
           controller: info
 
 campus:
+  guest-login:
+    # 体验码登录开关（联调/演示用）：生产环境置为 false 关闭任意码即可登录的降级入口
+    enabled: true
   jwt:
     # 设置jwt签名加密时使用的秘钥
     admin-secret-key: itcast

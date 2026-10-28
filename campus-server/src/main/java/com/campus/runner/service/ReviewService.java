@@ -20,4 +20,9 @@ public interface ReviewService {
      * 按订单查询评价
      */
     OrderReviewVO getByOrderId(Long orderId);
+
+    /**
+     * 用户端-我发出的评价分页
+     */
+    PageResult<com.campus.runner.vo.MyReviewVO> pageMy(Long userId, Integer page, Integer pageSize);
 }

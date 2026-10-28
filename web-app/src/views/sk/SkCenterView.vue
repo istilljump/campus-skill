@@ -1,5 +1,5 @@
 <template>
-  <div class="center">
+  <div class="center" v-loading="loading">
     <!-- 主视觉：技能者数据总览 -->
     <div class="hero">
       <div class="hero-main">
@@ -82,7 +82,7 @@
           <el-table-column label="时间">
             <template #default="{ row }">{{ fmtTime(row.applyTime) }}</template>
           </el-table-column>
-          <template #empty><div class="muted" style="text-align:center;padding:12px 0">暂无提现记录</div></template>
+          <template #empty><el-empty :image-size="60" description="暂无提现记录" /></template>
         </el-table>
       </div>
 
@@ -101,7 +101,7 @@
               </span>
             </template>
           </el-table-column>
-          <template #empty><div class="muted" style="text-align:center;padding:12px 0">暂无流水</div></template>
+          <template #empty><el-empty :image-size="60" description="暂无流水" /></template>
         </el-table>
       </div>
     </div>
@@ -128,6 +128,7 @@ const txs = ref([])
 const wdAmount = ref(null)
 const wdPassword = ref('')
 const busy = ref(false)
+const loading = ref(false)
 
 // 等级门槛：20/50/100 单晋升铜/银/金牌（与 H5 LEVEL_GOALS 一致）
 const LEVEL_GOALS = { 1: 20, 2: 50, 3: 100 }
@@ -157,12 +158,15 @@ function barH(p) {
 }
 
 async function load() {
-  center.value = await skCenter() || {}
-  store.center = center.value
-  currentTask.value = ((await skPageOrders({ page: 1, pageSize: 5, status: 3 }))?.records || [])[0] || null
-  trend.value = await skTrend(7) || []
-  wdRecords.value = (await skPageWithdraws({ page: 1, pageSize: 10 }))?.records || []
-  txs.value = (await skPageTxs({ page: 1, pageSize: 10 }))?.records || []
+  loading.value = true
+  try {
+    center.value = await skCenter() || {}
+    store.center = center.value
+    currentTask.value = ((await skPageOrders({ page: 1, pageSize: 5, status: 3 }))?.records || [])[0] || null
+    trend.value = await skTrend(7) || []
+    wdRecords.value = (await skPageWithdraws({ page: 1, pageSize: 10 }))?.records || []
+    txs.value = (await skPageTxs({ page: 1, pageSize: 10 }))?.records || []
+  } finally { loading.value = false }
 }
 
 async function onPickup() {

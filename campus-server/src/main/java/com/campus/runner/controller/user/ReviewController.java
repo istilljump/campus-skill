@@ -10,6 +10,7 @@ import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -35,6 +36,14 @@ public class ReviewController {
     public Result<String> submit(@RequestBody @Valid ReviewSubmitDTO reviewSubmitDTO) {
         reviewService.submit(BaseContext.getCurrentId(), reviewSubmitDTO);
         return Result.success("评价成功");
+    }
+
+    @GetMapping("/my")
+    @ApiOperation("我发出的评价分页")
+    public Result<com.campus.runner.result.PageResult<com.campus.runner.vo.MyReviewVO>> my(
+            @RequestParam(defaultValue = "1") Integer page,
+            @RequestParam(defaultValue = "10") Integer pageSize) {
+        return Result.success(reviewService.pageMy(BaseContext.getCurrentId(), page, pageSize));
     }
 
     @GetMapping("/order/{orderId}")

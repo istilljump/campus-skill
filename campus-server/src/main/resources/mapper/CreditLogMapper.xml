@@ -4,7 +4,13 @@
 <mapper namespace="com.campus.runner.mapper.CreditLogMapper">
 
     <!-- 技能者信用分流水 -->
-    <select id="listBySkiller" resultType="com.campus.runner.entity.CreditLog">
-        select * from credit_log where skiller_id = #{skillerId} order by create_time desc
+    <select id="listBySkiller" resultType="com.campus.runner.vo.CreditLogVO">
+        select l.id, l.delta, l.reason, l.order_id as orderId,
+               o.number as orderNumber, l.create_time as createTime
+        from credit_log l
+        left join orders o on l.order_id = o.id
+        where l.skiller_id = #{skillerId}
+        order by l.create_time desc, l.id desc
+        limit 50
     </select>
 </mapper>

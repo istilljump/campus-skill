@@ -1,0 +1,36 @@
+sequenceDiagram
+    autonumber
+    actor U as 用户（发单方）
+    actor S as 技能者
+    participant FE as 前端（Web/H5）
+    participant OS as OrderService
+    participant WS as WalletService（钱包）
+    participant DB as MySQL
+    participant R as Redis
+    participant MQ as MessageService
+
+    U->>FE: 发布悬赏（定价 50 元）
+    FE->>OS: submit()
+    OS->>WS: 托管扣款 50 元（条件更新 balance-50）
+    WS->>DB: 写钱包流水（TYPE_EXPENSE）
+    OS->>DB: 订单落库（状态1待支付→支付→状态2待接单）
+    Note over DB: 资金托管：钱已从用户余额扣出，<br/>技能者尚未到账
+
+    S->>FE: 抢单
+    FE->>R: Lua：限流计数+订单占位（1 次往返）
+    R-->>FE: 占位成功（仅 1 人）
+    FE->>OS: grab()
+    OS->>DB: 条件更新 UPDATE orders SET status=3<br/>WHERE id=? AND status=2 AND pay_status=1
+    Note over DB: 影响行数=1 才算抢单成功，<br/>数据库层保证不重复接单
+    OS->>DB: 预支付托管资金挂账（结算时点=验收）
+    OS->>MQ: 站内信通知发单用户
+    MQ-->>U: WebSocket 实时推送
+
+    S->>FE: 上传交付物（状态4已交付）
+    U->>FE: 验收
+    FE->>OS: confirm()（验收结算）
+    OS->>WS: 技能者到账 = 悬赏 − 类目费率(10%)
+    WS->>DB: 技能者余额 +45 元、平台费 +5 元、双向流水
+    OS->>DB: 订单状态5已完成、信用分 +1
+    OS->>MQ: 双方站内信
+    Note over WS,DB: 退款分支：取消/超时无人接单/超时未交付/仲裁退款<br/>均原路退回用户余额

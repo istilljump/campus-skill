@@ -4,6 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>CampusSkill 校园技能工坊 · 双身份工作台</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="alternate icon" href="/favicon.ico">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#00AEEC">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="CampusSkill">
 <link rel="stylesheet" href="/assets/tokens.css">
 <link rel="stylesheet" href="/assets/vendor/vant.css">
 <link rel="stylesheet" href="/assets/glass.css">
@@ -108,6 +116,30 @@
   }
   /* 输入控件占满所在卡片行宽（登录卡/表单统一观感） */
   .cs-app .field { display: block; width: 100%; box-sizing: border-box; }
+  /* 登录卡账号/密码栏：对齐 web-app / admin-web 的 Element Plus 输入框（白底细边框 + 前缀图标 + 密码可见切换） */
+  .cs-app .ep-field {
+    display: flex; align-items: center; width: 100%; box-sizing: border-box;
+    height: 40px; margin: 0 0 18px; padding: 0 8px 0 12px;
+    background: #fff; border: 1px solid #e3e5e7; border-radius: 4px;
+    transition: border-color .18s ease, box-shadow .18s ease;
+  }
+  .cs-app .ep-field:hover { border-color: #9499a0; }
+  .cs-app .ep-field:focus-within { border-color: #00aeec; box-shadow: 0 0 0 1px #00aeec inset; }
+  .cs-app .ep-field .ep-ico { flex: none; width: 16px; height: 16px; margin-right: 8px; color: #9499a0; }
+  .cs-app .ep-field input {
+    flex: 1; min-width: 0; height: 100%; padding: 0;
+    border: none; outline: none; background: transparent;
+    font-size: 14px; color: #18191c; caret-color: #00aeec;
+  }
+  .cs-app .ep-field input::placeholder { color: #9499a0; }
+  .cs-app .ep-field .ep-eye {
+    flex: none; display: inline-flex; align-items: center; justify-content: center;
+    width: 26px; height: 26px; margin-left: 4px; padding: 0;
+    border: none; background: transparent; border-radius: 4px; cursor: pointer; color: #9499a0;
+  }
+  .cs-app .ep-field .ep-eye:hover { color: #61666d; }
+  .cs-app .ep-field .ep-eye:active { opacity: .75; }
+  .cs-app .ep-field .ep-eye svg { width: 15px; height: 15px; }
   /* 鲜活明亮画布：白底 + 高饱和蓝/粉/青光斑（覆盖 glass.css 画布） */
   body {
     background:
@@ -152,6 +184,76 @@
     background: linear-gradient(135deg, var(--cs-accent), var(--cs-accent-2));
   }
   .cs-app .role-switch:active { transform: scale(.98); }
+  /* 全局读取错误提示条 */
+  .cs-app .err-bar {
+    display: flex; align-items: center; gap: 8px; margin: var(--sp-3) 0 0;
+    padding: 11px 14px; border-radius: 12px; font-size: var(--text-sm);
+    background: rgba(255, 176, 39, .12); border: 1px solid rgba(255, 176, 39, .38); color: #a05a00;
+  }
+  .cs-app .err-bar .err-ico { flex: none; }
+  .cs-app .err-bar .err-msg { flex: 1; line-height: 1.45; }
+  .cs-app .err-bar .err-retry {
+    flex: none; padding: 5px 14px; border: none; border-radius: 999px; cursor: pointer;
+    font-size: var(--text-xs); font-weight: var(--weight-semibold); color: #fff;
+    background: linear-gradient(135deg, var(--cs-accent), var(--cs-accent-2));
+  }
+  .cs-app .err-bar .err-retry:active { transform: scale(.97); }
+  /* 空态卡片：一句说明 + 一个可点的下一步，避免"死胡同" */
+  .cs-app .empty-cta { margin-top: 10px; display: flex; justify-content: center; }
+  .cs-app .empty-cta .btn { width: auto; padding: 8px 20px; }
+/* ===== 我的页身份 Hero（与首页 hero 同一渐变语言）===== */
+.me-hero {
+  background: linear-gradient(135deg, rgba(0,174,236,.20), rgba(251,114,153,.14) 55%, rgba(14,165,233,.12));
+  border: 1px solid rgba(0,174,236,.22);
+}
+.me-hero-top { display: flex; align-items: center; gap: 12px; }
+.me-avatar {
+  width: 48px; height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #00aeec, #0ea5e9);
+  color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; font-weight: 700;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(0,174,236,.35);
+}
+.me-hero-info { flex: 1; min-width: 0; }
+.me-hero-name { font-weight: var(--weight-semibold); font-size: 17px; display: flex; align-items: center; }
+.me-hero-sub { font-size: 12px; color: var(--text-tertiary); margin-top: 3px; }
+.me-hero-stats {
+  display: flex;
+  margin-top: 14px;
+  background: rgba(255,255,255,.72);
+  border-radius: 12px;
+  padding: 10px 0;
+}
+.me-stat {
+  flex: 1;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  cursor: pointer;
+}
+.me-stat + .me-stat { border-left: 1px solid rgba(0,0,0,.06); }
+.me-stat b { font-size: 16px; color: #18191c; }
+.me-stat span { font-size: 11px; color: var(--text-tertiary); }
+.me-stat:active { opacity: .7; }
+
+/* ===== 分组 cell 精修：行高/圆角/内缩分隔线 ===== */
+.van-cell-group--inset { border-radius: 12px; overflow: hidden; }
+.van-cell { padding: 13px 16px; }
+.van-cell .van-icon.van-cell__left-icon { color: #00aeec; margin-right: 10px; font-size: 17px; }
+.van-cell::after { left: 46px; }
+
+/* 退出登录：警示描边款 */
+.btn-danger-ghost {
+  color: #ee0a24;
+  border-color: rgba(238,10,36,.45);
+  background: #fff;
+}
+.btn-danger-ghost:active { background: #fff1f0; }
+
+.pwd-strength.weak { color: #ee0a24; }
+.pwd-strength.mid { color: #ff976a; }
+.pwd-strength.strong { color: #00b578; }
 </style>
 </head>
 <body>
@@ -170,20 +272,47 @@
       <!-- 用户身份：账号 / 注册 / 体验码 -->
       <template v-if="loginRole === 'user'">
         <template v-if="loginMode === 'account'">
-          <input class="field" v-model="accountForm.username" placeholder="用户名" @keyup.enter="doAccountLogin"/>
-          <input class="field" type="password" v-model="accountForm.password" placeholder="密码" @keyup.enter="doAccountLogin"/>
-          <button class="btn" style="margin-top:16px" @click="doAccountLogin" :disabled="busy">登 录</button>
+          <div class="ep-field">
+            <svg class="ep-ico" viewBox="0 0 1024 1024" v-html="icoUser"></svg>
+            <input v-model="accountForm.username" placeholder="用户名" @keyup.enter="doAccountLogin"/>
+          </div>
+          <div class="ep-field">
+            <svg class="ep-ico" viewBox="0 0 1024 1024" v-html="icoLock"></svg>
+            <input :type="showLoginPwd ? 'text' : 'password'" v-model="accountForm.password" placeholder="密码" @keyup.enter="doAccountLogin"/>
+            <button type="button" class="ep-eye" tabindex="-1" :title="showLoginPwd ? '隐藏密码' : '显示密码'" @click="showLoginPwd = !showLoginPwd">
+              <svg viewBox="0 0 1024 1024" v-html="showLoginPwd ? icoHide : icoView"></svg>
+            </button>
+          </div>
+          <button class="btn" @click="doAccountLogin" :disabled="busy">登 录</button>
           <div class="order-line" style="margin-top:14px;font-size:13px">
             <span class="text-secondary" style="cursor:pointer" @click="loginMode='register'">没有账号？立即注册</span>
             <span class="text-tertiary" style="cursor:pointer" @click="loginMode='guest'">体验登录 ›</span>
           </div>
         </template>
         <template v-else-if="loginMode === 'register'">
-          <input class="field" v-model="accountForm.username" placeholder="用户名（4-20位字母/数字/下划线）"/>
-          <input class="field" type="password" v-model="accountForm.password" placeholder="密码（6-32位）"/>
-          <input class="field" type="password" v-model="accountForm.confirmPassword" placeholder="确认密码"/>
-          <input class="field" v-model="accountForm.name" placeholder="昵称（选填）"/>
-          <button class="btn" style="margin-top:16px" @click="doRegister" :disabled="busy">注 册</button>
+          <div class="ep-field">
+            <svg class="ep-ico" viewBox="0 0 1024 1024" v-html="icoUser"></svg>
+            <input v-model="accountForm.username" placeholder="用户名（4-20位字母/数字/下划线）"/>
+          </div>
+          <div class="ep-field">
+            <svg class="ep-ico" viewBox="0 0 1024 1024" v-html="icoLock"></svg>
+            <input :type="showRegPwd ? 'text' : 'password'" v-model="accountForm.password" placeholder="密码（6-32位）"/>
+            <button type="button" class="ep-eye" tabindex="-1" :title="showRegPwd ? '隐藏密码' : '显示密码'" @click="showRegPwd = !showRegPwd">
+              <svg viewBox="0 0 1024 1024" v-html="showRegPwd ? icoHide : icoView"></svg>
+            </button>
+          </div>
+          <div class="ep-field">
+            <svg class="ep-ico" viewBox="0 0 1024 1024" v-html="icoLock"></svg>
+            <input :type="showRegConfirmPwd ? 'text' : 'password'" v-model="accountForm.confirmPassword" placeholder="确认密码"/>
+            <button type="button" class="ep-eye" tabindex="-1" :title="showRegConfirmPwd ? '隐藏密码' : '显示密码'" @click="showRegConfirmPwd = !showRegConfirmPwd">
+              <svg viewBox="0 0 1024 1024" v-html="showRegConfirmPwd ? icoHide : icoView"></svg>
+            </button>
+          </div>
+          <div class="ep-field">
+            <svg class="ep-ico" viewBox="0 0 1024 1024" v-html="icoPostcard"></svg>
+            <input v-model="accountForm.name" placeholder="昵称（选填）"/>
+          </div>
+          <button class="btn" @click="doRegister" :disabled="busy">注 册</button>
           <div class="order-line" style="margin-top:14px;font-size:13px">
             <span class="text-secondary" style="cursor:pointer" @click="loginMode='account'">‹ 返回账号登录</span>
           </div>
@@ -200,9 +329,18 @@
       <!-- 技能者身份：账号 / 体验码 + 入驻申请 -->
       <template v-else>
         <template v-if="skLoginMode === 'account'">
-          <input class="field" v-model="skAccountForm.username" placeholder="用户名（需已通过技能者认证）" @keyup.enter="doSkAccountLogin"/>
-          <input class="field" type="password" v-model="skAccountForm.password" placeholder="密码" @keyup.enter="doSkAccountLogin"/>
-          <button class="btn" style="margin-top:16px" @click="doSkAccountLogin" :disabled="busy">登 录</button>
+          <div class="ep-field">
+            <svg class="ep-ico" viewBox="0 0 1024 1024" v-html="icoUser"></svg>
+            <input v-model="skAccountForm.username" placeholder="用户名（需已通过技能者认证）" @keyup.enter="doSkAccountLogin"/>
+          </div>
+          <div class="ep-field">
+            <svg class="ep-ico" viewBox="0 0 1024 1024" v-html="icoLock"></svg>
+            <input :type="showSkPwd ? 'text' : 'password'" v-model="skAccountForm.password" placeholder="密码" @keyup.enter="doSkAccountLogin"/>
+            <button type="button" class="ep-eye" tabindex="-1" :title="showSkPwd ? '隐藏密码' : '显示密码'" @click="showSkPwd = !showSkPwd">
+              <svg viewBox="0 0 1024 1024" v-html="showSkPwd ? icoHide : icoView"></svg>
+            </button>
+          </div>
+          <button class="btn" @click="doSkAccountLogin" :disabled="busy">登 录</button>
           <div class="order-line" style="margin-top:14px;font-size:13px">
             <span class="text-tertiary">还没有入驻？在下方提交申请</span>
             <span class="text-secondary" style="cursor:pointer" @click="skLoginMode='guest'">体验登录 ›</span>
@@ -276,6 +414,13 @@
       </van-nav-bar>
       <main class="views">
 
+      <!-- 全局读取错误提示：任一板块数据加载失败都会在此提示，并提供一键重试 -->
+      <div v-if="loadErr" class="err-bar">
+        <span class="err-ico">⚠️</span>
+        <span class="err-msg">{{ loadErr }}</span>
+        <button class="err-retry" @click="retryCurrent">重试</button>
+      </div>
+
     <!-- ============ 用户身份视图 ============ -->
     <!-- 用户登录（已登录技能者但用户身份未登录时切换呈现） -->
     <div v-if="role==='user' && view==='userLogin'" class="view">
@@ -284,20 +429,47 @@
         <h2 style="margin:12px 0 4px">用户登录</h2>
         <p class="text-tertiary" style="margin-bottom:20px;font-size:var(--text-sm)">登录后即可发布技能服务需求</p>
         <template v-if="loginMode === 'account'">
-          <input class="field" v-model="accountForm.username" placeholder="用户名" @keyup.enter="doAccountLogin"/>
-          <input class="field" type="password" v-model="accountForm.password" placeholder="密码" @keyup.enter="doAccountLogin"/>
-          <button class="btn" style="margin-top:16px" @click="doAccountLogin" :disabled="busy">登 录</button>
+          <div class="ep-field">
+            <svg class="ep-ico" viewBox="0 0 1024 1024" v-html="icoUser"></svg>
+            <input v-model="accountForm.username" placeholder="用户名" @keyup.enter="doAccountLogin"/>
+          </div>
+          <div class="ep-field">
+            <svg class="ep-ico" viewBox="0 0 1024 1024" v-html="icoLock"></svg>
+            <input :type="showLoginPwd ? 'text' : 'password'" v-model="accountForm.password" placeholder="密码" @keyup.enter="doAccountLogin"/>
+            <button type="button" class="ep-eye" tabindex="-1" :title="showLoginPwd ? '隐藏密码' : '显示密码'" @click="showLoginPwd = !showLoginPwd">
+              <svg viewBox="0 0 1024 1024" v-html="showLoginPwd ? icoHide : icoView"></svg>
+            </button>
+          </div>
+          <button class="btn" @click="doAccountLogin" :disabled="busy">登 录</button>
           <div class="order-line" style="margin-top:14px;font-size:13px">
             <span class="text-secondary" style="cursor:pointer" @click="loginMode='register'">没有账号？立即注册</span>
             <span class="text-tertiary" style="cursor:pointer" @click="loginMode='guest'">体验登录 ›</span>
           </div>
         </template>
         <template v-else-if="loginMode === 'register'">
-          <input class="field" v-model="accountForm.username" placeholder="用户名（4-20位字母/数字/下划线）"/>
-          <input class="field" type="password" v-model="accountForm.password" placeholder="密码（6-32位）"/>
-          <input class="field" type="password" v-model="accountForm.confirmPassword" placeholder="确认密码"/>
-          <input class="field" v-model="accountForm.name" placeholder="昵称（选填）"/>
-          <button class="btn" style="margin-top:16px" @click="doRegister" :disabled="busy">注 册</button>
+          <div class="ep-field">
+            <svg class="ep-ico" viewBox="0 0 1024 1024" v-html="icoUser"></svg>
+            <input v-model="accountForm.username" placeholder="用户名（4-20位字母/数字/下划线）"/>
+          </div>
+          <div class="ep-field">
+            <svg class="ep-ico" viewBox="0 0 1024 1024" v-html="icoLock"></svg>
+            <input :type="showRegPwd ? 'text' : 'password'" v-model="accountForm.password" placeholder="密码（6-32位）"/>
+            <button type="button" class="ep-eye" tabindex="-1" :title="showRegPwd ? '隐藏密码' : '显示密码'" @click="showRegPwd = !showRegPwd">
+              <svg viewBox="0 0 1024 1024" v-html="showRegPwd ? icoHide : icoView"></svg>
+            </button>
+          </div>
+          <div class="ep-field">
+            <svg class="ep-ico" viewBox="0 0 1024 1024" v-html="icoLock"></svg>
+            <input :type="showRegConfirmPwd ? 'text' : 'password'" v-model="accountForm.confirmPassword" placeholder="确认密码"/>
+            <button type="button" class="ep-eye" tabindex="-1" :title="showRegConfirmPwd ? '隐藏密码' : '显示密码'" @click="showRegConfirmPwd = !showRegConfirmPwd">
+              <svg viewBox="0 0 1024 1024" v-html="showRegConfirmPwd ? icoHide : icoView"></svg>
+            </button>
+          </div>
+          <div class="ep-field">
+            <svg class="ep-ico" viewBox="0 0 1024 1024" v-html="icoPostcard"></svg>
+            <input v-model="accountForm.name" placeholder="昵称（选填）"/>
+          </div>
+          <button class="btn" @click="doRegister" :disabled="busy">注 册</button>
           <div class="order-line" style="margin-top:14px;font-size:13px">
             <span class="text-secondary" style="cursor:pointer" @click="loginMode='account'">‹ 返回账号登录</span>
           </div>
@@ -352,6 +524,30 @@
             </div>
           </div>
         </div>
+        <div v-else>
+          <div class="sec-title">⏳ 进行中的订单</div>
+          <div class="glass-card text-tertiary" style="font-size:13px">
+            暂无进行中的订单，发一个悬赏或去技能市场逛逛吧
+            <div class="empty-cta" style="justify-content:flex-start">
+              <van-button round type="primary" size="small" style="padding:0 18px" @click="quickPublish">发布悬赏</van-button>
+            </div>
+          </div>
+        </div>
+        <template v-if="recommend.length">
+          <div class="sec-title">✨ 猜你喜欢<span class="text-tertiary" style="font-size:11px;font-weight:400;margin-left:6px">根据你的行为个性化推荐</span></div>
+          <div class="grid-cards">
+            <div class="glass-card interactive" v-for="r in recommend" :key="r.id" @click="openSvc(r, 2)" style="cursor:pointer">
+              <div class="order-line">
+                <div><span class="order-title">{{ r.title }}</span><span class="tag">{{ r.categoryName }}</span></div>
+                <span class="money">{{ money(r.price) }}</span>
+              </div>
+              <div class="order-line" style="margin-top:6px">
+                <span class="text-tertiary" style="font-size:12px">评分 {{ r.avgScore ?? '-' }}<template v-if="r.salesCount"> · 已售 {{ r.salesCount }}</template></span>
+                <span class="text-secondary" style="font-size:11px;color:var(--cs-accent)">{{ r.recommendReason || '为你推荐' }}</span>
+              </div>
+            </div>
+          </div>
+        </template>
         <div class="sec-title">🧩 快捷入口</div>
         <div class="quick-grid">
           <div class="quick-item" @click="go('hall')"><span>🧭</span>订单大厅</div>
@@ -386,7 +582,7 @@
             <div class="text-secondary" style="font-size:13px;margin-top:4px">{{ m.content }}</div>
             <div v-if="m.orderId" class="text-secondary" style="font-size:12px;margin-top:4px;color:var(--cs-accent)">查看订单详情 ›</div>
           </div>
-          <van-empty v-if="!messages.length" description="暂无消息"></van-empty>
+          <van-empty v-if="!skel && !messages.length" description="暂无消息"></van-empty>
         </div>
       </div>
     </div>
@@ -463,7 +659,9 @@
             <div class="addr-line">{{ [o.pickupAddress, o.deliveryAddress].filter(Boolean).join(' → ') || '线上交付' }}</div>
             <div class="order-line"><span class="text-tertiary" style="font-size:12px">{{ o.publisherName }} 发布于 {{ (o.createTime||'').slice(5,16) }}</span></div>
           </div>
-          <van-empty v-if="!hall.length" description="大厅暂无待接单订单"></van-empty>
+          <van-empty v-if="!skel && !hall.length" description="还没有待接单的悬赏，不如自己发一个">
+            <van-button round type="primary" size="small" style="padding:0 20px" @click="quickPublish">去发布悬赏</van-button>
+          </van-empty>
         </div>
       </div>
     </div>
@@ -509,7 +707,9 @@
               <span class="text-tertiary" style="font-size:12px">评分 {{ s.skillerScore ?? '-' }} · 信用 {{ s.skillerCreditScore ?? '-' }}</span>
             </div>
           </div>
-          <van-empty v-if="!market.length" description="市场暂无服务，稍后再来看看"></van-empty>
+          <van-empty v-if="!skel && !market.length" description="没有匹配的服务，换个条件试试">
+            <van-button round size="small" style="padding:0 20px" @click="marketKeyword=''; marketCategory=null; marketSort='default'; loadMarket()">重置筛选条件</van-button>
+          </van-empty>
         </div>
       </van-pull-refresh>
       </div>
@@ -536,14 +736,16 @@
               </span>
             </div>
           </div>
-          <van-empty v-if="!bookings.length" description="暂无预约记录"></van-empty>
+          <van-empty v-if="!skel && !bookings.length" description="还没有预约记录，去技能市场看看">
+            <van-button round type="primary" size="small" style="padding:0 20px" @click="marketTab=0; loadMarket()">去技能市场</van-button>
+          </van-empty>
         </div>
       </div>
     </div>
 
     <!-- 我的订单 -->
     <div v-if="role==='user' && view==='orders'" class="view">
-      <van-tabs v-model:active="orderTab" @click-tab="loadOrders">
+      <van-tabs v-model:active="orderTab" @click-tab="loadOrders()">
         <van-tab title="全部" :name="null"></van-tab><van-tab title="待支付" :name="1"></van-tab>
         <van-tab title="待接单" :name="2"></van-tab><van-tab title="进行中" :name="3"></van-tab>
         <van-tab title="待验收" :name="4"></van-tab><van-tab title="已完成" :name="5"></van-tab>
@@ -567,7 +769,11 @@
               <span class="money">{{ money(o.rewardAmount) }}</span>
             </div>
           </div>
-          <van-empty v-if="!orders.length" description="还没有订单，发一单试试吧">
+          <div class="empty-cta" v-if="!skel && orders.length && !ordersFinished">
+            <van-button round size="small" :loading="moreLoading" @click="loadOrders(true)">加载更多</van-button>
+          </div>
+          <div class="text-tertiary" v-else-if="!skel && orders.length && ordersFinished" style="text-align:center;font-size:12px;margin-top:10px">已经到底啦</div>
+          <van-empty v-if="!skel && !orders.length" description="还没有订单，发一单试试吧">
             <van-button round type="primary" size="small" style="padding:0 20px" @click="go('home')">去发布订单</van-button>
           </van-empty>
         </div>
@@ -577,6 +783,21 @@
 
     <!-- 订单详情/跟踪 -->
     <div v-if="role==='user' && view==='orderDetail'" class="view">
+      <!-- 详情加载中：骨架屏；详情缺失时给出明确去向，避免空白页 -->
+      <template v-if="skel && !detail">
+        <div class="section cs-skel-card cs-skel" style="padding:18px;max-width:760px">
+          <div class="cs-skel-item cs-skel-title"></div>
+          <div class="cs-skel-item cs-skel-text"></div>
+          <div class="cs-skel-item cs-skel-text w60"></div>
+        </div>
+        <div class="section cs-skel-card cs-skel" style="padding:18px;max-width:760px" v-for="i in 2" :key="i">
+          <div class="cs-skel-item cs-skel-text"></div>
+          <div class="cs-skel-item cs-skel-text w60"></div>
+        </div>
+      </template>
+      <van-empty v-else-if="!detail" description="订单不存在或已不可查看">
+        <van-button round size="small" style="padding:0 20px" @click="go('orders')">返回我的订单</van-button>
+      </van-empty>
       <div class="section glass-card" v-if="detail" style="max-width:760px">
         <van-steps :active="stepActive" active-color="var(--cs-accent)">
           <van-step>发单</van-step><van-step>支付</van-step><van-step>接单</van-step>
@@ -656,11 +877,14 @@
       <div class="section">
         <div class="glass-card">
           <div style="font-weight:var(--weight-semibold);margin-bottom:8px">收支明细</div>
-          <van-cell-group inset>
+          <van-cell-group inset v-if="!skel">
             <van-cell v-for="t in txs" :key="t.id" :title="txName(t.type)" :label="t.remark"
               :value="(t.type===1||t.type===3||t.type===5?'+':'-')+money(t.amount)"></van-cell>
           </van-cell-group>
-          <van-empty v-if="!txs.length" description="暂无流水" image-size="64"></van-empty>
+          <template v-else>
+            <div class="cs-skel-item cs-skel-text" v-for="i in 4" :key="i" style="margin-top:12px"></div>
+          </template>
+          <van-empty v-if="!skel && !txs.length" description="暂无流水" image-size="64"></van-empty>
         </div>
       </div>
     </div>
@@ -717,20 +941,122 @@
 
     <!-- 我的（用户） -->
     <div v-if="role==='user' && view==='me'" class="view">
-      <div class="section glass-card" style="margin-top:16px;max-width:760px">
-        <div class="order-line"><b>{{ profile.name || '校园用户' }}</b><span class="text-tertiary">ID: {{ profile.id }}</span></div>
-        <div style="margin-top:12px">
-          <van-cell-group inset>
-            <van-cell title="信用分" :value="profile.creditScore ?? 100"></van-cell>
-            <van-cell title="累计发单" :value="(profile.publishOrderCount ?? 0) + ' 单'"></van-cell>
-            <van-cell title="校区" :value="profile.campus || '未填写'"></van-cell>
-          </van-cell-group>
+      <div class="section me-hero" style="margin-top:16px;max-width:760px">
+        <div class="me-hero-top">
+          <div class="me-avatar">{{ (profile.name || '校')[0] }}</div>
+          <div class="me-hero-info">
+            <div class="me-hero-name">{{ profile.name || '校园用户' }}<van-tag v-if="!profile.username" type="warning" plain style="margin-left:8px">体验账号</van-tag></div>
+            <div class="me-hero-sub">ID: {{ profile.id }} · {{ profile.campus || '校区未填写' }}</div>
+          </div>
+          <van-tag :type="meLevel==='C3'?'success':meLevel==='C2'?'primary':'warning'">{{ meLevel }}</van-tag>
         </div>
-        <button class="btn ghost" style="margin-top:16px" @click="openProfileEdit">编辑资料</button>
-        <button class="btn ghost" style="margin-top:8px" @click="changePwd">修改密码</button>
-        <button class="btn ghost" style="margin-top:8px" @click="openMessagesU">消息中心</button>
-        <button class="btn ghost" style="margin-top:8px" @click="view='address'">地址管理</button>
-        <button class="btn ghost" style="margin-top:8px" @click="logoutUser">退出用户登录</button>
+        <div class="me-hero-stats">
+          <div class="me-stat" @click="go('credit')"><b>{{ profile.creditScore ?? 100 }}</b><span>信用分</span></div>
+          <div class="me-stat"><b>{{ profile.publishOrderCount ?? 0 }}</b><span>累计发单</span></div>
+          <div class="me-stat" @click="go('myReviews')"><b>{{ myReviewTotal }}</b><span>我的评价</span></div>
+        </div>
+        <div v-if="!profile.username" class="text-secondary" style="font-size:12px;margin-top:10px;color:var(--cs-accent);cursor:pointer" @click="changePwd">⚠️ 体验账号未设置密码，建议立即设置以防丢失 ›</div>
+        <div style="margin-top:12px">
+          <div class="sec-title" style="margin-top:0">🌱 成长任务<span class="text-tertiary" style="font-size:11px;font-weight:400;margin-left:6px">{{ tasksDone }}/{{ meTasks.length }} 已完成</span></div>
+          <div class="grid-cards">
+            <div class="glass-card" v-for="t in meTasks" :key="t.key" @click="t.done ? null : t.go()"
+              :style="(t.done ? 'opacity:.72;border-color:#d1f0dd;background:#f7fcf9;' : 'cursor:pointer;')">
+              <div class="order-line">
+                <div><b style="font-size:13px">{{ t.done ? '✓ ' : '' }}{{ t.title }}</b></div>
+                <van-tag v-if="t.done" type="success" plain>已完成</van-tag>
+                <span v-else class="text-tertiary" style="font-size:12px">去完成 ›</span>
+              </div>
+              <div class="text-tertiary" style="font-size:11px;margin-top:4px">{{ t.desc }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="section glass-card" style="margin-top:12px;max-width:760px">
+        <div class="sec-title" style="margin-top:0">🧾 交易与服务<span class="text-tertiary" style="font-size:11px;font-weight:400;margin-left:6px">钱包 · 预约 · 评价 · 地址 · 消息</span></div>
+        <van-cell-group inset>
+          <van-cell title="我的钱包" icon="balance-o" is-link @click="go('wallet')"></van-cell>
+          <van-cell title="我的预约" icon="calendar-o" is-link @click="goMyBookings()"></van-cell>
+          <van-cell title="我的评价" icon="chat-o" is-link @click="go('myReviews')"></van-cell>
+          <van-cell title="地址管理" icon="location-o" is-link @click="view='address'"></van-cell>
+          <van-cell title="消息中心" icon="bell" is-link @click="openMessagesU"></van-cell>
+        </van-cell-group>
+      </div>
+      <div class="section glass-card" style="margin-top:12px;max-width:760px">
+        <div class="sec-title" style="margin-top:0">🔐 账号与成长<span class="text-tertiary" style="font-size:11px;font-weight:400;margin-left:6px">资料 · 安全 · 信用</span></div>
+        <van-cell-group inset>
+          <van-cell title="编辑资料" icon="contact-o" is-link @click="openProfileEdit"></van-cell>
+          <van-cell title="修改密码" icon="shield-o" is-link @click="changePwd"></van-cell>
+          <van-cell title="信用档案" icon="medal-o" is-link @click="go('credit')"></van-cell>
+          <van-cell :title="runnerToken ? '技能者工作台' : '成为技能者'" icon="manager-o" is-link @click="runnerToken ? toggleRole() : go('skillerApply')"></van-cell>
+        </van-cell-group>
+      </div>
+      <div class="section" style="max-width:760px;margin-top:12px">
+        <button class="btn ghost btn-danger-ghost" style="width:100%" @click="askLogoutUser">退出用户登录</button>
+      </div>
+    </div>
+
+    <!-- 信用档案（用户身份） -->
+    <div v-if="role==='user' && view==='credit'" class="view">
+      <div class="page-head">
+        <div><div class="ph-title">🏅 信用档案</div><div class="ph-sub">信用分反映履约表现，影响信任与曝光</div></div>
+      </div>
+      <div class="section glass-card" style="text-align:center;padding:20px 0 14px">
+        <div class="money" style="font-size:36px">{{ profile.creditScore ?? 100 }}</div>
+        <div style="margin-top:6px"><van-tag :type="meLevel==='C3'?'success':meLevel==='C2'?'primary':'warning'">{{ meLevel }}</van-tag></div>
+        <div class="text-tertiary" style="font-size:12px;margin-top:8px">{{ meLevelDesc }}</div>
+      </div>
+      <div class="section glass-card">
+        <div class="sec-title" style="margin-top:0">📏 信用规则</div>
+        <van-cell-group inset>
+          <van-cell title="交付完成" value="+1 / 单"></van-cell>
+          <van-cell title="获得好评" value="+2 / 单"></van-cell>
+          <van-cell title="返修" value="-3 / 次"></van-cell>
+          <van-cell title="超时未交付" value="-5 且扣违约金"></van-cell>
+          <van-cell title="仲裁判责" value="-10"></van-cell>
+        </van-cell-group>
+      </div>
+      <template v-if="runnerToken && skCredit">
+        <div class="section glass-card">
+          <div class="sec-title" style="margin-top:0">🛠️ 技能者信用流水</div>
+          <div class="text-tertiary" style="font-size:12px;margin-bottom:8px">
+            技能者信用 {{ skCredit.creditScore }}（{{ skCredit.level }}）· {{ skCredit.levelDesc }}<template v-if="skCredit.toNextLevel != null"> · 距下一等级差 {{ skCredit.toNextLevel }} 分</template>
+          </div>
+          <div class="grid-cards" v-if="skCredit.logs && skCredit.logs.length">
+            <div class="glass-card" v-for="l in skCredit.logs.slice(0, 10)" :key="l.id">
+              <div class="order-line">
+                <b style="font-size:13px">{{ l.reason || '信用变动' }}</b>
+                <span :style="{ color: l.delta > 0 ? '#00b578' : '#ee0a24', fontWeight: 600 }">{{ l.delta > 0 ? '+' : '' }}{{ l.delta }}</span>
+              </div>
+              <div class="text-tertiary" style="font-size:11px;margin-top:4px">{{ relTime(l.createTime) }}<template v-if="l.orderNumber"> · {{ l.orderNumber }}</template></div>
+            </div>
+          </div>
+          <van-empty v-else description="暂无信用流水，接单履约后产生" image-size="64"></van-empty>
+        </div>
+      </template>
+    </div>
+
+    <!-- 我的评价（用户身份） -->
+    <div v-if="role==='user' && view==='myReviews'" class="view">
+      <div class="page-head">
+        <div><div class="ph-title">📝 我的评价</div><div class="ph-sub">发出的评价与对应订单，点击可回看订单</div></div>
+      </div>
+      <div class="section">
+        <div class="grid-cards" v-if="myReviews.length">
+          <div class="glass-card interactive" v-for="r in myReviews" :key="r.id" @click="openOrder(r.orderId)" style="cursor:pointer">
+            <div class="order-line">
+              <div><span class="order-title">{{ r.orderTitle || '订单' }}</span></div>
+              <van-rate :model-value="r.score" readonly allow-half size="12px"></van-rate>
+            </div>
+            <div class="text-secondary" style="font-size:13px;margin-top:4px">{{ r.content || '（未填写文字评价）' }}</div>
+            <div class="order-line" style="margin-top:6px">
+              <span class="text-tertiary" style="font-size:11px">{{ relTime(r.createTime) }}<template v-if="r.isAnonymous===1"> · 匿名</template></span>
+              <span class="text-secondary" style="font-size:11px;color:var(--cs-accent)">查看订单 ›</span>
+            </div>
+          </div>
+        </div>
+        <van-empty v-else description="还没有发出过评价，完成订单后可以评价技能者">
+          <van-button round type="primary" size="small" style="padding:0 20px" @click="go('orders')">去我的订单</van-button>
+        </van-empty>
       </div>
     </div>
 
@@ -744,9 +1070,18 @@
           <p class="text-tertiary" style="margin-bottom:20px;font-size:var(--text-sm)">认证技能者登录后即可接单</p>
         </div>
         <template v-if="skLoginMode === 'account'">
-          <input class="field" v-model="skAccountForm.username" placeholder="用户名（需已通过技能者认证）" @keyup.enter="doSkAccountLogin"/>
-          <input class="field" type="password" v-model="skAccountForm.password" placeholder="密码" @keyup.enter="doSkAccountLogin"/>
-          <button class="btn" style="margin-top:16px" @click="doSkAccountLogin" :disabled="busy">登 录</button>
+          <div class="ep-field">
+            <svg class="ep-ico" viewBox="0 0 1024 1024" v-html="icoUser"></svg>
+            <input v-model="skAccountForm.username" placeholder="用户名（需已通过技能者认证）" @keyup.enter="doSkAccountLogin"/>
+          </div>
+          <div class="ep-field">
+            <svg class="ep-ico" viewBox="0 0 1024 1024" v-html="icoLock"></svg>
+            <input :type="showSkPwd ? 'text' : 'password'" v-model="skAccountForm.password" placeholder="密码" @keyup.enter="doSkAccountLogin"/>
+            <button type="button" class="ep-eye" tabindex="-1" :title="showSkPwd ? '隐藏密码' : '显示密码'" @click="showSkPwd = !showSkPwd">
+              <svg viewBox="0 0 1024 1024" v-html="showSkPwd ? icoHide : icoView"></svg>
+            </button>
+          </div>
+          <button class="btn" @click="doSkAccountLogin" :disabled="busy">登 录</button>
           <div class="order-line" style="margin-top:14px;font-size:13px">
             <span class="text-tertiary">还没有入驻？在下方提交申请</span>
             <span class="text-secondary" style="cursor:pointer" @click="skLoginMode='guest'">体验登录 ›</span>
@@ -803,7 +1138,9 @@
           </div>
           <div v-if="hallNew > 0" class="glass-card interactive" style="border-left:3px solid var(--cs-accent);cursor:pointer"
             @click="applyHallNew">🔔 有 {{ hallNew }} 个新需求 · 点击查看</div>
-          <van-empty v-if="!skHall.length" description="悬赏大厅暂无需求，稍后再来看看"></van-empty>
+          <van-empty v-if="!skel && !skHall.length" description="当前没有可抢的悬赏，稍后再来看看">
+            <van-button round size="small" style="padding:0 20px" @click="loadSkHall()">刷新大厅</van-button>
+          </van-empty>
         </div>
       </div>
     </div>
@@ -845,7 +1182,13 @@
               🔁 用户已申请返修，点击「响应返修」重新开始服务
             </div>
           </div>
-          <van-empty v-if="!myOrders.length" description="还没有接单记录"></van-empty>
+          <div class="empty-cta" v-if="!skel && myOrders.length && !myOrdersFinished">
+            <van-button round size="small" :loading="moreLoading" @click="loadMyOrders(true)">加载更多</van-button>
+          </div>
+          <div class="text-tertiary" v-else-if="!skel && myOrders.length && myOrdersFinished" style="text-align:center;font-size:12px;margin-top:10px">已经到底啦</div>
+          <van-empty v-if="!skel && !myOrders.length" description="还没有接单记录，去悬赏大厅看看">
+            <van-button round type="primary" size="small" style="padding:0 20px" @click="go('grab')">去抢单</van-button>
+          </van-empty>
         </div>
       </div>
       <div class="section" v-else>
@@ -871,7 +1214,9 @@
               </span>
             </div>
           </div>
-          <van-empty v-if="!skBookings.length" description="暂无预约单"></van-empty>
+          <van-empty v-if="!skel && !skBookings.length" description="暂时没有新的预约单">
+            <van-button round size="small" style="padding:0 20px" @click="loadSkBookings()">刷新</van-button>
+          </van-empty>
         </div>
       </div>
     </div>
@@ -907,7 +1252,9 @@
               </span>
             </div>
           </div>
-          <van-empty v-if="!services.length" description="还没有服务，点击右上角新增"></van-empty>
+          <van-empty v-if="!skel && !services.length" description="还没有上架服务，把你的技能挂出来吧">
+            <van-button round type="primary" size="small" style="padding:0 20px" @click="openSvcForm()">新增服务</van-button>
+          </van-empty>
         </div>
       </div>
     </div>
@@ -927,7 +1274,10 @@
         </template>
         <div class="grid-cards" v-else>
           <div v-for="p in portfolios" :key="p.id" class="glass-card">
-            <img v-if="p.coverUrl" :src="p.coverUrl" style="width:100%;border-radius:12px;margin-bottom:8px" onerror="this.style.display='none'"/>
+            <!-- 固定宽高比 + 懒加载：避免图片加载引起列表重排（CLS） -->
+            <img v-if="p.coverUrl" :src="p.coverUrl" loading="lazy" decoding="async"
+              style="width:100%;aspect-ratio:8/5;object-fit:cover;border-radius:12px;margin-bottom:8px;background:var(--cs-surface-2,#eef2f6)"
+              onerror="this.style.display='none'"/>
             <div class="order-line">
               <div><span class="order-title">{{ p.title }}</span><van-tag :type="pfTag(p.status)" style="margin-left:6px">{{ pfText(p.status) }}</van-tag></div>
               <van-button size="small" type="danger" plain @click="delPortfolio(p)" :disabled="busy">删除</van-button>
@@ -935,7 +1285,9 @@
             <div v-if="p.description" class="text-secondary" style="font-size:13px;margin-top:4px">{{ p.description }}</div>
             <div v-if="p.status===2 && p.auditOpinion" style="font-size:12px;margin-top:4px;color:var(--cs-danger)">驳回意见：{{ p.auditOpinion }}</div>
           </div>
-          <van-empty v-if="!portfolios.length" description="还没有作品，快发布第一个吧"></van-empty>
+          <van-empty v-if="!skel && !portfolios.length" description="还没有作品，先发布一个用于作品认证">
+            <van-button round type="primary" size="small" style="padding:0 20px" @click="openPfForm()">发布作品</van-button>
+          </van-empty>
         </div>
       </div>
     </div>
@@ -1004,7 +1356,7 @@
             <van-cell v-for="w in wdRecords" :key="w.id" :title="money(w.amount)"
               :value="['待处理','已打款','已驳回'][w.status]" :label="w.applyTime"></van-cell>
           </van-cell-group>
-          <van-empty v-if="!wdRecords.length" description="暂无提现记录" image-size="64"></van-empty>
+          <van-empty v-if="!skel && !wdRecords.length" description="暂无提现记录" image-size="64"></van-empty>
         </div>
         <div class="glass-card">
           <div style="font-weight:var(--weight-semibold);margin-bottom:8px">收支明细</div>
@@ -1012,7 +1364,7 @@
             <van-cell v-for="t in skTxs" :key="t.id" :title="txName(t.type)" :label="t.remark"
               :value="(t.type===1||t.type===3||t.type===5?'+':'-')+money(t.amount)"></van-cell>
           </van-cell-group>
-          <van-empty v-if="!skTxs.length" description="暂无流水" image-size="64"></van-empty>
+          <van-empty v-if="!skel && !skTxs.length" description="暂无流水" image-size="64"></van-empty>
         </div>
         <div class="glass-card">
           <div class="order-line"><b>🏅 接单等级权益</b><span class="tag">{{ levelName(center.runnerLevel) }}</span></div>
@@ -1052,7 +1404,7 @@
             <div class="text-secondary" style="font-size:13px;margin-top:4px">{{ m.content }}</div>
             <div v-if="m.orderId" class="text-secondary" style="font-size:12px;margin-top:4px;color:var(--cs-accent)">查看我的接单 ›</div>
           </div>
-          <van-empty v-if="!skMessages.length" description="暂无消息"></van-empty>
+          <van-empty v-if="!skel && !skMessages.length" description="暂无消息"></van-empty>
         </div>
       </div>
     </div>
@@ -1062,7 +1414,7 @@
 
     <!-- 底部导航（仅移动端显示；登录卡视图隐藏；按当前身份渲染） -->
     <van-tabbar class="m-tabbar" v-if="role==='user' && view!=='userLogin'" v-model="tab" @change="onTab">
-      <van-tabbar-item icon="wap-nav-o" name="home">首页</van-tabbar-item>
+      <van-tabbar-item icon="wap-home-o" name="home">首页</van-tabbar-item>
       <van-tabbar-item icon="orders-o" name="orders">订单</van-tabbar-item>
       <van-tabbar-item icon="shop-o" name="market">技能市场</van-tabbar-item>
       <van-tabbar-item icon="balance-o" name="wallet">钱包</van-tabbar-item>
@@ -1079,6 +1431,16 @@
     <!-- 发布悬赏悬浮按钮：仅用户身份移动端显示，高频操作一步直达 -->
     <button v-if="role==='user' && !['submit','userLogin'].includes(view)" class="fab" @click="quickPublish">✏️ 发布悬赏</button>
 
+    <!-- 修改密码弹窗（含强度反馈与改密后重新登录引导） -->
+    <van-popup v-model:show="pwdShow" round position="bottom" style="padding:20px">
+      <div style="font-weight:var(--weight-semibold);margin-bottom:8px">🔑 修改密码</div>
+      <input class="field" type="password" v-model="pwdPopupForm.oldPassword" placeholder="原密码（首次设置可不填）"/>
+      <input class="field" type="password" v-model="pwdPopupForm.newPassword" placeholder="新密码（6-32位）"/>
+      <div v-if="pwdPopupForm.newPassword" class="pwd-strength" :class="pwdStrength.cls" style="font-size:12px;margin:-6px 0 4px;padding-left:2px">密码强度：{{ pwdStrength.label }}</div>
+      <input class="field" type="password" v-model="pwdPopupForm.confirm" placeholder="确认新密码"/>
+      <button class="btn" style="margin-top:16px" @click="submitChangePwd" :disabled="busy">确认修改</button>
+    </van-popup>
+
     <!-- 服务详情/预约弹窗 -->
     <van-popup v-model:show="showSvc" round position="bottom" style="padding:20px;max-height:72vh;overflow-y:auto">
       <template v-if="svcDetail && !bookingMode">
@@ -1094,6 +1456,18 @@
           <span class="text-tertiary">评分 {{ svcDetail.skillerScore ?? '-' }} · 信用 {{ svcDetail.skillerCreditScore ?? '-' }}</span>
         </div>
         <button class="btn" style="margin-top:16px" @click="bookingMode=true" :disabled="busy">预约服务</button>
+        <template v-if="similarList.length">
+          <div class="sec-title" style="margin-top:16px">👀 看了又看</div>
+          <div class="grid-cards">
+            <div class="glass-card interactive" v-for="sim in similarList" :key="sim.id" @click="openSvc(sim, 3)" style="cursor:pointer">
+              <div class="order-line">
+                <div><span class="order-title" style="font-size:13px">{{ sim.title }}</span></div>
+                <span class="money" style="font-size:14px">{{ money(sim.price) }}</span>
+              </div>
+              <div class="text-tertiary" style="font-size:11px;margin-top:4px;color:var(--cs-accent)">{{ sim.recommendReason || '相似推荐' }}</div>
+            </div>
+          </div>
+        </template>
       </template>
       <template v-else-if="svcDetail">
         <div style="font-weight:var(--weight-semibold);margin-bottom:8px">预约「{{ svcDetail.title }}」</div>
@@ -1156,22 +1530,51 @@
 
 <script>
 const { createApp, ref, reactive, computed } = Vue;
-const { showToast, showLoadingToast, closeToast } = vant;
+const { showToast } = vant;
+
+/* ===== 数据层共享状态 =====
+   骨架屏由真实请求驱动（在途 GET 计数），不再使用固定 450ms 假等待；
+   读取失败统一写入 loadErr，由页面顶部错误条展示并提供重试。 */
+const skel = ref(false);
+const loadErr = ref("");
+let inflight = 0;
+
+/* 定时器统一登记：切视图 / 退出登录 / 切换身份时集中清理，避免后台常驻重渲染 */
+const timers = new Set();
+function addTimer(fn, ms) { const id = setInterval(fn, ms); timers.add(id); return id; }
+function dropTimer(id) { if (id) { clearInterval(id); timers.delete(id); } }
+function clearAllTimers() { timers.forEach(clearInterval); timers.clear(); }
 
 /* 双 token：user_token（/user/**）与 runner_token（/skiller/**）可同时存在，
    token 失效时按 URL 前缀清除对应身份，不影响另一身份 */
-async function api(method, url, body, token) {
+async function api(method, url, body, token, opts) {
   const opt = { method, headers: { "Content-Type": "application/json" } };
   if (token) opt.headers["authentication"] = token;
   if (body !== undefined && body !== null) opt.body = JSON.stringify(body);
-  const r = await fetch(url, opt);
-  const j = await r.json();
-  if (j.code === 0 && j.msg && j.msg.indexOf("token") >= 0) {
+  /* silent：轮询等后台请求不参与骨架屏与错误提示，避免无感刷新打断界面 */
+  const isRead = method === "GET" && !(opts && opts.silent);
+  if (isRead) { inflight += 1; skel.value = true; }
+  let j;
+  try {
+    const r = await fetch(url, opt);
+    j = await r.json();
+  } catch (e) {
+    j = { code: 0, msg: "网络异常，请检查连接后重试" };
+  } finally {
+    if (isRead) { inflight = Math.max(0, inflight - 1); if (inflight === 0) skel.value = false; }
+  }
+  const tokenExpired = j.code === 0 && j.msg && j.msg.indexOf("token") >= 0;
+  if (isRead && !tokenExpired) {
+    if (j.code === 1) { if (loadErr.value) loadErr.value = ""; }
+    else loadErr.value = j.msg || "数据加载失败，请稍后重试";
+  }
+  if (tokenExpired) {
     localStorage.removeItem(url.indexOf("/skiller") === 0 ? "runner_token" : "user_token");
     setTimeout(() => location.reload(), 800);
   }
   return j;
 }
+const LIST_PAGE_SIZE = 10;   // 长列表分页大小（首屏只拉一页，滚动/点击按需追加）
 const money = v => "￥" + Number(v || 0).toFixed(2);
 const STATUS = { 1:"待支付", 2:"待接单", 3:"进行中", 4:"已交付·待验收", 5:"已完成", 6:"已取消", 7:"已超时", 8:"返修中", 9:"仲裁中" };
 const TAG = { 1:"primary", 2:"warning", 3:"primary", 4:"primary", 5:"success", 6:"default", 7:"danger", 8:"warning", 9:"danger" };
@@ -1196,31 +1599,38 @@ createApp({
     const accountForm = reactive({ username: "", password: "", confirmPassword: "", name: "" });
     const skAccountForm = reactive({ username: "", password: "" });
     const auditForm = reactive({ realName: "", studentNo: "", campus: "", college: "" });
-    const skel = ref(true);
-    let skelTimer = null;
-    function playSkel() {
-      skel.value = true;
-      clearTimeout(skelTimer);
-      skelTimer = setTimeout(() => { skel.value = false; }, 450);
-    }
+    /* EP 风格输入栏：与 web-app/admin-web 登录页同款的 Element Plus 图标（@element-plus/icons-vue 原始路径） */
+    const icoUser = '<path fill="currentColor" d="M512 512a192 192 0 1 0 0-384 192 192 0 0 0 0 384m0 64a256 256 0 1 1 0-512 256 256 0 0 1 0 512m320 320v-96a96 96 0 0 0-96-96H288a96 96 0 0 0-96 96v96a32 32 0 1 1-64 0v-96a160 160 0 0 1 160-160h448a160 160 0 0 1 160 160v96a32 32 0 1 1-64 0"></path>';
+    const icoLock = '<path fill="currentColor" d="M224 448a32 32 0 0 0-32 32v384a32 32 0 0 0 32 32h576a32 32 0 0 0 32-32V480a32 32 0 0 0-32-32zm0-64h576a96 96 0 0 1 96 96v384a96 96 0 0 1-96 96H224a96 96 0 0 1-96-96V480a96 96 0 0 1 96-96"></path><path fill="currentColor" d="M512 544a32 32 0 0 1 32 32v192a32 32 0 1 1-64 0V576a32 32 0 0 1 32-32m192-160v-64a192 192 0 1 0-384 0v64zM512 64a256 256 0 0 1 256 256v128H256V320A256 256 0 0 1 512 64"></path>';
+    const icoPostcard = '<path fill="currentColor" d="M160 224a32 32 0 0 0-32 32v512a32 32 0 0 0 32 32h704a32 32 0 0 0 32-32V256a32 32 0 0 0-32-32zm0-64h704a96 96 0 0 1 96 96v512a96 96 0 0 1-96 96H160a96 96 0 0 1-96-96V256a96 96 0 0 1 96-96"></path><path fill="currentColor" d="M704 320a64 64 0 1 1 0 128 64 64 0 0 1 0-128M288 448h256q32 0 32 32t-32 32H288q-32 0-32-32t32-32m0 128h256q32 0 32 32t-32 32H288q-32 0-32-32t32-32"></path>';
+    const icoView = '<path fill="currentColor" d="M512 160c320 0 512 352 512 352S832 864 512 864 0 512 0 512s192-352 512-352m0 64c-225.28 0-384.128 208.064-436.8 288 52.608 79.872 211.456 288 436.8 288 225.28 0 384.128-208.064 436.8-288-52.608-79.872-211.456-288-436.8-288m0 64a224 224 0 1 1 0 448 224 224 0 0 1 0-448m0 64a160.19 160.19 0 0 0-160 160c0 88.192 71.744 160 160 160s160-71.808 160-160-71.744-160-160-160"></path>';
+    const icoHide = '<path fill="currentColor" d="M876.8 156.8c0-9.6-3.2-16-9.6-22.4s-12.8-9.6-22.4-9.6-16 3.2-22.4 9.6L736 220.8c-64-32-137.6-51.2-224-60.8-160 16-288 73.6-377.6 176S0 496 0 512s48 73.6 134.4 176c22.4 25.6 44.8 48 73.6 67.2l-86.4 89.6c-6.4 6.4-9.6 12.8-9.6 22.4s3.2 16 9.6 22.4 12.8 9.6 22.4 9.6 16-3.2 22.4-9.6l704-710.4c3.2-6.4 6.4-12.8 6.4-22.4m-646.4 528Q115.2 579.2 76.8 512q43.2-72 153.6-172.8C304 272 400 230.4 512 224c64 3.2 124.8 19.2 176 44.8l-54.4 54.4C598.4 300.8 560 288 512 288c-64 0-115.2 22.4-160 64s-64 96-64 160c0 48 12.8 89.6 35.2 124.8L256 707.2c-9.6-6.4-19.2-16-25.6-22.4m140.8-96Q352 555.2 352 512c0-44.8 16-83.2 48-112s67.2-48 112-48c28.8 0 54.4 6.4 73.6 19.2zM889.599 336c-12.8-16-28.8-28.8-41.6-41.6l-48 48c73.6 67.2 124.8 124.8 150.4 169.6q-43.2 72-153.6 172.8c-73.6 67.2-172.8 108.8-284.8 115.2-51.2-3.2-99.2-12.8-140.8-28.8l-48 48c57.6 22.4 118.4 38.4 188.8 44.8 160-16 288-73.6 377.6-176S1024 528 1024 512s-48.001-73.6-134.401-176"></path><path fill="currentColor" d="M511.998 672c-12.8 0-25.6-3.2-38.4-6.4l-51.2 51.2c28.8 12.8 57.6 19.2 89.6 19.2 64 0 115.2-22.4 160-64 41.6-41.6 64-96 64-160 0-32-6.4-64-19.2-89.6l-51.2 51.2c3.2 12.8 6.4 25.6 6.4 38.4 0 44.8-16 83.2-48 112s-67.2 48-112 48"></path>';
+    /* 密码可见切换状态（账号登录 / 注册两组 / 技能者登录） */
+    const showLoginPwd = ref(false);
+    const showRegPwd = ref(false);
+    const showRegConfirmPwd = ref(false);
+    const showSkPwd = ref(false);
+    function playSkel() { loadErr.value = ""; }
     /* 双身份主题：技能者端挂 sk-mode 粉色主色（挂载容器属性不被 Vue 编译，直接操作 DOM 类名） */
     Vue.watchEffect(() => {
       const el = document.getElementById("app");
-      if (!el) return;
       const sk = (userToken.value || runnerToken.value)
         ? role.value === "skiller"
         : loginRole.value === "skiller";
-      el.classList.toggle("sk-mode", sk);
+      if (el) el.classList.toggle("sk-mode", sk);
+      /* 移动端浏览器地址栏 / 添加到主屏后的主题色跟随身份 */
+      const meta = document.querySelector('meta[name="theme-color"]');
+      if (meta) meta.setAttribute("content", sk ? "#fb7299" : "#00AEEC");
     });
     Vue.watch(view, (v) => {
-      playSkel();
+      loadErr.value = "";
+      syncCountdownTimer();
       /* 底部 tabbar 高亮跟随视图；非 tab 视图（发单/详情/登录卡等）不高亮 */
       const tabs = role.value === "user"
         ? ["home", "orders", "market", "wallet", "me"]
         : ["grab", "skOrders", "services", "portfolio", "skCenter"];
       tab.value = tabs.includes(v) ? v : "";
     });
-    if (userToken.value || runnerToken.value) setTimeout(() => { skel.value = false; }, 450);
 
     function toast(msg, ok = true) { showToast({ message: msg, type: ok ? "success" : "fail" }); }
     function relTime(t) {
@@ -1254,6 +1664,12 @@ createApp({
 
     /* ===== WebSocket（按当前身份 token 连接，切身份时重连） ===== */
     let ws = null, wsTimer = null;
+    /* 退出 / 切换身份时释放当前身份的后台资源（倒计时定时器 + WebSocket + 重连计划） */
+    function releaseIdentity() {
+      stopCountdownTimer();
+      clearTimeout(wsTimer);
+      if (ws) { try { ws.onclose = null; ws.close(); } catch (e) {} ws = null; }
+    }
     function connectWs() {
       const tk = role.value === "skiller" ? runnerToken.value : userToken.value;
       if (!tk) return;
@@ -1279,12 +1695,17 @@ createApp({
 
     /* ================= 用户身份 ================= */
     const profile = ref({});
+    const skCredit = ref(null);
+    const myReviews = ref([]);
     const types = ref([]);
     const addresses = ref([]);
     const hall = ref([]);
     const hallKeyword = ref("");
     const hallType = ref(null);
     const orders = ref([]);
+    let ordersPage = 1;
+    const ordersFinished = ref(false);
+    const moreLoading = ref(false);   // 「加载更多」按钮的独立 loading，不触发整页骨架
     const orderTab = ref(null);
     const detail = ref(null);
     const reviewed = ref(false);
@@ -1305,12 +1726,15 @@ createApp({
     const unread = ref(0);
     const boostAmount = ref(null);
     const activeOrders = ref([]);
+    const recommend = ref([]);
+    const similarList = ref([]);
     const marketTab = ref(0);
     const market = ref([]);
     const marketKeyword = ref("");
     const marketCategory = ref(null);
     const marketSort = ref("default");
     const svcDetail = ref(null);
+    const lastSvcSrc = ref(1);
     const showSvc = ref(false);
     const bookingMode = ref(false);
     const bookingForm = reactive({ serviceItemId: null, expectTime: "", remark: "" });
@@ -1323,7 +1747,15 @@ createApp({
       return m[s] === undefined ? 0 : m[s];
     });
     const nowTick = ref(Date.now());
-    setInterval(() => { nowTick.value = Date.now(); }, 1000);
+    let tickTimer = null;
+    /* 倒计时定时器只在订单详情页且确实存在倒计时时运行：避免整棵视图树每秒重渲染 */
+    function syncCountdownTimer() {
+      const d = detail.value;
+      const need = view.value === "orderDetail" && !!d && [1, 3, 4, 8].includes(d.status);
+      if (need && !tickTimer) tickTimer = addTimer(() => { nowTick.value = Date.now(); }, 1000);
+      else if (!need && tickTimer) { dropTimer(tickTimer); tickTimer = null; }
+    }
+    function stopCountdownTimer() { if (tickTimer) { dropTimer(tickTimer); tickTimer = null; } }
     function parseTime(s) { return s ? new Date(String(s).replace(" ", "T")).getTime() : 0; }
     const countdown = computed(() => {
       const d = detail.value; if (!d) return "";
@@ -1373,35 +1805,115 @@ createApp({
       if (r.code === 1) { localStorage.setItem("user_token", r.data.token); userToken.value = r.data.token; role.value = "user"; view.value = "home"; tab.value = "home"; initUser(); }
       else toast(r.msg || "登录失败", false);
     }
-    async function changePwd() {
-      const oldPassword = prompt("请输入原密码（首次设置密码可不填，直接确定）");
-      if (oldPassword === null) return;
-      const newPassword = prompt("请输入新密码（6-32位）");
-      if (!newPassword) return;
+    function changePwd() { openPwdPopup(); }
+    const meLevel = Vue.computed(() => {
+      const v = profile.value.creditScore ?? 100;
+      return v >= 90 ? "C3" : v >= 70 ? "C2" : "C1";
+    });
+    const meLevelDesc = Vue.computed(() => ({
+      C3: "信用优秀：可获更多曝光与信任",
+      C2: "信用良好：保持按时交付可升级 C3",
+      C1: "信用待提升：避免返修与超时",
+    })[meLevel.value]);
+    const pwdShow = ref(false);
+    const pwdPopupForm = reactive({ oldPassword: "", newPassword: "", confirm: "" });
+    const myReviewTotal = ref(0);
+    const meTasks = Vue.computed(() => [
+      { key: "password", done: !!profile.value.username, title: "设置登录密码",
+        desc: "体验账号未设密码有丢失风险", go: () => changePwd() },
+      { key: "firstOrder", done: (profile.value.publishOrderCount ?? 0) > 0, title: "发出第一单悬赏",
+        desc: "体验担保交易全流程", go: () => go("submit") },
+      { key: "firstReview", done: myReviewTotal.value > 0, title: "完成首次评价",
+        desc: "订单完成后评价技能者", go: () => go("orders") },
+      { key: "skiller", done: !!runnerToken.value, title: "入驻成为技能者",
+        desc: "认证后即可挂牌接单", go: () => go("skillerApply") },
+    ]);
+    const tasksDone = Vue.computed(() => meTasks.value.filter(t => t.done).length);
+    function pwdStrengthOf(p) {
+      if (!p) return { label: "", cls: "" };
+      const mixed = /[A-Za-z]/.test(p) && /\d/.test(p);
+      if (p.length >= 10 && mixed) return { label: "强", cls: "strong" };
+      if (p.length >= 8) return { label: "中", cls: "mid" };
+      return { label: "弱：建议 8 位以上并混合字母与数字", cls: "weak" };
+    }
+    const pwdStrength = Vue.computed(() => pwdStrengthOf(pwdPopupForm.newPassword));
+    function openPwdPopup() {
+      Object.assign(pwdPopupForm, { oldPassword: "", newPassword: "", confirm: "" });
+      pwdShow.value = true;
+    }
+    async function submitChangePwd() {
+      if (!pwdPopupForm.newPassword) return toast("请填写新密码", false);
+      if (pwdPopupForm.newPassword !== pwdPopupForm.confirm) return toast("两次输入的新密码不一致", false);
+      if (pwdPopupForm.oldPassword && pwdPopupForm.oldPassword === pwdPopupForm.newPassword) return toast("新密码不能与原密码相同", false);
       busy.value = true;
-      const r = await api("PUT", "/user/user/password", { oldPassword, newPassword }, userToken.value);
+      const r = await api("PUT", "/user/user/password", { oldPassword: pwdPopupForm.oldPassword, newPassword: pwdPopupForm.newPassword }, userToken.value);
       busy.value = false;
-      r.code === 1 ? toast("密码已更新") : toast(r.msg, false);
+      if (r.code === 1) {
+        pwdShow.value = false;
+        try { await vant.showConfirmDialog({ title: "修改成功", message: "密码已更新，请使用新密码重新登录" }); } catch (e) {}
+        //安全惯例：改密成功后旧会话失效，清理本地登录态回登录页
+        releaseIdentity();
+        localStorage.removeItem("user_token");
+        userToken.value = "";
+        view.value = "userLogin";
+        loginMode.value = "account";
+        toast("请使用新密码重新登录");
+      } else toast(r.msg, false);
+    }
+    async function loadCredit() {
+      if (!runnerToken.value) { skCredit.value = null; return; }
+      try {
+        const r = await api("GET", "/skiller/info/credit", null, runnerToken.value);
+        skCredit.value = r.data || null;
+      } catch (e) { skCredit.value = null; }
+    }
+    async function loadMyReviews() {
+      try {
+        const r = await api("GET", "/user/review/my?page=1&pageSize=20", null, userToken.value);
+        myReviews.value = (r.data && r.data.records) || [];
+        myReviewTotal.value = Number(r.data && r.data.total) || 0;
+      } catch (e) { myReviews.value = []; }
+    }
+    function goMyBookings() { marketTab.value = 1; view.value = "market"; loadBookings(); }
+    async function askLogoutUser() {
+      try {
+        await vant.showConfirmDialog({ title: "退出用户登录", message: "确定退出当前用户身份吗？已登录的技能者身份不受影响" });
+      } catch (e) { return; }
+      logoutUser();
     }
     function logoutUser() {
+      releaseIdentity();
       localStorage.removeItem("user_token");
       userToken.value = "";
-      if (runnerToken.value) { role.value = "skiller"; view.value = "grab"; tab.value = "grab"; toast("已退出用户身份"); }
+      if (runnerToken.value) { role.value = "skiller"; view.value = "grab"; tab.value = "grab"; initSkiller(); toast("已退出用户身份"); }
       else location.reload();
     }
 
     async function initUser() {
-      profile.value = (await api("GET", "/user/user/profile", null, userToken.value)).data || {};
-      types.value = (await api("GET", "/user/skillCategory/list", null, userToken.value)).data || [];
-      await loadAddresses();
-      await loadWalletU();
+      /* 首屏四项互相独立，并发拉取以缩短白屏时间 */
+      const [p, t] = await Promise.all([
+        api("GET", "/user/user/profile", null, userToken.value),
+        api("GET", "/user/skillCategory/list", null, userToken.value),
+      ]);
+      profile.value = p.data || {};
+      types.value = t.data || [];
+      loadAddresses();
+      loadWalletU();
       loadActiveOrders();
+      loadRecommend();
+      loadMyReviews();
       loadUnreadU();
       connectWs();
     }
     async function loadActiveOrders() {
       const r = await api("GET", "/user/order/page?page=1&pageSize=10", null, userToken.value);
       activeOrders.value = ((r.data && r.data.records) || []).filter(o => [2, 3, 4].includes(o.status)).slice(0, 3);
+    }
+    async function loadRecommend() {
+      try {
+        const r = await api("GET", "/user/market/recommend?limit=6", null, userToken.value);
+        recommend.value = (r.data || []).slice(0, 4);
+      } catch (e) { recommend.value = []; }
     }
     async function loadUnreadU() {
       const r = await api("GET", "/user/message/unread", null, userToken.value);
@@ -1482,17 +1994,28 @@ createApp({
       view.value = "profileEdit";
     }
     async function saveProfile() {
+      if (!editForm.name || !editForm.name.trim()) return toast("昵称不能为空", false);
+      if (editForm.phone && !/^1\d{10}$/.test(editForm.phone)) return toast("手机号格式不正确（11 位数字）", false);
       busy.value = true;
       const r = await api("PUT", "/user/user/profile", editForm, userToken.value);
       busy.value = false;
       r.code === 1 ? (toast("资料已更新"), profile.value = await (async () =>
         (await api("GET", "/user/user/profile", null, userToken.value)).data)(), view.value = "me") : toast(r.msg, false);
     }
-    async function loadOrders() {
-      const q = new URLSearchParams({ page: 1, pageSize: 20 });
+    async function loadOrders(append) {
+      /* 长列表分页：首次进入/刷新按页重置，点「加载更多」按页追加，避免一次拉全量 */
+      if (!append) { ordersPage = 1; ordersFinished.value = false; }
+      moreLoading.value = true;
+      const q = new URLSearchParams({ page: ordersPage, pageSize: LIST_PAGE_SIZE });
       if (orderTab.value) q.set("status", orderTab.value);
-      const r = await api("GET", "/user/order/page?" + q, null, userToken.value);
-      orders.value = (r.data && r.data.records) || [];
+      const r = await api("GET", "/user/order/page?" + q, null, userToken.value, { silent: !!append });
+      moreLoading.value = false;
+      if (r.code !== 1) { ordersFinished.value = true; return; }
+      const recs = (r.data && r.data.records) || [];
+      orders.value = append ? orders.value.concat(recs) : recs;
+      const total = (r.data && r.data.total) || orders.value.length;
+      if (!recs.length || orders.value.length >= total) ordersFinished.value = true;
+      else ordersPage += 1;
     }
     async function openOrder(id) {
       const r = await api("GET", "/user/order/detail/" + id, null, userToken.value);
@@ -1564,18 +2087,30 @@ createApp({
       const r = await api("GET", "/user/market?" + q, null, userToken.value);
       market.value = (r.data && r.data.records) || [];
     }
-    function openSvc(s) {
+    async function openSvc(s, src) {
+      lastSvcSrc.value = src || 1;
       svcDetail.value = s;
       bookingMode.value = false;
       bookingForm.serviceItemId = s.id;
       bookingForm.expectTime = "";
       bookingForm.remark = "";
       showSvc.value = true;
+      //浏览详情即产生行为埋点（后端 /user/market/{id}?src=），并拉取「看了又看」
+      //src=行为来源：1市场列表 2猜你喜欢 3看了又看（推荐效果实验）
+      similarList.value = [];
+      try {
+        const d = await api("GET", "/user/market/" + s.id + "?src=" + (src || 1), null, userToken.value);
+        if (d.data) svcDetail.value = d.data;
+      } catch (e) { /* 详情刷新失败保留列表数据 */ }
+      try {
+        const r = await api("GET", "/user/market/" + s.id + "/similar?limit=4", null, userToken.value);
+        similarList.value = r.data || [];
+      } catch (e) { similarList.value = []; }
     }
     async function submitBooking() {
       if (!bookingForm.expectTime) return toast("请填写期望服务时间，如 2026-10-10 14:00", false);
       busy.value = true;
-      const r = await api("POST", "/user/booking", bookingForm, userToken.value);
+      const r = await api("POST", "/user/booking", { ...bookingForm, src: lastSvcSrc.value }, userToken.value);
       busy.value = false;
       if (r.code === 1) {
         toast("预约成功，等待技能者确认");
@@ -1638,6 +2173,8 @@ createApp({
       else if (name === "market") { marketTab.value === 0 ? loadMarket() : loadBookings(); }
       else if (name === "hall") loadHall();
       else if (name === "messages") loadMessages();
+      else if (name === "credit") { loadCredit(); }
+      else if (name === "myReviews") { loadMyReviews(); }
     }
 
     /* ================= 技能者身份 ================= */
@@ -1649,6 +2186,8 @@ createApp({
     const hallNew = ref(0);
     const hallSeenMax = ref(0);
     const myOrders = ref([]);
+    let myOrdersPage = 1;
+    const myOrdersFinished = ref(false);
     const skTxs = ref([]);
     const wdRecords = ref([]);
     const wdAmount = ref(null);
@@ -1722,9 +2261,10 @@ createApp({
       initSkiller();
     }
     function logoutSkiller() {
+      releaseIdentity();
       localStorage.removeItem("runner_token");
       runnerToken.value = "";
-      if (userToken.value) { role.value = "user"; view.value = "home"; tab.value = "home"; toast("已退出技能者身份"); }
+      if (userToken.value) { role.value = "user"; view.value = "home"; tab.value = "home"; initUser(); toast("已退出技能者身份"); }
       else location.reload();
     }
     async function initSkiller() {
@@ -1756,9 +2296,11 @@ createApp({
       const r = await api("GET", "/user/hall/skillCategory/list", null, runnerToken.value);
       skHallTypes.value = r.data || [];
     }
-    async function loadCats() {
+    async function loadCats(force) {
+      /* 技能类目在会话内基本不变：缓存一次，避免各表单重复拉取 */
+      if (cats.value.length && !force) return;
       const r = await api("GET", "/user/skillCategory/list", null, runnerToken.value);
-      cats.value = r.data || [];
+      if (r.code === 1) cats.value = r.data || [];
     }
     async function loadTrend() {
       const r = await api("GET", "/skiller/info/trend?days=7", null, runnerToken.value);
@@ -1788,12 +2330,12 @@ createApp({
     }
     async function pollHall() {
       if (!runnerToken.value || role.value !== "skiller" || view.value !== "grab") return;
-      const r = await api("GET", "/skiller/orders/hall?page=1&pageSize=1", null, runnerToken.value);
+      const r = await api("GET", "/skiller/orders/hall?page=1&pageSize=1", null, runnerToken.value, { silent: true });
       const list = (r.data && r.data.records) || [];
       if (list.length) trackHallMax(Math.max(...list.map(o => o.id)));
       else if (!hallSeenMax.value) hallSeenMax.value = -1;
     }
-    setInterval(() => pollHall(), 15000);
+    addTimer(() => pollHall(), 15000);
     function trackHallMax(maxId) {
       if (hallSeenMax.value === 0) { hallSeenMax.value = maxId; return; }
       if (maxId > hallSeenMax.value) {
@@ -1802,9 +2344,18 @@ createApp({
       }
     }
     function applyHallNew() { hallNew.value = 0; loadSkHall(); }
-    async function loadMyOrders() {
-      const r = await api("GET", "/skiller/orders/page?page=1&pageSize=20", null, runnerToken.value);
-      myOrders.value = (r.data && r.data.records) || [];
+    async function loadMyOrders(append) {
+      if (!append) { myOrdersPage = 1; myOrdersFinished.value = false; }
+      moreLoading.value = true;
+      const r = await api("GET", "/skiller/orders/page?page=" + myOrdersPage + "&pageSize=" + LIST_PAGE_SIZE,
+        null, runnerToken.value, { silent: !!append });
+      moreLoading.value = false;
+      if (r.code !== 1) { myOrdersFinished.value = true; return; }
+      const recs = (r.data && r.data.records) || [];
+      myOrders.value = append ? myOrders.value.concat(recs) : recs;
+      const total = (r.data && r.data.total) || myOrders.value.length;
+      if (!recs.length || myOrders.value.length >= total) myOrdersFinished.value = true;
+      else myOrdersPage += 1;
     }
     async function loadSkBookings() {
       const r = await api("GET", "/skiller/booking/page?page=1&pageSize=20", null, runnerToken.value);
@@ -1941,9 +2492,9 @@ createApp({
       r.code === 1 ? (toast("提现申请已提交"), loadWalletS()) : toast(r.msg, false);
     }
     async function setPwd() {
-      if (!wdPassword.value || wdPassword.value.length < 6) return toast("密码至少6位", false);
-      const r = await api("POST", "/skiller/wallet/password?password=" + encodeURIComponent(wdPassword.value), null, runnerToken.value);
-      r.code === 1 ? toast("提现密码已设置") : toast(r.msg, false);
+      if (!/^\d{6}$/.test(wdPassword.value || "")) return toast("提现密码需为 6 位数字", false);
+      const r = await api("POST", "/skiller/wallet/password", { password: wdPassword.value }, runnerToken.value);
+      r.code === 1 ? (toast("提现密码已设置"), wdPassword.value = "") : toast(r.msg, false);
     }
     async function loadMe() {
       const c = await api("GET", "/skiller/info/center", null, runnerToken.value);
@@ -1964,6 +2515,7 @@ createApp({
 
     /* ================= 身份切换与统一导航 ================= */
     function toggleRole() {
+      releaseIdentity();
       if (role.value === "user") {
         if (runnerToken.value) { role.value = "skiller"; view.value = "grab"; tab.value = "grab"; initSkiller(); }
         else { role.value = "skiller"; view.value = "skLogin"; }
@@ -1972,6 +2524,16 @@ createApp({
         else { role.value = "user"; view.value = "userLogin"; }
       }
     }
+    /* 错误提示条上的「重试」：按当前视图重新拉取数据 */
+    function retryCurrent() {
+      loadErr.value = "";
+      const v = view.value;
+      if (v === "orderDetail" && detail.value) { openOrder(detail.value.id); return; }
+      if (role.value === "user") goUser(v); else goSk(v);
+      /* 无专属加载器的视图回退到身份初始化（资料 / 地址 / 类目等） */
+      if (userToken.value && ["me", "submit", "address", "profileEdit", "skillerApply"].includes(v)) initUser();
+      if (runnerToken.value && v === "skLogin") initSkiller();
+    }
     function go(name) { role.value === "user" ? goUser(name) : goSk(name); }
     function onTab(name) { go(name); }
 
@@ -1979,7 +2541,8 @@ createApp({
       const m = role.value === "user"
         ? { home:"首页", hall:"订单大厅", submit:"发布订单", orders:"我的订单", orderDetail:"订单详情",
             wallet:"我的钱包", address:"地址管理", skillerApply:"技能者入驻", me:"我的",
-            messages:"消息中心", market:"技能市场", profileEdit:"编辑资料", userLogin:"用户登录" }
+            messages:"消息中心", market:"技能市场", profileEdit:"编辑资料", userLogin:"用户登录",
+            credit:"信用档案", myReviews:"我的评价" }
         : { skLogin:"技能者登录", grab:"悬赏大厅", skOrders:"我的接单", services:"我的服务",
             portfolio:"我的作品", skCenter:"技能者中心", skMessages:"消息中心" };
       return m[view.value] || "CampusSkill 校园技能工坊";
@@ -1990,20 +2553,24 @@ createApp({
 
     return { userToken, runnerToken, role, view, tab, busy,
              loginRole, loginMode, skLoginMode, loginCode, accountForm, skAccountForm, auditForm,
+             icoUser, icoLock, icoPostcard, icoView, icoHide, showLoginPwd, showRegPwd, showRegConfirmPwd, showSkPwd,
              doAccountLogin, doRegister, doGuestLogin, doSkAccountLogin, doSkGuestLogin, applyAudit,
              changePwd, logoutUser, logoutSkiller, toggleRole, go, onTab, navTitle,
-             skel, playSkel, money, relTime, copyText, statusText, tagType, modeText, bkText, bkTag, pfText, pfTag, txName,
-             /* user */ profile, types, addresses, hall, hallKeyword, hallType, orders, orderTab, detail, reviewed,
+             skel, playSkel, loadErr, retryCurrent, money, relTime, copyText, statusText, tagType, modeText, bkText, bkTag, pfText, pfTag, txName,
+             /* user */ profile, types, addresses, hall, hallKeyword, hallType, orders, orderTab, ordersFinished, moreLoading, detail, reviewed,
              reviewTags, toggleTag, reviewScore, reviewContent, wallet, txs, editForm, curType, form, addrForm,
              messages, unread, boostAmount, activeOrders, marketTab, market, marketKeyword, marketCategory,
              marketSort, svcDetail, showSvc, bookingMode, bookingForm, bookings, feeRateNum, typeName,
+             recommend, similarList, lastSvcSrc,
+             skCredit, myReviews, meLevel, meLevelDesc, goMyBookings, askLogoutUser,
+             meTasks, tasksDone, pwdShow, pwdPopupForm, pwdStrength, submitChangePwd,
              stepActive, countdown, refreshing, onRefresh, rechargeAmount, quickPublish,
              startOrder, submitOrder, loadHall, loadOrders, openOrder, payOrder, boostOrder,
              acceptOrder, applyRework, applyDispute, cancelOrder, submitReview, loadMarket, openSvc,
              submitBooking, loadBookings, onMarketTab, payBooking, cancelBooking, recharge,
              saveAddress, delAddress, openProfileEdit, saveProfile, applySkiller, openMessagesU, readAll, changePwd,
              /* skiller */ center, skHall, skHallKeyword, skHallTypes, skHallTypeId, hallNew, applyHallNew,
-             myOrders, portfolios, skTxs, wdRecords, wdAmount, wdPassword, trend, barH, trendTotal, trendIncome,
+             myOrders, myOrdersFinished, loadMyOrders, portfolios, skTxs, wdRecords, wdAmount, wdPassword, trend, barH, trendTotal, trendIncome,
              skMessages, skUnread, orderSub, skBookings, services, cats, svcShow, svcForm, pfShow, pfForm,
              deliverShow, deliverForm, currentTask, levelPct, nextGoal, nextLevelName, limitPct, levelName,
              loadSkHall, loadOrderSub, grab, pickup, openDeliver, submitDeliver, respondRework,

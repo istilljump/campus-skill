@@ -19,6 +19,12 @@ public interface WalletAccountMapper {
     @Select("select * from wallet_account where user_id = #{userId}")
     WalletAccount getByUserId(Long userId);
 
+    /**
+     * 行级锁按用户查询：并发开户冲突后使用，锁定读可读到其他事务刚提交的账户（普通读会命中事务快照仍为 null）
+     */
+    @Select("select * from wallet_account where user_id = #{userId} for update")
+    WalletAccount getByUserIdForUpdate(Long userId);
+
     @Select("select * from wallet_account where id = #{id}")
     WalletAccount getById(Long id);
 

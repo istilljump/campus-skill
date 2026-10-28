@@ -90,6 +90,13 @@ public class ReviewServiceImpl implements ReviewService {
     }
 
     @Override
+    public PageResult<com.campus.runner.vo.MyReviewVO> pageMy(Long userId, Integer page, Integer pageSize) {
+        PageHelper.startPage(page, pageSize);
+        Page<com.campus.runner.vo.MyReviewVO> myPage = orderReviewMapper.pageMyByUser(userId);
+        return new PageResult<>(myPage.getTotal(), myPage.getResult(), myPage.getPageSize(), myPage.getPageNum());
+    }
+
+    @Override
     public OrderReviewVO getByOrderId(Long orderId) {
         OrderReview review = orderReviewMapper.getByOrderId(orderId);
         return review == null ? null : toVO(review);

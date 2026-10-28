@@ -28,6 +28,11 @@ public interface OrderReviewMapper {
     Page<OrderReview> pageByRunnerId(@Param("runnerId") Long runnerId);
 
     /**
+     * 用户发出的评价分页（联查订单标题与技能者姓名）
+     */
+    Page<com.campus.runner.vo.MyReviewVO> pageMyByUser(@Param("userId") Long userId);
+
+    /**
      * 重算技能者综合评分
      */
     @Select("select ifnull(round(avg(score), 1), 5.0) from order_review where runner_id = #{runnerId}")

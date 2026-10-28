@@ -40,7 +40,8 @@
           </template>
         </el-table-column>
         <el-table-column prop="adminName" label="发布人" width="100" />
-      </el-table>
+            <template #empty><el-empty description="暂无数据" :image-size="72" /></template>
+    </el-table>
       <div class="table-pager">
         <el-pagination background layout="total, prev, pager, next" :total="total"
           v-model:current-page="page" :page-size="pageSize" @change="load" />

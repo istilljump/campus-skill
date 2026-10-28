@@ -15,8 +15,10 @@ import com.campus.runner.mapper.RunnerMapper;
 import com.campus.runner.mapper.ServiceItemMapper;
 import com.campus.runner.mapper.UserMapper;
 import com.campus.runner.result.PageResult;
+import com.campus.runner.entity.UserBehavior;
 import com.campus.runner.service.BookingService;
 import com.campus.runner.service.MessageService;
+import com.campus.runner.service.RecommendService;
 import com.campus.runner.vo.BookingVO;
 import com.campus.runner.vo.OrderSubmitVO;
 import com.github.pagehelper.Page;
@@ -62,6 +64,9 @@ public class BookingServiceImpl implements BookingService {
     @Autowired
     private MessageService messageService;
 
+    @Autowired
+    private RecommendService recommendService;
+
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void apply(Long userId, BookingApplyDTO dto) {
@@ -87,6 +92,9 @@ public class BookingServiceImpl implements BookingService {
                     "您挂牌的服务「" + service.getTitle() + "」收到新的预约，请及时确认",
                     null);
         }
+        //行为埋点：预约服务（推荐引擎数据源，旁路记录不影响主流程）；来源继承本次会话的浏览入口
+        recommendService.record(userId, service.getId(), UserBehavior.TYPE_BOOKING,
+                dto.getSrc() == null ? UserBehavior.SOURCE_OTHER : dto.getSrc());
         log.info("服务预约提交成功，bookingId={}, userId={}, serviceItemId={}", booking.getId(), userId, service.getId());
     }
 
@@ -184,6 +192,8 @@ public class BookingServiceImpl implements BookingService {
         orderMapper.insert(order);
         //预约单回填订单id（状态保持已确认，订单验收完成时置为已完成）
         bookingMapper.updateOrderId(booking.getId(), order.getId());
+        //行为埋点：成交（推荐引擎数据源，旁路记录不影响主流程）
+        recommendService.record(userId, service.getId(), UserBehavior.TYPE_DEAL, UserBehavior.SOURCE_OTHER);
 
         return OrderSubmitVO.builder()
                 .id(order.getId())

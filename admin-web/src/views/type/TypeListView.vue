@@ -31,6 +31,7 @@
           <el-button link type="danger" @click="remove(row)">删除</el-button>
         </template>
       </el-table-column>
+          <template #empty><el-empty description="暂无数据" :image-size="72" /></template>
     </el-table>
 
     <el-dialog v-model="editVisible" :title="form.id ? '编辑类型' : '新增类型'" width="480px">

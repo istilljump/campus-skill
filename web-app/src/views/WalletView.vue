@@ -24,7 +24,9 @@
         <el-table-column label="时间" width="170">
           <template #default="{ row }">{{ fmtTime(row.createTime) }}</template>
         </el-table-column>
-        <template #empty><el-empty description="暂无流水" :image-size="72" /></template>
+        <template #empty><el-empty description="还没有钱包流水，充值或完成第一单后产生" :image-size="72">
+  <el-button type="primary" plain @click="onRecharge">去充值</el-button>
+</el-empty></template>
       </el-table>
     </div>
   </div>

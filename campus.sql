@@ -555,4 +555,26 @@ CREATE TABLE `message` (
   KEY `idx_recipient` (`recipient_id`,`is_read`,`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='站内消息';
 
+
+--
+-- Table structure for table `user_behavior` (v8 推荐引擎数据源)
+--
+
+DROP TABLE IF EXISTS `user_behavior`;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `user_behavior` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `user_id` bigint NOT NULL COMMENT '用户id',
+  `service_item_id` bigint NOT NULL COMMENT '技能服务id',
+  `category_id` bigint DEFAULT NULL COMMENT '技能类目id（行为发生时冗余）',
+  `behavior_type` tinyint NOT NULL COMMENT '行为类型 1浏览 2预约 3成交',
+  `source` tinyint NOT NULL DEFAULT '4' COMMENT '行为来源 1市场列表 2猜你喜欢 3看了又看 4其他（推荐效果实验用）',
+  `weight` decimal(4,1) NOT NULL DEFAULT '1.0' COMMENT '行为权重（浏览1.0/预约3.0/成交5.0）',
+  `create_time` datetime NOT NULL COMMENT '行为时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_behavior_user_time` (`user_id`, `create_time`),
+  KEY `idx_behavior_item` (`service_item_id`),
+  KEY `idx_behavior_user_item` (`user_id`, `service_item_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='用户行为记录（推荐引擎数据源）';
+
 -- Dump completed on 2026-09-27 16:26:42

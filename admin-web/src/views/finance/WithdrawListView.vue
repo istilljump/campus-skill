@@ -30,6 +30,7 @@
           <el-button v-if="row.status === 0" link type="primary" @click="openProcess(row)">处理</el-button>
         </template>
       </el-table-column>
+          <template #empty><el-empty description="暂无数据" :image-size="72" /></template>
     </el-table>
 
     <div class="table-pager">

@@ -116,10 +116,12 @@ public class RunnerServiceImpl implements RunnerService {
         if (user == null || user.getPassword() == null) {
             throw new BusinessException("账号或密码不正确");
         }
-        String hashed = org.springframework.util.DigestUtils.md5DigestAsHex(
-                (user.getSalt() + dto.getPassword()).getBytes());
-        if (!hashed.equals(user.getPassword())) {
+        if (!com.campus.runner.utils.PasswordUtil.matches(dto.getPassword(), user.getSalt(), user.getPassword())) {
             throw new BusinessException("账号或密码不正确");
+        }
+        //旧 MD5 口径登录成功后自动升级为 BCrypt（渐进迁移）
+        if (com.campus.runner.utils.PasswordUtil.needsRehash(user.getPassword())) {
+            userMapper.updatePassword(user.getId(), com.campus.runner.utils.PasswordUtil.encode(dto.getPassword()), user.getSalt());
         }
         Runner runner = runnerMapper.getByUserId(user.getId());
         if (runner == null || runner.getAuditStatus() == null || runner.getAuditStatus() != RunnerConstant.AUDIT_PASSED) {
@@ -225,7 +227,8 @@ public class RunnerServiceImpl implements RunnerService {
             result.add(com.campus.runner.vo.TrendPointVO.builder()
                     .date(date)
                     .orderCount(row != null ? ((Number) row.get("orderCount")).intValue() : 0)
-                    .completedCount(row != null ? ((Number) row.get("orderCount")).intValue() : 0)
+                    .completedCount(row != null && row.get("completedCount") != null
+                            ? ((Number) row.get("completedCount")).intValue() : 0)
                     .amount(row != null && row.get("amount") != null
                             ? new BigDecimal(String.valueOf(row.get("amount"))) : BigDecimal.ZERO)
                     .build());

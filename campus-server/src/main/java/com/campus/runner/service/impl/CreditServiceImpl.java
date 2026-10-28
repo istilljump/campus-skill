@@ -24,6 +24,25 @@ public class CreditServiceImpl implements CreditService {
     private RunnerMapper runnerMapper;
 
     @Override
+    public com.campus.runner.vo.SkillerCreditVO myCredit(Long skillerId) {
+        com.campus.runner.entity.Runner runner = runnerMapper.getById(skillerId);
+        int score = runner == null || runner.getCreditScore() == null ? 100 : runner.getCreditScore();
+        //等级口径与 README 一致：C3≥90 / C2≥70 / C1<70
+        String level = score >= 90 ? "C3" : score >= 70 ? "C2" : "C1";
+        String levelDesc = "C3".equals(level) ? "信用优秀，可获更多曝光与信任"
+                : "C2".equals(level) ? "信用良好，保持按时交付可升级 C3"
+                : "信用待提升，避免返修与超时";
+        Integer toNext = "C3".equals(level) ? null : ("C2".equals(level) ? 90 - score : 70 - score);
+        return com.campus.runner.vo.SkillerCreditVO.builder()
+                .creditScore(score)
+                .level(level)
+                .levelDesc(levelDesc)
+                .toNextLevel(toNext)
+                .logs(creditLogMapper.listBySkiller(skillerId))
+                .build();
+    }
+
+    @Override
     @Transactional(rollbackFor = Exception.class)
     public void addCredit(Long skillerId, int delta, String reason, Long orderId) {
         if (skillerId == null) {

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.campus.runner.mapper.UserBehaviorMapper">
+
+    <!-- 写入行为（浏览类行为由 service 层先查询去重后再调用） -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        insert into user_behavior (user_id, service_item_id, category_id, behavior_type, source, weight, create_time)
+        values (#{userId}, #{serviceItemId}, #{categoryId}, #{behaviorType}, #{source}, #{weight}, #{createTime})
+    </insert>
+
+    <!-- 用户最近的去重行为：同一服务仅保留最新一次 -->
+    <select id="listRecentDistinctByUser" resultType="com.campus.runner.entity.UserBehavior">
+        select b.id, b.user_id, b.service_item_id, b.category_id, b.behavior_type, b.weight, b.create_time
+        from user_behavior b
+        join (select service_item_id, max(id) as max_id
+              from user_behavior
+              where user_id = #{userId}
+              group by service_item_id) t on b.id = t.max_id
+        order by b.create_time desc
+        limit #{limit}
+    </select>
+
+    <!-- 全量去重行为对（近 N 天）：同一用户对同一服务仅保留最高权重的一次 -->
+    <select id="listRecentDistinctAll" resultType="com.campus.runner.entity.UserBehavior">
+        select b.id, b.user_id, b.service_item_id, b.category_id, b.behavior_type, b.weight, b.create_time
+        from user_behavior b
+        join (select user_id, service_item_id, max(weight) as max_weight
+              from user_behavior
+              where create_time >= date_sub(now(), interval #{days} day)
+              group by user_id, service_item_id) t
+          on b.user_id = t.user_id and b.service_item_id = t.service_item_id and b.weight = t.max_weight
+    </select>
+
+    <!-- 服务维度最近行为 -->
+    <select id="listByItem" resultType="com.campus.runner.entity.UserBehavior">
+        select * from user_behavior
+        where service_item_id = #{serviceItemId}
+        order by create_time desc
+        limit #{limit}
+    </select>
+
+</mapper>

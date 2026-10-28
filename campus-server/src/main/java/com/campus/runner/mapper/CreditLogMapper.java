@@ -18,7 +18,10 @@ public interface CreditLogMapper {
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void insert(CreditLog creditLog);
 
-    List<CreditLog> listBySkiller(Long skillerId);
+    /**
+     * 技能者信用流水（联查订单号，最近 50 条）
+     */
+    List<com.campus.runner.vo.CreditLogVO> listBySkiller(@Param("skillerId") Long skillerId);
 
     /**
      * 信用分排行榜（按信用分降序取前 N）

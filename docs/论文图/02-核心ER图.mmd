@@ -1,0 +1,119 @@
+erDiagram
+    user ||--o{ orders : "发布 1:N"
+    user ||--o{ booking : "预约"
+    user ||--o| wallet_account : "钱包 1:1"
+    skiller ||--o{ orders : "接单"
+    skiller ||--o{ service_item : "挂牌"
+    skiller ||--o{ portfolio : "作品集"
+    skiller ||--o{ credit_log : "信用流水"
+    service_item ||--o{ booking : "被预约"
+    booking ||--o| orders : "确认后转化"
+    orders ||--o| order_review : "评价 1:1"
+    orders ||--o{ dispute : "仲裁"
+    wallet_account ||--o{ wallet_transaction : "流水"
+    skill_category ||--o{ service_item : "类目"
+    skill_category ||--o{ orders : "类目"
+    user {
+        bigint id PK
+        varchar openid "微信标识/账号占位"
+        varchar username UK "登录账号"
+        varchar password "BCrypt"
+        varchar name "昵称"
+        varchar campus "校区"
+        int credit_score "用户信用分"
+    }
+    skiller {
+        bigint id PK
+        bigint user_id FK
+        varchar name
+        tinyint audit_status "认证状态"
+        tinyint skill_level "作品定级C1-C3"
+        int credit_score "技能者信用分"
+        int daily_order_limit "每日接单上限"
+    }
+    orders {
+        bigint id PK
+        varchar number UK "订单号"
+        bigint user_id FK "发单用户"
+        bigint runner_id FK "接单技能者"
+        bigint type_id FK "类目"
+        bigint service_item_id FK "关联服务"
+        tinyint mode "1悬赏 2预约"
+        decimal reward_amount "悬赏金额"
+        decimal platform_fee "平台服务费"
+        decimal runner_income "技能者实得"
+        tinyint status "1-9状态机"
+        tinyint pay_status "支付状态"
+    }
+    service_item {
+        bigint id PK
+        bigint skiller_id FK
+        bigint category_id FK
+        varchar title
+        decimal price "挂牌价"
+        int delivery_days "承诺交付天数"
+        tinyint status "1上架"
+        int sales_count "销量"
+    }
+    booking {
+        bigint id PK
+        bigint service_item_id FK
+        bigint user_id FK
+        bigint skiller_id FK
+        bigint order_id FK "支付时回填"
+        tinyint status "0待确认 1已确认"
+    }
+    wallet_account {
+        bigint id PK
+        bigint user_id UK
+        decimal balance "余额"
+        decimal frozen_amount "冻结金额"
+        tinyint status
+    }
+    wallet_transaction {
+        bigint id PK
+        bigint wallet_id FK
+        tinyint type "1收入 2支出 3充值"
+        decimal amount
+        bigint order_id FK
+    }
+    credit_log {
+        bigint id PK
+        bigint skiller_id FK
+        int delta "分值变动"
+        varchar reason "变动原因"
+        bigint order_id FK
+    }
+    order_review {
+        bigint id PK
+        bigint order_id FK
+        bigint user_id FK "发单方"
+        bigint runner_id FK "技能者"
+        tinyint score "评分1-5"
+        varchar tags "标签"
+    }
+    user_behavior {
+        bigint id PK
+        bigint user_id FK
+        bigint service_item_id FK
+        tinyint behavior_type "1浏览 2预约 3成交"
+        tinyint source "来源 1-4"
+        decimal weight "行为权重"
+    }
+    skill_category {
+        bigint id PK
+        varchar name
+        decimal fee_rate "平台费率"
+    }
+    dispute {
+        bigint id PK
+        bigint order_id FK
+        tinyint status "仲裁状态"
+        varchar verdict "裁定结果"
+    }
+    portfolio {
+        bigint id PK
+        bigint skiller_id FK
+        varchar cover_url
+        tinyint status "审核状态"
+    }

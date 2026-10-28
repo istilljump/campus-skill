@@ -13,6 +13,10 @@
     <description>CampusSkill 校园技能工坊 —— 校园技能互助服务市场：通用层：常量、异常、JWT/Redis/OSS 工具、统一返回</description>
     <dependencies>
         <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-crypto</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
         </dependency>

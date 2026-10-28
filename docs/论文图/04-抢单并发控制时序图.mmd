@@ -1,0 +1,35 @@
+sequenceDiagram
+    autonumber
+    participant S1 as 技能者A（竞争者×N）
+    participant LB as 应用集群
+    participant R as Redis（Lua 原子脚本）
+    participant LC as 权限本地缓存
+    participant DB as MySQL
+
+    S1->>LB: POST /skiller/orders/grab {orderId}
+    LB->>R: EVAL 抢单原子脚本<br/>INCR 限流计数（首次 EXPIRE 10s）
+    alt 超过限流阈值（10 秒 5 次）
+        R-->>LB: -1
+        LB-->>S1: 「操作过于频繁」（1 次 Redis 往返即拒绝）
+    else 订单已被占用
+        R-->>LB: 0（SET NX 失败）
+        LB-->>S1: 「抢单失败，请重试」
+    else 占位成功
+        R-->>LB: 1（SET NX EX 10s）
+        LB->>LC: 接单权限校验（认证/状态/每日上限）
+        alt 缓存命中（30s 内）
+            LC-->>LB: 直接放行（0 次查库）
+        else 缓存未命中
+            LC->>DB: 查技能者档案 + 当日接单数（2 次 SQL）
+            LC-->>LB: 结果写入缓存（允许 30s / 拒绝 5s）
+        end
+        LB->>DB: UPDATE orders SET status=3<br/>WHERE id=? AND status=2 AND pay_status=1
+        alt 影响行数 = 1
+            DB-->>LB: 抢单成功（唯一赢家）
+            LB->>DB: 站内信落库 + WebSocket 推送
+        else 影响行数 = 0（已被抢/状态不符）
+            DB-->>LB: 「订单不可接单」
+        end
+        LB->>R: DEL 占位 key（TTL 10s 兜底）
+    end
+    Note over R,DB: 双保险：Redis 占位削峰挡住无效竞争，<br/>MySQL 条件更新兜底保证「恰好一人成功」

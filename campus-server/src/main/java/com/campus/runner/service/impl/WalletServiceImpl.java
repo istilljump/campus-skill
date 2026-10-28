@@ -24,11 +24,13 @@ import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.DigestUtils;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -51,6 +53,9 @@ public class WalletServiceImpl implements WalletService {
 
     @Autowired
     private RunnerMapper runnerMapper;
+
+    @Autowired
+    private StringRedisTemplate stringRedisTemplate;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -246,19 +251,62 @@ public class WalletServiceImpl implements WalletService {
      */
     private WalletAccount ensureWallet(Long userId) {
         WalletAccount wallet = walletAccountMapper.getByUserId(userId);
+        if (wallet != null) {
+            return wallet;
+        }
+        //并发懒开户保护（并发对账测试发现）：20 个并发首充曾触发唯一键冲突与 gap lock 死锁。
+        //方案：Redis 锁串行化同一用户的开户插入（插入仍在外层事务内执行，不额外占用连接）；
+        //等待方先轮询等 Redis 锁释放（持锁者 insert 执行后才释放），再对已存在的行做锁定读，
+        //阻塞在开户事务的行锁上直至其提交——避免了对不存在行的 gap lock 与唯一键冲突。
+        for (int attempt = 0; attempt < 20 && wallet == null; attempt++) {
+            String lockKey = "campus:wallet:init:" + userId;
+            Boolean locked = stringRedisTemplate.opsForValue().setIfAbsent(lockKey, "1", Duration.ofSeconds(10));
+            if (Boolean.TRUE.equals(locked)) {
+                try {
+                    if (walletAccountMapper.getByUserIdForUpdate(userId) == null) {
+                        walletAccountMapper.insert(WalletAccount.builder()
+                                .userId(userId)
+                                .balance(new BigDecimal("0"))
+                                .frozenAmount(new BigDecimal("0"))
+                                .totalIncome(new BigDecimal("0"))
+                                .totalExpense(new BigDecimal("0"))
+                                .status(WalletConstant.ACCOUNT_NORMAL)
+                                .createTime(LocalDateTime.now())
+                                .updateTime(LocalDateTime.now())
+                                .build());
+                    }
+                } finally {
+                    stringRedisTemplate.delete(lockKey);
+                }
+                //本事务插入对自己立即可见；若 insert 被跳过（极端下他人已建）则行锁等待其提交后返回
+                wallet = walletAccountMapper.getByUserIdForUpdate(userId);
+            } else {
+                //另一事务正在开户：等它执行完 insert（Redis 锁释放）后，行已存在，
+                //此时锁定读走行锁等待而非 gap lock，待其外层事务提交即返回
+                long deadline = System.currentTimeMillis() + 10_000;
+                while (Boolean.TRUE.equals(stringRedisTemplate.hasKey(lockKey))
+                        && System.currentTimeMillis() < deadline) {
+                    try {
+                        Thread.sleep(20);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
+                }
+                wallet = walletAccountMapper.getByUserIdForUpdate(userId);
+                if (wallet == null) {
+                    //开户事务已回滚等极端场景：退避后回到循环重新竞争开户
+                    try {
+                        Thread.sleep(100);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
+                }
+            }
+        }
         if (wallet == null) {
-            WalletAccount created = WalletAccount.builder()
-                    .userId(userId)
-                    .balance(new BigDecimal("0"))
-                    .frozenAmount(new BigDecimal("0"))
-                    .totalIncome(new BigDecimal("0"))
-                    .totalExpense(new BigDecimal("0"))
-                    .status(WalletConstant.ACCOUNT_NORMAL)
-                    .createTime(LocalDateTime.now())
-                    .updateTime(LocalDateTime.now())
-                    .build();
-            walletAccountMapper.insert(created);
-            wallet = walletAccountMapper.getByUserId(userId);
+            throw new BusinessException("钱包初始化失败，请稍后重试");
         }
         return wallet;
     }

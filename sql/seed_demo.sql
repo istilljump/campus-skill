@@ -23,6 +23,12 @@ SET @u2 = (SELECT id FROM user WHERE openid = 'campus_dev_demo2');
 SET @u3 = (SELECT id FROM user WHERE openid = 'campus_dev_demo3');
 SET @u4 = (SELECT id FROM user WHERE openid = 'campus_dev_demo4');
 
+-- ---------- 演示账号（demo1~demo4，密码 123456；v6 升级脚本执行后此回填才生效） ----------
+UPDATE `user` SET username = 'demo1', salt = 'campus_skill_demo1', password = MD5(CONCAT('campus_skill_demo1', '123456')) WHERE openid = 'campus_dev_demo1';
+UPDATE `user` SET username = 'demo2', salt = 'campus_skill_demo2', password = MD5(CONCAT('campus_skill_demo2', '123456')) WHERE openid = 'campus_dev_demo2';
+UPDATE `user` SET username = 'demo3', salt = 'campus_skill_demo3', password = MD5(CONCAT('campus_skill_demo3', '123456')) WHERE openid = 'campus_dev_demo3';
+UPDATE `user` SET username = 'demo4', salt = 'campus_skill_demo4', password = MD5(CONCAT('campus_skill_demo4', '123456')) WHERE openid = 'campus_dev_demo4';
+
 -- ---------- 技能者（已认证、已定级） ----------
 INSERT INTO skiller (user_id, name, phone, student_no, campus, college, audit_status, runner_level, daily_order_limit, completed_orders, score, credit_score, skill_level, create_time)
 VALUES (@u2, '陈技能', '13800000002', '2026010102', '主校区', '计算机学院', 1, 2, 10, 7, 4.9, 103, 3, NOW() - INTERVAL 10 DAY),

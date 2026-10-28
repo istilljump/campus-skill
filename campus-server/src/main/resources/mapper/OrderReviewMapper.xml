@@ -9,4 +9,15 @@
         where runner_id = #{runnerId}
         order by create_time desc
     </select>
+
+    <!-- 用户发出的评价分页（联查订单标题/单号与技能者姓名） -->
+    <select id="pageMyByUser" resultType="com.campus.runner.vo.MyReviewVO">
+        select r.id, r.order_id as orderId, o.title as orderTitle, sk.name as skillerName,
+               r.score, r.content, r.tags, r.is_anonymous as isAnonymous, r.create_time as createTime
+        from order_review r
+        left join orders o on r.order_id = o.id
+        left join skiller sk on r.runner_id = sk.id
+        where r.user_id = #{userId}
+        order by r.create_time desc, r.id desc
+    </select>
 </mapper>

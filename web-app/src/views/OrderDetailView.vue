@@ -1,5 +1,6 @@
 <template>
-  <div class="page-card detail-card" v-if="detail">
+  <div class="page-card detail-card" v-loading="loading">
+   <template v-if="detail">
     <!-- 状态步骤条 -->
     <el-steps :active="stepActive" align-center class="steps">
       <el-step title="发单" /><el-step title="支付" /><el-step title="接单" />
@@ -82,6 +83,10 @@
         <el-alert v-if="detail.status === 5 && reviewed" type="success" :closable="false" title="✅ 已完成并评价" />
       </el-col>
     </el-row>
+   </template>
+   <el-empty v-else-if="!loading" description="订单不存在或已不可查看">
+     <el-button @click="$router.push('/orders')">返回我的订单</el-button>
+   </el-empty>
   </div>
 </template>
 
@@ -100,6 +105,7 @@ const route = useRoute()
 const detail = ref(null)
 const reviewed = ref(false)
 const busy = ref(false)
+const loading = ref(false)
 const boostAmount = ref(null)
 const reviewScore = ref(5)
 const reviewContent = ref('')
@@ -137,9 +143,12 @@ const countdown = computed(() => {
 })
 
 async function load() {
-  detail.value = await getOrderDetail(route.params.id)
-  const rv = await getOrderReview(route.params.id)
-  reviewed.value = !!(rv && rv.id)
+  loading.value = true
+  try {
+    detail.value = await getOrderDetail(route.params.id)
+    const rv = await getOrderReview(route.params.id)
+    reviewed.value = !!(rv && rv.id)
+  } finally { loading.value = false }
 }
 
 async function onPay() {

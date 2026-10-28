@@ -30,6 +30,7 @@
           <el-button v-else link type="success" @click="toggleStatus(row, 1)">启用</el-button>
         </template>
       </el-table-column>
+          <template #empty><el-empty description="暂无数据" :image-size="72" /></template>
     </el-table>
 
     <div class="table-pager">

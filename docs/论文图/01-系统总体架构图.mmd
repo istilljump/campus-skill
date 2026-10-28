@@ -1,0 +1,46 @@
+flowchart TB
+    subgraph Client["客户端层（三端隔离）"]
+        WA["Web 门户 web-app<br/>Vue3 + Vite + Element Plus<br/>用户端 / 技能者端一体"]
+        H5["双身份 H5 user-app<br/>单文件零构建<br/>用户端 + 技能者端"]
+        AW["管理端控制台 admin-web<br/>Vue3 + Element Plus + ECharts"]
+    end
+
+    subgraph Gateway["接入层"]
+        JWT["JWT 三端隔离拦截器<br/>/user/** · /skiller/** · /admin/**"]
+        WS["WebSocket /ws/{token}<br/>实时消息推送"]
+    end
+
+    subgraph App["应用层 campus-server（Maven 多模块）"]
+        direction TB
+        subgraph Ctrl["Controller 35 个"]
+            C1["用户端 14"]
+            C2["技能者端 8"]
+            C3["管理端 13"]
+        end
+        subgraph Svc["Service 业务层"]
+            S1["订单 / 撮合<br/>抢单 Lua + 条件更新"]
+            S2["钱包 / 担保交易<br/>托管·结算·退款"]
+            S3["推荐引擎<br/>ItemCF + 内容特征"]
+            S4["信用引擎 / 消息 / 统计"]
+        end
+        subgraph Task["定时任务引擎"]
+            T1["超时取消 / 退款"]
+            T2["自动验收 / 违约金"]
+        end
+    end
+
+    subgraph Infra["数据与中间件层"]
+        DB[("MySQL 8.0<br/>18 张表")]
+        RD[("Redis<br/>抢单锁 / 限流 / 缓存")]
+    end
+
+    WA --> JWT
+    H5 --> JWT
+    AW --> JWT
+    H5 -.实时消息.-> WS
+    JWT --> Ctrl
+    Ctrl --> Svc
+    Task --> Svc
+    Svc --> DB
+    Svc --> RD
+    WS --> Svc

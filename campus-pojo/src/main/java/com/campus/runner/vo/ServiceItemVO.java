@@ -81,4 +81,7 @@ public class ServiceItemVO implements Serializable {
 
     //技能类目名称
     private String categoryName;
+
+    //推荐理由（仅推荐接口返回，如「与你互动过的服务相似」）
+    private String recommendReason;
 }

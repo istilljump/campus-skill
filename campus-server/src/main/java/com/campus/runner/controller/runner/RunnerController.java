@@ -34,11 +34,20 @@ public class RunnerController {
     @Autowired
     private RunnerService runnerService;
 
+    @Autowired
+    private com.campus.runner.service.CreditService creditService;
+
     @GetMapping("/center")
     @ApiOperation("个人中心（今日接单/收入/等级/评分/余额）")
     public Result<RunnerCenterVO> center() {
         //BaseContext 中是技能者ID，getCenter 需要关联用户ID
         return Result.success(runnerService.getCenter(runnerService.resolveUserId(BaseContext.getCurrentId())));
+    }
+
+    @GetMapping("/credit")
+    @ApiOperation("我的信用档案（当前分/等级/流水明细，最近50条）")
+    public Result<com.campus.runner.vo.SkillerCreditVO> credit() {
+        return Result.success(creditService.myCredit(BaseContext.getCurrentId()));
     }
 
     @GetMapping("/trend")
