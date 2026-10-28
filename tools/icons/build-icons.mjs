@@ -82,32 +82,12 @@ out.push('favicon.ico (16/32/48)')
 copyFileSync(join(here, 'icon-tile.svg'), join(staticDir, 'favicon.svg'))
 out.push('favicon.svg')
 
-// 满幅方版：iOS/Android 自行裁切圆角，故不加圆角与留白
-for (const [size, name] of [[180, 'apple-touch-icon.png'], [192, 'icon-192.png'], [512, 'icon-512.png']]) {
+// 满幅方版：iOS 添加到主屏幕时自行裁切圆角，故不加圆角与留白
+for (const [size, name] of [[180, 'apple-touch-icon.png']]) {
   const buf = render('render-square.html', size, join(work, `square-${size}.png`))
   writeFileSync(join(staticDir, name), buf)
   out.push(`${name} (${size})`)
 }
-
-// PWA manifest（App 端"添加到主屏幕"后即以此图标启动）
-const manifest = {
-  name: 'CampusSkill 校园技能工坊',
-  short_name: 'CampusSkill',
-  description: '校园技能互助服务市场 · 用户端与技能者端双身份工作台',
-  start_url: '/user-app/',
-  scope: '/user-app/',
-  display: 'standalone',
-  orientation: 'portrait',
-  background_color: '#f4f7fb',
-  theme_color: '#00AEEC',
-  icons: [
-    { src: '/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
-    { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
-    { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
-  ],
-}
-writeFileSync(join(staticDir, 'manifest.webmanifest'), JSON.stringify(manifest, null, 2) + '\n')
-out.push('manifest.webmanifest')
 
 console.log('图标已生成到 static/:')
 for (const line of out) console.log('  -', line)

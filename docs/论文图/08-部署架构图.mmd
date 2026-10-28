@@ -1,7 +1,6 @@
 flowchart TB
     subgraph Client["客户端（浏览器访问）"]
         W1["Web 门户<br/>web-app 静态资源"]
-        W2["双身份 H5<br/>user-app"]
         W3["管理端<br/>admin-web"]
     end
 
@@ -20,11 +19,9 @@ flowchart TB
     end
 
     W1 -- HTTP 8080 --> APP
-    W2 -- HTTP 8080 --> APP
     W3 -- HTTP 8080 --> APP
     APP --> MYSQL
     APP -- 缓存/限流/Lua --> REDIS
     WS -- 实时推送 --> W1
-    WS --> W2
 
     note1["静态资源随 jar 发布：<br/>tools/build-frontends.mjs 构建同步"] -.-> APP

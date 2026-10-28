@@ -1,7 +1,6 @@
 flowchart TB
-    subgraph Client["客户端层（三端隔离）"]
+    subgraph Client["客户端层"]
         WA["Web 门户 web-app<br/>Vue3 + Vite + Element Plus<br/>用户端 / 技能者端一体"]
-        H5["双身份 H5 user-app<br/>单文件零构建<br/>用户端 + 技能者端"]
         AW["管理端控制台 admin-web<br/>Vue3 + Element Plus + ECharts"]
     end
 
@@ -35,9 +34,8 @@ flowchart TB
     end
 
     WA --> JWT
-    H5 --> JWT
     AW --> JWT
-    H5 -.实时消息.-> WS
+    WA -.实时消息.-> WS
     JWT --> Ctrl
     Ctrl --> Svc
     Task --> Svc

@@ -63,14 +63,13 @@ java -jar campus-server/target/campus-server-1.0-SNAPSHOT.jar
 |---|---|---|
 | 🖥️ 管理端控制台（工程版·推荐） | http://localhost:8080/admin-web/ | Vue3 + Vite + Element Plus + Pinia + ECharts 蓝白活力风桌面工作台：数据大屏、订单、预约、技能者、作品审核、仲裁工单、信用榜单、认证/提现审核、类目、系统公告；源码见 `admin-web/` |
 | 🌐 Web 门户（桌面端·推荐） | http://localhost:8080/web-app/ | Vue3 + Vite + Element Plus 蓝白活力风桌面工作台：用户端与技能者端业务一体（概览/悬赏大厅/技能市场/发布悬赏/订单全流程/钱包/消息/地址/资料/入驻 + 接单台/服务/作品/技能者中心），双身份登录自动联动导航；源码见 `web-app/` |
-| 🙋🛠️ 双身份 H5（用户端 + 技能者端合一） | http://localhost:8080/user-app/ | 鲜活明亮蓝白风，单文件零构建：顶栏身份徽章/侧栏身份卡一键切换用户与技能者身份，双 token 并存；涵盖发单、订单大厅、技能市场/预约、交付验收、钱包、消息、地址 + 技能者登录/入驻、抢单大厅、接单交付、服务上架、作品集、提现（原 skiller-app 独立入口已合并删除） |
 
 ### 管理端工程版（admin-web）
 
 - 源码位置：仓库根目录 `admin-web/`（Vue 3.5 + Vite 6 + Element Plus + Pinia + Vue Router + ECharts + Axios）
 - 开发模式：`npm install && npm run dev`，Vite 已配置 `/admin → http://localhost:8080` 代理
 - 部署模式：`npm run build` 后将 `dist/` 拷贝到 `campus-server/src/main/resources/static/admin-web/`，随 jar 一起发布（hash 路由）
-- **蓝白活力主题**：与用户端/技能者端 H5 同一设计语言（浅灰白底 + B 站蓝 #00AEEC 主色 + 粉色 #FB7299 点缀，Element Plus 品牌色覆盖，无新增依赖）
+- **蓝白活力主题**：与 Web 门户同一设计语言（浅灰白底 + B 站蓝 #00AEEC 主色 + 粉色 #FB7299 点缀，Element Plus 品牌色覆盖，无新增依赖）
 - **数据大屏**：核心指标、成交趋势、热门技能类目 TOP5、各校区订单占比、订单状态分布，30 秒自动刷新 + 全屏演示模式
 - **系统公告**（v5 新增）：`系统配置 → 公告管理` 发布公告，实时推送全体用户与技能者收件箱（在线用户 WebSocket 弹窗提醒），历史记录含送达人数；接口 `POST /admin/message/broadcast`、`GET /admin/message/page`
 - **预约管理**（v5 新增）：`业务管理 → 预约管理` 查看全平台预约单（状态筛选/联查用户与技能者），支持管理员取消异常预约（仅待确认，双端站内通知）；接口 `GET /admin/booking/page`、`PUT /admin/booking/{id}/cancel`
@@ -83,10 +82,10 @@ java -jar campus-server/target/campus-server-1.0-SNAPSHOT.jar
 | 端 | 登录方式 | 说明 |
 |---|---|---|
 | 管理端 | admin / 123456 | 含近 7 天成交数据、信用榜单、作品/认证/仲裁工单演示 |
-| 用户端 H5 | 账号 `demo1` / `123456` | 张晓文：已有 3 笔已完成订单、余额 ¥210 |
-| 用户端 H5 | 账号 `demo4` / `123456` | 李梦琪：有已完成订单与默认地址 |
-| 技能者端 H5 | 账号 `demo2` / `123456` | 陈技能：C3 作品定级、信用 103、在售 2 项服务、作品集 2 件 |
-| 技能者端 H5 | 账号 `demo3` / `123456` | 林小艺：C2 作品定级、在售海报设计/摄影服务 |
+| Web 门户 · 用户身份 | 账号 `demo1` / `123456` | 张晓文：已有 3 笔已完成订单、余额 ¥210 |
+| Web 门户 · 用户身份 | 账号 `demo4` / `123456` | 李梦琪：有已完成订单与默认地址 |
+| Web 门户 · 技能者身份 | 账号 `demo2` / `123456` | 陈技能：C3 作品定级、信用 103、在售 2 项服务、作品集 2 件 |
+| Web 门户 · 技能者身份 | 账号 `demo3` / `123456` | 林小艺：C2 作品定级、在售海报设计/摄影服务 |
 
 > 登录形态：用户端/技能者端支持**账号密码登录 + 注册**（主入口，MD5 加盐存储）与**体验码登录**（联调降级入口，输入任意码即可，对应微信登录未配置 appid 的本地降级模式）。密码可在「我的 → 修改密码」变更。详见 `sql/upgrade_v6_account_login.sql`。
 
@@ -110,7 +109,7 @@ node tools/verify-demo.mjs                          # 演示就绪自检：逐�
 node tools/build-frontends.mjs   # 依次构建 web-app / admin-web 并同步 dist → campus-server 静态目录
 ```
 
-避免"源码改了但 jar 里仍是旧页面"。App 端（`user-app`）为单文件零构建，直接改 `campus-server/src/main/resources/static/user-app/index.html`。
+避免"源码改了但 jar 里仍是旧页面"。
 
 ### 端到端冒烟测试
 
