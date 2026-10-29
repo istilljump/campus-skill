@@ -24,4 +24,9 @@ public interface CreditService {
      * 技能者端-我的信用档案（当前分 + 等级 + 流水明细）
      */
     com.campus.runner.vo.SkillerCreditVO myCredit(Long skillerId);
+
+    /**
+     * 信用档案 Excel 导出（概要 + 流水溯源两页），技能者端本人与管理端通用
+     */
+    void exportProfile(Long skillerId, java.io.OutputStream out) throws java.io.IOException;
 }

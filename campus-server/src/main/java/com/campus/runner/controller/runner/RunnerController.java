@@ -50,6 +50,16 @@ public class RunnerController {
         return Result.success(creditService.myCredit(BaseContext.getCurrentId()));
     }
 
+    @GetMapping("/credit/export")
+    @ApiOperation("导出我的信用档案（Excel：概要 + 流水溯源）")
+    public void creditExport(javax.servlet.http.HttpServletResponse response) throws java.io.IOException {
+        Long skillerId = BaseContext.getCurrentId();
+        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        response.setHeader("Content-Disposition", "attachment;filename=" +
+                java.net.URLEncoder.encode("信用档案-" + skillerId + ".xlsx", "UTF-8"));
+        creditService.exportProfile(skillerId, response.getOutputStream());
+    }
+
     @GetMapping("/trend")
     @ApiOperation("近 N 日完成单量与收入趋势（默认7天）")
     public Result<List<TrendPointVO>> trend(@RequestParam(defaultValue = "7") Integer days) {

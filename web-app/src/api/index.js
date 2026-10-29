@@ -1,5 +1,11 @@
 import request from '@/utils/request'
 
+// ==================== 幂等键（v11 可信交易保障体系） ====================
+// 每次用户动作生成唯一键，随 X-Idempotency-Key 请求头携带：
+// 同键重复提交（双击/超时重发/刷新重放）后端只成功一次，防止重复扣款/重复冻结
+export const idemKey = () =>
+  (crypto && crypto.randomUUID ? crypto.randomUUID() : 'k' + Date.now() + '-' + Math.random().toString(36).slice(2))
+
 // ==================== 认证（A7 账号密码体系 + 体验码降级） ====================
 export const accountLogin = (data) => request.post('/user/user/accountLogin', data)
 export const register = (data) => request.post('/user/user/register', data)
@@ -23,7 +29,8 @@ export const delAddress = (id) => request.delete('/user/addressBook', { params: 
 export const submitOrder = (data) => request.post('/user/order/submit', data)
 export const pageOrders = (params) => request.get('/user/order/page', { params })
 export const getOrderDetail = (id) => request.get(`/user/order/detail/${id}`)
-export const payOrder = (orderNumber) => request.post(`/user/order/pay/${orderNumber}`)
+export const payOrder = (orderNumber) =>
+  request.post(`/user/order/pay/${orderNumber}`, null, { headers: { 'X-Idempotency-Key': idemKey() } })
 export const boostOrder = (data) => request.put('/user/order/boost', data)
 export const cancelOrder = (data) => request.put('/user/order/cancel', data)
 export const acceptOrder = (id) => request.put(`/user/order/accept/${id}`)
@@ -50,7 +57,8 @@ export const cancelBooking = (id) => request.put(`/user/booking/${id}/cancel`)
 // ==================== 用户端-钱包 ====================
 export const getWallet = () => request.get('/user/wallet/balance')
 export const pageTxs = (params) => request.get('/user/wallet/transactions', { params })
-export const recharge = (data) => request.post('/user/wallet/recharge', data)
+export const recharge = (data) =>
+  request.post('/user/wallet/recharge', data, { headers: { 'X-Idempotency-Key': idemKey() } })
 
 // ==================== 消息中心（用户侧 /skiller 侧共用结构） ====================
 export const listMessages = () => request.get('/user/message/list')
@@ -63,7 +71,12 @@ export const skTrend = (days) => request.get('/skiller/info/trend', { params: { 
 export const skWallet = () => request.get('/skiller/wallet/balance')
 export const skPageTxs = (params) => request.get('/skiller/wallet/transactions', { params })
 export const skPageWithdraws = (params) => request.get('/skiller/wallet/withdraw/page', { params })
-export const skApplyWithdraw = (data) => request.post('/skiller/wallet/withdraw', data)
+export const skApplyWithdraw = (data) =>
+  request.post('/skiller/wallet/withdraw', data, { headers: { 'X-Idempotency-Key': idemKey() } })
+
+// 信用档案导出（Excel 流，前端 Blob 下载）
+export const skExportCredit = () =>
+  request.get('/skiller/info/credit/export', { responseType: 'blob' })
 export const skSetWithdrawPwd = (password) => request.post('/skiller/wallet/password', { password })
 
 // ==================== 技能者端-大厅/接单/交付 ====================

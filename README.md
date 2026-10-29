@@ -26,7 +26,14 @@
 - **定时任务**：15 分钟未支付自动取消、超时无人接单自动退款、超时未交付（状态3/8）退款 + 违约金 + 信用-5、超48h 未验收自动验收
 - **消息中心 + WebSocket**：关键节点站内信，`/ws/{token}` 实时推送，未读徽标、断线重连
 - **个性化推荐引擎（v8）**：浏览/预约/成交行为自动埋点（`user_behavior` 表），混合推荐 = ItemCF 协同过滤 + 内容特征（类目偏好/标签 Jaccard/价格贴近度）+ 质量因子三路加权（0.45/0.30/0.25）；首页「猜你喜欢」、服务详情「看了又看」均带推荐理由；无行为用户冷启动回退「热门精选」，已成交与本人挂牌服务自动排除
-- **管理端**：数据大屏（近7/30天成交趋势、热门技能类目 TOP5、校区分布）、作品审核、认证审核、**仲裁工单**、提现审核、技能者管理、技能类目管理（含费率）、**信用榜单**
+- **管理端**：数据大屏 v2（交易指标行 + **资金与信任行**：托管中金额/钱包总余额/提现在途/风控未处置/对账健康徽标可点击跳转 + 交易转化漏斗 发布→支付→接单→交付→验收 + 订单发布时段热度 + 成交趋势/类目TOP5/校区分布/状态分布/供需缺口，30 秒自动刷新 + 全屏）、作品审核、认证审核、**仲裁工单**、提现审核、技能者管理、技能类目管理（含费率）、**信用榜单**
+- **可信交易保障体系（v11）**：
+  - **资金对账**：每小时定时核对「钱包余额 = 流水重算值」恒等式，差异落库告警，管理端对账中心可查/可导出 Excel 报告
+  - **幂等提交**：充值/支付/提现接口 Stripe 风格幂等键（`X-Idempotency-Key` 请求头 + Redis SETNX 令牌），同键重复提交仅成功一次，失败自动放行重试
+  - **风控规则引擎**：策略模式四规则（R001 高频发单 / R002 大额提现 / R003 高频提现 / R004 返修率异常），命中落库、管理端风控中心处置
+  - **信用档案导出**：技能者端/管理端一键导出信用档案 Excel（概要 + 流水溯源）
+  - **读缓存**：类目/信用榜单/货架/服务详情 Redis Cache-Aside，分级 TTL + 写路径失效
+  - **订单详情脱敏**：非参与者查看他人订单自动隐藏手机号/地址/交付物
 
 ## 快速启动
 
@@ -47,6 +54,8 @@ mysql -uroot campus_runner < sql/upgrade_v5_admin_console.sql
 mysql -uroot campus_runner < sql/upgrade_v8_recommend.sql
 # v9 性能优化（orders 技能者维度索引，建议执行）：
 mysql -uroot campus_runner < sql/upgrade_v9_performance.sql
+# v11 可信交易保障体系（对账/风控表 + openid 唯一索引 + 流水索引，旧库必须执行；可重复执行）：
+mysql --default-character-set=utf8mb4 -uroot campus_runner < sql/upgrade_v11_trust.sql
 
 # 2. 修改 campus-server/src/main/resources/application-dev.yml 的数据库/Redis 连接
 
@@ -56,6 +65,17 @@ java -jar campus-server/target/campus-server-1.0-SNAPSHOT.jar
 ```
 
 启动后访问 `http://localhost:8080/doc.html` 查看在线接口文档。
+
+### 测试与压测（v11）
+
+| 层级 | 方式 |
+|---|---|
+| 单元/集成测试 | `mvn test -pl campus-server -am`（50 例：钱包/对账/风控/幂等/抢单并发），IT 需本地 MySQL（campus_runner_test 库）与 Redis |
+| E2E 冒烟 | `node e2e/smoke.mjs`（68 断言全链路） |
+| 负载压测 | `tools/loadtest/bench.mjs`（读路径缓存 A/B / 抢单竞态 / 幂等验证）+ JMeter 方案 `tools/jmeter/` |
+| 数据工厂 | `sql/data_factory.sql`（批量造数）+ `sql/loadtest_reset.sql`（一键清理） |
+
+测试规范与用例清单见 `docs/测试规范与用例文档-v11.md`，实验数据见 `docs/实验报告-v11-可信交易保障体系.md`。
 
 ## 前端页面
 

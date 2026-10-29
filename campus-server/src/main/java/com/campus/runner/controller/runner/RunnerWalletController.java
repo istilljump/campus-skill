@@ -1,5 +1,6 @@
 package com.campus.runner.controller.runner;
 
+import com.campus.runner.annotation.Idempotent;
 import com.campus.runner.context.BaseContext;
 import com.campus.runner.dto.WithdrawApplyDTO;
 import com.campus.runner.dto.WithdrawPasswordDTO;
@@ -53,6 +54,7 @@ public class RunnerWalletController {
     }
 
     @PostMapping("/withdraw")
+    @Idempotent(scope = "wallet-withdraw", duplicateMessage = "该提现申请已提交，请勿重复提交")
     @ApiOperation("提现申请")
     public Result<String> withdraw(@RequestBody @Valid WithdrawApplyDTO withdrawApplyDTO) {
         walletService.applyWithdraw(currentUserId(), withdrawApplyDTO);

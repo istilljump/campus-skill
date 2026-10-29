@@ -26,6 +26,15 @@ public class CreditController {
     @Autowired
     private CreditService creditService;
 
+    @GetMapping("/profile/export")
+    @ApiOperation("导出指定技能者信用档案（Excel：概要 + 流水溯源）")
+    public void profileExport(@RequestParam Long skillerId, javax.servlet.http.HttpServletResponse response) throws java.io.IOException {
+        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        response.setHeader("Content-Disposition", "attachment;filename=" +
+                java.net.URLEncoder.encode("信用档案-" + skillerId + ".xlsx", "UTF-8"));
+        creditService.exportProfile(skillerId, response.getOutputStream());
+    }
+
     @GetMapping("/rank")
     @ApiOperation("技能者信用分排行榜（默认前10）")
     public Result<List<CreditRankVO>> rank(@RequestParam(defaultValue = "10") Integer limit) {

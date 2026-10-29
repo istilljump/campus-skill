@@ -56,6 +56,9 @@ export const trendStats = (days = 7) => request.get('/admin/statistics/trend', {
 export const typeRankStats = (limit = 5) => request.get('/admin/statistics/typeRank', { params: { limit } })
 export const campusRankStats = () => request.get('/admin/statistics/campusRank')
 export const supplyDemandStats = () => request.get('/admin/statistics/supplyDemand')
+export const trustStats = () => request.get('/admin/statistics/trust')
+export const funnelStats = () => request.get('/admin/statistics/funnel')
+export const hourlyStats = (days = 7) => request.get('/admin/statistics/hourly', { params: { days } })
 
 // ========== 系统公告 ==========
 export const broadcastAnnouncement = (data) => request.post('/admin/message/broadcast', data)
@@ -64,3 +67,15 @@ export const pageAnnouncements = (params) => request.get('/admin/message/page', 
 // ========== 预约单管理 ==========
 export const pageBookings = (params) => request.get('/admin/booking/page', { params })
 export const cancelBooking = (id) => request.put(`/admin/booking/${id}/cancel`)
+
+// ========== 风控中心（v11 可信交易保障体系） ==========
+export const pageRiskLogs = (params) => request.get('/admin/risk/page', { params })
+export const handleRiskLog = (data) => request.put('/admin/risk/handle', data)
+
+// ========== 资金对账中心（v11） ==========
+export const runReconcile = () => request.post('/admin/reconcile/run')
+export const reconcileSummary = () => request.get('/admin/reconcile/summary')
+export const pageReconcileRecords = (params) => request.get('/admin/reconcile/page', { params })
+// 对账报告导出（Excel 流）
+export const exportReconcile = (batchNo) =>
+  request.get('/admin/reconcile/export', { params: { batchNo }, responseType: 'blob' })

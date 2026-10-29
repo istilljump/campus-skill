@@ -90,6 +90,13 @@ const menuGroups = [
     ],
   },
   {
+    label: '信任与安全',
+    items: [
+      { path: '/risk', title: '风控中心', icon: 'Aim' },
+      { path: '/reconcile', title: '资金对账', icon: 'Coin' },
+    ],
+  },
+  {
     label: '系统配置',
     items: [
       { path: '/types', title: '技能类目', icon: 'Grid' },

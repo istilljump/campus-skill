@@ -107,7 +107,10 @@
 
     <!-- 信用档案：用户信用等级说明 + 技能者信用流水 -->
     <div class="page-card" style="margin-top:16px">
-      <div class="card-title"><el-icon><TrophyBase /></el-icon><span>信用档案</span></div>
+      <div class="card-title"><el-icon><TrophyBase /></el-icon><span>信用档案</span>
+        <el-button v-if="store.hasSkiller" size="small" text type="primary" :loading="exporting"
+                   style="margin-left:auto" @click="exportCredit">导出信用档案（Excel）</el-button>
+      </div>
       <div class="credit-top">
         <div class="credit-score">
           <span class="score-num">{{ store.profile.creditScore ?? 100 }}</span>
@@ -179,7 +182,7 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { User, Medal, Lock, Connection, TrophyBase, ChatDotRound, Flag, ArrowRight } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
-import { updateProfile, getMyReviews, getSkillerCredit } from '@/api'
+import { updateProfile, getMyReviews, getSkillerCredit, skExportCredit } from '@/api'
 import { useRouter } from 'vue-router'
 
 const store = useUserStore()
@@ -275,6 +278,21 @@ async function onLogout() {
   await store.logout()
   ElMessage.success('已退出')
   router.push('/login')
+}
+
+// 信用档案 Excel 导出（Blob 下载，含概要 + 流水溯源两页）
+const exporting = ref(false)
+async function exportCredit() {
+  exporting.value = true
+  try {
+    const blob = await skExportCredit()
+    const url = URL.createObjectURL(new Blob([blob], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }))
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `信用档案-${new Date().toISOString().slice(0, 10)}.xlsx`
+    a.click()
+    URL.revokeObjectURL(url)
+  } catch { ElMessage.error('导出失败，请稍后重试') } finally { exporting.value = false }
 }
 
 onMounted(async () => {

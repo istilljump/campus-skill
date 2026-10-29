@@ -16,7 +16,9 @@ import com.campus.runner.mapper.WalletTransactionMapper;
 import com.campus.runner.mapper.WithdrawRequestMapper;
 import com.campus.runner.result.PageResult;
 import com.campus.runner.service.MessageService;
+import com.campus.runner.service.RiskControlService;
 import com.campus.runner.service.WalletService;
+import com.campus.runner.service.risk.RiskEvent;
 import com.campus.runner.vo.WalletTransactionVO;
 import com.campus.runner.vo.WalletVO;
 import com.campus.runner.vo.WithdrawRecordVO;
@@ -56,6 +58,9 @@ public class WalletServiceImpl implements WalletService {
 
     @Autowired
     private StringRedisTemplate stringRedisTemplate;
+
+    @Autowired
+    private RiskControlService riskControlService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -182,6 +187,8 @@ public class WalletServiceImpl implements WalletService {
                 .applyTime(LocalDateTime.now())
                 .build();
         withdrawRequestMapper.insert(request);
+        //风控：提现事件进规则引擎（大额/高频提现检测），规则异常不阻断提现
+        riskControlService.fire(RiskEvent.withdraw(userId, amount));
         log.info("[操作日志]提现申请，userId={}, amount={}", userId, amount);
     }
 

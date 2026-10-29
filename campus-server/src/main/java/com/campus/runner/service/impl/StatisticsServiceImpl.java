@@ -27,9 +27,72 @@ public class StatisticsServiceImpl implements StatisticsService {
     @Autowired
     private com.campus.runner.mapper.RunnerMapper runnerMapper;
 
+    @Autowired
+    private com.campus.runner.mapper.StatisticsMapper statisticsMapper;
+
+    @Autowired
+    private com.campus.runner.mapper.ReconcileMapper reconcileMapper;
+
+    @Autowired
+    private com.campus.runner.mapper.ReconcileRecordMapper reconcileRecordMapper;
+
     @Override
     public OrderStatisticsVO overview() {
         return orderMapper.statistics();
+    }
+
+    @Override
+    public com.campus.runner.vo.TrustOverviewVO trustOverview() {
+        //最近批次取自批次汇总表（0 差异轮也落行），避免"最近有差异批次"的过期口径
+        Map<String, Object> batch = reconcileRecordMapper.latestBatch();
+        String batchNo = batch != null ? String.valueOf(batch.get("batch_no")) : null;
+        long mismatch = batch != null && batch.get("mismatch_count") != null ? ((Number) batch.get("mismatch_count")).longValue() : 0;
+        long checked = batch != null && batch.get("checked_wallets") != null ? ((Number) batch.get("checked_wallets")).longValue() : reconcileMapper.countWallets();
+        return com.campus.runner.vo.TrustOverviewVO.builder()
+                .escrowAmount(statisticsMapper.sumEscrow())
+                .walletBalance(statisticsMapper.sumWalletBalance())
+                .withdrawPending(statisticsMapper.sumWithdrawPending())
+                .riskUnhandled(statisticsMapper.countRiskUnhandled())
+                .risk7d(statisticsMapper.countRisk7d())
+                .reconcileBatchNo(batchNo)
+                .reconcileMismatch(mismatch)
+                .reconcileWallets(checked)
+                .reconcileAllMatched(batch == null || mismatch == 0)
+                .build();
+    }
+
+    @Override
+    public java.util.List<com.campus.runner.vo.FunnelStageVO> funnel() {
+        Map<String, Object> row = statisticsMapper.statFunnel();
+        int published = ((Number) row.get("published")).intValue();
+        int paid = nz(row.get("paid"));
+        int accepted = nz(row.get("accepted"));
+        int delivered = nz(row.get("delivered"));
+        int completed = nz(row.get("completed"));
+        return java.util.Arrays.asList(
+                new com.campus.runner.vo.FunnelStageVO("发布订单", published),
+                new com.campus.runner.vo.FunnelStageVO("完成支付", paid),
+                new com.campus.runner.vo.FunnelStageVO("技能者接单", accepted),
+                new com.campus.runner.vo.FunnelStageVO("提交交付", delivered),
+                new com.campus.runner.vo.FunnelStageVO("验收完成", completed));
+    }
+
+    @Override
+    public java.util.List<com.campus.runner.vo.NameCountVO> hourlyHeat(int days) {
+        days = Math.max(1, Math.min(days, 30));
+        Map<Integer, Integer> byHour = new HashMap<>();
+        for (Map<String, Object> row : statisticsMapper.statHourly(LocalDateTime.now().minusDays(days))) {
+            byHour.put(((Number) row.get("h")).intValue(), ((Number) row.get("c")).intValue());
+        }
+        java.util.List<com.campus.runner.vo.NameCountVO> result = new ArrayList<>();
+        for (int h = 0; h < 24; h++) {
+            result.add(new com.campus.runner.vo.NameCountVO(h + "时", byHour.getOrDefault(h, 0)));
+        }
+        return result;
+    }
+
+    private int nz(Object v) {
+        return v == null ? 0 : ((Number) v).intValue();
     }
 
     @Override

@@ -63,6 +63,24 @@ public class StatisticsController {
         return Result.success(statisticsService.campusRank());
     }
 
+    @GetMapping("/trust")
+    @ApiOperation("资金与信任总览（大屏 v2）：托管中/钱包余额/提现在途 + 风控告警 + 对账健康")
+    public Result<com.campus.runner.vo.TrustOverviewVO> trust() {
+        return Result.success(statisticsService.trustOverview());
+    }
+
+    @GetMapping("/funnel")
+    @ApiOperation("交易转化漏斗：发布→支付→接单→交付→完成")
+    public Result<List<com.campus.runner.vo.FunnelStageVO>> funnel() {
+        return Result.success(statisticsService.funnel());
+    }
+
+    @GetMapping("/hourly")
+    @ApiOperation("订单发布时段热度（近 days 天，默认7）")
+    public Result<List<NameCountVO>> hourly(@RequestParam(defaultValue = "7") Integer days) {
+        return Result.success(statisticsService.hourlyHeat(days));
+    }
+
     @GetMapping("/supplyDemand")
     @ApiOperation("类目供需缺口对比：在售服务数（供给）vs 近 30 天发单量（需求）+ 历史均价，按缺口排序")
     public Result<List<SupplyDemandVO>> supplyDemand() {

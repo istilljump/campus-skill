@@ -17,6 +17,9 @@ import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -47,6 +50,10 @@ public class ServiceItemServiceImpl implements ServiceItemService {
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(cacheNames = com.campus.runner.constant.CacheNames.MARKET_SHELF, allEntries = true),
+            @CacheEvict(cacheNames = com.campus.runner.constant.CacheNames.SERVICE_DETAIL, allEntries = true)
+    })
     public Long create(Long skillerId, ServiceItemDTO dto) {
         //类目校验
         checkCategory(dto.getCategoryId());
@@ -73,6 +80,10 @@ public class ServiceItemServiceImpl implements ServiceItemService {
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(cacheNames = com.campus.runner.constant.CacheNames.MARKET_SHELF, allEntries = true),
+            @CacheEvict(cacheNames = com.campus.runner.constant.CacheNames.SERVICE_DETAIL, allEntries = true)
+    })
     public void update(Long skillerId, Long id, ServiceItemDTO dto) {
         ServiceItem item = getOwnedItem(skillerId, id);
         if (dto.getCategoryId() != null) {
@@ -93,6 +104,10 @@ public class ServiceItemServiceImpl implements ServiceItemService {
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(cacheNames = com.campus.runner.constant.CacheNames.MARKET_SHELF, allEntries = true),
+            @CacheEvict(cacheNames = com.campus.runner.constant.CacheNames.SERVICE_DETAIL, allEntries = true)
+    })
     public void updateStatus(Long skillerId, Long id, Integer status) {
         getOwnedItem(skillerId, id);
         serviceItemMapper.update(ServiceItem.builder().id(id).status(status).build());
@@ -100,6 +115,9 @@ public class ServiceItemServiceImpl implements ServiceItemService {
     }
 
     @Override
+    @Cacheable(cacheNames = com.campus.runner.constant.CacheNames.MARKET_SHELF,
+            key = "#page + ':' + #pageSize + ':' + (#categoryId == null ? 0 : #categoryId) + ':' "
+                    + "+ (#keyword == null ? '' : #keyword) + ':' + (#sort == null ? 'default' : #sort)")
     public PageResult<ServiceItemVO> pageOnShelf(Integer page, Integer pageSize, Long categoryId, String keyword, String sort) {
         PageHelper.startPage(page, pageSize);
         Page<ServiceItemVO> voPage = (Page<ServiceItemVO>) serviceItemMapper.listOnShelf(categoryId, keyword, sort);
@@ -107,6 +125,7 @@ public class ServiceItemServiceImpl implements ServiceItemService {
     }
 
     @Override
+    @Cacheable(cacheNames = com.campus.runner.constant.CacheNames.SERVICE_DETAIL, key = "#id")
     public ServiceItemVO getVOById(Long id) {
         ServiceItemVO vo = serviceItemMapper.getVOById(id);
         if (vo == null) {

@@ -16,6 +16,21 @@ public interface StatisticsService {
     OrderStatisticsVO overview();
 
     /**
+     * 管理端-资金与信任总览（大屏 v2）：托管中/钱包余额/提现在途 + 风控告警 + 对账健康
+     */
+    com.campus.runner.vo.TrustOverviewVO trustOverview();
+
+    /**
+     * 管理端-交易转化漏斗：发布 → 支付 → 接单 → 交付 → 完成
+     */
+    java.util.List<com.campus.runner.vo.FunnelStageVO> funnel();
+
+    /**
+     * 管理端-订单发布时段热度（近 days 天，0-23 时补零）
+     */
+    java.util.List<com.campus.runner.vo.NameCountVO> hourlyHeat(int days);
+
+    /**
      * 技能者端-个人统计
      */
     RunnerStatisticsVO runnerStats(Long runnerId);

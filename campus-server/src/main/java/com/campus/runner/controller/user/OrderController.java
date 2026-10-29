@@ -4,6 +4,7 @@ import com.campus.runner.dto.DisputeApplyDTO;
 import com.campus.runner.dto.OrdersBoostDTO;
 import com.campus.runner.dto.OrdersCancelDTO;
 import com.campus.runner.dto.OrdersPageQueryDTO;
+import com.campus.runner.annotation.Idempotent;
 import com.campus.runner.dto.OrdersSubmitDTO;
 import com.campus.runner.dto.ReworkDTO;
 import com.campus.runner.context.BaseContext;
@@ -46,6 +47,7 @@ public class OrderController {
     }
 
     @PostMapping("/pay/{orderNumber}")
+    @Idempotent(scope = "order-pay", duplicateMessage = "该订单已提交支付，请勿重复操作")
     @ApiOperation("订单支付")
     public Result<String> pay(@PathVariable String orderNumber) {
         orderService.pay(orderNumber, BaseContext.getCurrentId());
@@ -59,9 +61,9 @@ public class OrderController {
     }
 
     @GetMapping("/detail/{id}")
-    @ApiOperation("订单详情")
+    @ApiOperation("订单详情（非参与者自动脱敏：隐藏手机号/地址/交付物）")
     public Result<OrderDetailVO> detail(@PathVariable Long id) {
-        return Result.success(orderService.detail(id));
+        return Result.success(orderService.detailForViewer(id, BaseContext.getCurrentId()));
     }
 
     @PutMapping("/accept/{id}")

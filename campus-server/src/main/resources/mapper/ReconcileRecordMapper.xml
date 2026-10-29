@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.campus.runner.mapper.ReconcileRecordMapper">
+
+    <!-- 对账差异分页 -->
+    <select id="page" resultType="com.campus.runner.entity.ReconcileRecord">
+        select * from reconcile_record
+        <where>
+            <if test="batchNo != null and batchNo != ''">and batch_no = #{batchNo}</if>
+        </where>
+        order by id desc
+    </select>
+</mapper>

@@ -93,6 +93,18 @@ SELECT w.id, 1, 172, NULL, '技能服务收入（演示汇总）', NOW() - INTER
 INSERT INTO wallet_transaction (wallet_id, type, amount, order_id, remark, create_time)
 SELECT w.id, 2, o.reward_amount, o.id, CONCAT('技能订单支付-', o.number), o.pay_time FROM wallet_account w JOIN orders o ON o.user_id = w.user_id WHERE o.status = 5;
 
+-- 对账一致性收口（v11）：余额与累计收支一律按流水重算，保证「余额 = 流水重算值」恒等式
+UPDATE wallet_account w
+SET w.balance = (
+      SELECT COALESCE(SUM(CASE WHEN wt.type IN (1, 3, 5) THEN wt.amount ELSE -wt.amount END), 0)
+      FROM wallet_transaction wt WHERE wt.wallet_id = w.id),
+    w.total_income = (
+      SELECT COALESCE(SUM(wt.amount), 0) FROM wallet_transaction wt
+      WHERE wt.wallet_id = w.id AND wt.type IN (1, 3, 5)),
+    w.total_expense = (
+      SELECT COALESCE(SUM(wt.amount), 0) FROM wallet_transaction wt
+      WHERE wt.wallet_id = w.id AND wt.type IN (2, 4, 6));
+
 -- ---------- 信用分流水 ----------
 INSERT INTO credit_log (skiller_id, delta, reason, order_id, create_time)
 SELECT @s1, 1, '交付完成+1', o.id, o.finish_time FROM orders o WHERE o.title = '高数课件PPT美化';

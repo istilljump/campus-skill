@@ -12,6 +12,8 @@ import com.campus.runner.vo.ErrandTypeVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -30,16 +32,19 @@ public class ErrandTypeServiceImpl implements ErrandTypeService {
     private OrderMapper orderMapper;
 
     @Override
+    @Cacheable(cacheNames = com.campus.runner.constant.CacheNames.SKILL_CATEGORY, key = "'enabled'")
     public List<ErrandTypeVO> listEnabled() {
         return errandTypeMapper.listEnabled().stream().map(this::toVO).collect(Collectors.toList());
     }
 
     @Override
+    @Cacheable(cacheNames = com.campus.runner.constant.CacheNames.SKILL_CATEGORY, key = "'all'")
     public List<ErrandTypeVO> listAll() {
         return errandTypeMapper.listAll().stream().map(this::toVO).collect(Collectors.toList());
     }
 
     @Override
+    @CacheEvict(cacheNames = com.campus.runner.constant.CacheNames.SKILL_CATEGORY, allEntries = true)
     public void save(ErrandTypeDTO dto) {
         ErrandType type = new ErrandType();
         BeanUtils.copyProperties(dto, type);
@@ -56,6 +61,7 @@ public class ErrandTypeServiceImpl implements ErrandTypeService {
     }
 
     @Override
+    @CacheEvict(cacheNames = com.campus.runner.constant.CacheNames.SKILL_CATEGORY, allEntries = true)
     public void update(ErrandTypeDTO dto) {
         if (dto.getId() == null) {
             throw new BusinessException("类型id不能为空");
@@ -71,6 +77,7 @@ public class ErrandTypeServiceImpl implements ErrandTypeService {
     }
 
     @Override
+    @CacheEvict(cacheNames = com.campus.runner.constant.CacheNames.SKILL_CATEGORY, allEntries = true)
     public void updateStatus(Long id, Integer status) {
         ErrandType exist = errandTypeMapper.getById(id);
         if (exist == null) {
@@ -80,6 +87,7 @@ public class ErrandTypeServiceImpl implements ErrandTypeService {
     }
 
     @Override
+    @CacheEvict(cacheNames = com.campus.runner.constant.CacheNames.SKILL_CATEGORY, allEntries = true)
     public void delete(Long id) {
         ErrandType exist = errandTypeMapper.getById(id);
         if (exist == null) {

@@ -55,12 +55,31 @@ public class RedisConfig {
 
     @Bean
     public RedisCacheManager cacheManager(RedisConnectionFactory factory) {
-        RedisCacheConfiguration configuration = RedisCacheConfiguration.defaultCacheConfig()
+        //缓存值序列化器：Jackson + JavaTimeModule（实体含 LocalDateTime）+ 类型信息（多态反序列化）
+        ObjectMapper cacheMapper = new ObjectMapper();
+        cacheMapper.registerModule(new JavaTimeModule());
+        cacheMapper.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
+        cacheMapper.activateDefaultTyping(LaissezFaireSubTypeValidator.instance, ObjectMapper.DefaultTyping.NON_FINAL);
+        cacheMapper.disable(SerializationFeature.WRITE_DATE_KEYS_AS_TIMESTAMPS);
+        GenericJackson2JsonRedisSerializer serializer = new GenericJackson2JsonRedisSerializer(cacheMapper);
+
+        RedisCacheConfiguration defaults = RedisCacheConfiguration.defaultCacheConfig()
                 .computePrefixWith(cacheName -> cacheName + ":")
                 .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
-                .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(new GenericJackson2JsonRedisSerializer()));
+                .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(serializer));
+
+        //热点读缓存分级 TTL：类目/榜单变化低频可长缓存，货架与详情需要较高新鲜度
+        java.time.Duration categoryTtl = java.time.Duration.ofMinutes(10);
+        java.time.Duration rankTtl = java.time.Duration.ofMinutes(5);
+        java.time.Duration shelfTtl = java.time.Duration.ofMinutes(2);
+        java.time.Duration detailTtl = java.time.Duration.ofMinutes(5);
+
         return RedisCacheManager.builder(factory)
-                .cacheDefaults(configuration)
+                .cacheDefaults(defaults)
+                .withCacheConfiguration(com.campus.runner.constant.CacheNames.SKILL_CATEGORY, defaults.entryTtl(categoryTtl))
+                .withCacheConfiguration(com.campus.runner.constant.CacheNames.CREDIT_RANK, defaults.entryTtl(rankTtl))
+                .withCacheConfiguration(com.campus.runner.constant.CacheNames.MARKET_SHELF, defaults.entryTtl(shelfTtl))
+                .withCacheConfiguration(com.campus.runner.constant.CacheNames.SERVICE_DETAIL, defaults.entryTtl(detailTtl))
                 .build();
     }
 }

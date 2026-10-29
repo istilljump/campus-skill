@@ -33,7 +33,9 @@ import com.campus.runner.mapper.ServiceItemMapper;
 import com.campus.runner.mapper.UserMapper;
 import com.campus.runner.result.PageResult;
 import com.campus.runner.service.CreditService;
+import com.campus.runner.service.RiskControlService;
 import com.campus.runner.service.MessageService;
+import com.campus.runner.service.risk.RiskEvent;
 import com.campus.runner.service.OrderService;
 import com.campus.runner.service.WalletService;
 import com.campus.runner.vo.OrderDetailVO;
@@ -108,10 +110,16 @@ public class OrderServiceImpl implements OrderService {
     private CreditService creditService;
 
     @Autowired
+    private RiskControlService riskControlService;
+
+    @Autowired
     private RedisTemplate<String, Object> redisTemplate;
 
     @Autowired
     private StringRedisTemplate stringRedisTemplate;
+
+    @Autowired
+    private org.springframework.cache.CacheManager cacheManager;
 
     /**
      * 抢单基线开关：true 时走优化前三步实现（A/B 压测与答辩对比用），
@@ -211,6 +219,8 @@ public class OrderServiceImpl implements OrderService {
                 .build();
         orderMapper.insert(order);
         userMapper.incrementPublishOrderCount(userId);
+        //风控：发单事件进规则引擎（高频发单检测），规则异常不阻断发单
+        riskControlService.fire(RiskEvent.publish(userId, order.getId()));
 
         return OrderSubmitVO.builder()
                 .id(order.getId())
@@ -342,6 +352,32 @@ public class OrderServiceImpl implements OrderService {
                 vo.setRunnerPhone(runner.getPhone());
                 vo.setRunnerScore(runner.getScore());
             }
+        }
+        return vo;
+    }
+
+    @Override
+    public OrderDetailVO detailForViewer(Long orderId, Long viewerUserId) {
+        Orders order = orderMapper.getById(orderId);
+        if (order == null) {
+            throw new OrderBusinessException(MessageConstant.ORDER_NOT_FOUND);
+        }
+        boolean publisher = order.getUserId() != null && order.getUserId().equals(viewerUserId);
+        boolean assigned = false;
+        if (!publisher && order.getRunnerId() != null) {
+            // /user/** 拦截器口径：BaseContext 恒为用户id（技能者 token 亦含 userId claim）
+            Runner mine = runnerMapper.getByUserId(viewerUserId);
+            assigned = mine != null && order.getRunnerId().equals(mine.getId());
+        }
+        OrderDetailVO vo = detail(orderId);
+        if (!publisher && !assigned) {
+            //非参与者脱敏：手机号、地址、交付物属于履约隐私，公开字段（标题/类目/悬赏/状态）保留
+            vo.setPublisherPhone(null);
+            vo.setRunnerPhone(null);
+            vo.setDeliveryAddress("（参与者可见）");
+            vo.setPickupAddress(null);
+            vo.setDeliverableUrl(null);
+            vo.setDeliverableNote(null);
         }
         return vo;
     }
@@ -562,6 +598,8 @@ public class OrderServiceImpl implements OrderService {
         orderMapper.update(upd);
         //返修扣减技能者信用分
         creditService.addCredit(order.getRunnerId(), -3, "返修-3", order.getId());
+        //风控：返修事件进规则引擎（返修率异常检测）
+        riskControlService.fire(RiskEvent.rework(order.getRunnerId(), order.getId()));
         //站内消息：通知技能者返修原因
         notifySkilledIncome(order, "订单需返修",
                 "订单「" + order.getTitle() + "」被用户申请返修" + (dto != null && dto.getReason() != null ? "，原因：" + dto.getReason() : "")
@@ -825,9 +863,11 @@ public class OrderServiceImpl implements OrderService {
         runnerService.updateLevel(order.getRunnerId());
         //信用分+1
         creditService.addCredit(order.getRunnerId(), 1, "交付完成+1", order.getId());
-        //预约模式订单：累计服务销量
+        //预约模式订单：累计服务销量，并失效货架/详情缓存（CacheManager 直清，规避同类内部调用绕过代理）
         if (order.getMode() != null && order.getMode() == Orders.MODE_BOOKING && order.getServiceItemId() != null) {
             serviceItemMapper.incrementSales(order.getServiceItemId());
+            evictCache(com.campus.runner.constant.CacheNames.MARKET_SHELF, null);
+            evictCache(com.campus.runner.constant.CacheNames.SERVICE_DETAIL, String.valueOf(order.getServiceItemId()));
         }
         //关联预约单置为已完成
         Booking booking = bookingMapper.getByOrderId(order.getId());
@@ -949,6 +989,21 @@ public class OrderServiceImpl implements OrderService {
         //SecureRandom 避免可预测订单号，毫秒+6位随机降低撞号概率
         return "CR" + System.currentTimeMillis()
                 + String.format("%06d", SECURE_RANDOM.nextInt(1_000_000));
+    }
+
+    /**
+     * 直清缓存：key 为空即全量失效（对应 allEntries = true）
+     */
+    private void evictCache(String cacheName, String key) {
+        org.springframework.cache.Cache cache = cacheManager.getCache(cacheName);
+        if (cache == null) {
+            return;
+        }
+        if (key == null) {
+            cache.clear();
+        } else {
+            cache.evictIfPresent(key);
+        }
     }
 
     private String maskName(String name) {

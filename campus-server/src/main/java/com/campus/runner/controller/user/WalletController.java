@@ -1,6 +1,7 @@
 package com.campus.runner.controller.user;
 
 import com.campus.runner.context.BaseContext;
+import com.campus.runner.annotation.Idempotent;
 import com.campus.runner.dto.WalletRechargeDTO;
 import com.campus.runner.result.PageResult;
 import com.campus.runner.result.Result;
@@ -47,7 +48,8 @@ public class WalletController {
     }
 
     @PostMapping("/recharge")
-    @ApiOperation("钱包充值")
+    @ApiOperation("钱包充值（幂等保护：请求头携带 X-Idempotency-Key 防重复提交）")
+    @Idempotent(scope = "wallet-recharge", duplicateMessage = "该充值请求已提交成功，请勿重复提交")
     public Result<String> recharge(@RequestBody @Valid WalletRechargeDTO walletRechargeDTO) {
         walletService.recharge(BaseContext.getCurrentId(), walletRechargeDTO.getAmount());
         return Result.success("充值成功");

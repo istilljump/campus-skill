@@ -57,6 +57,12 @@ public interface OrderService {
     OrderDetailVO detail(Long orderId);
 
     /**
+     * 按查看者授权的订单详情：发单用户或被指派技能者可见全量，
+     * 其余查看者返回脱敏视图（隐藏手机号/收发货地址/交付物）——第2轮迭代巡检发现的越权修复
+     */
+    OrderDetailVO detailForViewer(Long orderId, Long viewerUserId);
+
+    /**
      * 技能者端-抢单（含并发控制）
      */
     void grab(Long runnerId, OrdersGrabDTO ordersGrabDTO);

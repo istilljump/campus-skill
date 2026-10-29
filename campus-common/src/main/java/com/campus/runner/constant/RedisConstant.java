@@ -22,4 +22,7 @@ public class RedisConstant {
 
     //类目价格参考缓存 key 前缀，完整键为 campus:market:price-ref:{typeId}（5 分钟过期）
     public static final String MARKET_PRICE_REF = "campus:market:price-ref:";
+
+    //幂等提交键前缀，完整键为 campus:idem:{scope}:{userId}:{token}（Stripe 风格幂等键）
+    public static final String IDEMPOTENT_KEY = "campus:idem:";
 }
